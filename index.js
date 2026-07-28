@@ -1,20 +1,26 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { PrismaClient } = require('@prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg'); // ✅ إضافة الـ adapter
 
 const app = express();
-const prisma = new PrismaClient();
+
+// ✅ إنشاء الـ adapter وربطه بالـ PrismaClient
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+const prisma = new PrismaClient({ adapter });
+
 const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
-
-// تقديم الملفات الثابتة من مجلد public (مثل اللوقو logo.png)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 1. رابط فحص السيرفر وجلب إعدادات المتجر والشعار
+// ✅ رابط فحص السيرفر وجلب إعدادات المتجر
 app.get('/', async (req, res) => {
   try {
     let settings = await prisma.storeSetting.findFirst();
@@ -40,12 +46,23 @@ app.get('/', async (req, res) => {
   }
 });
 
-// 2. رابط لجلب الشعار مباشرة (تأكيد للخدمة)
+// ✅ رابط لجلب الشعار مباشرة
 app.get('/logo', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'logo.png'));
 });
 
-// تشغيل السيرفر
+// ✅ اختبار الاتصال بقاعدة البيانات
+async function testConnection() {
+  try {
+    await prisma.$connect();
+    console.log("✅ Connected to DB");
+  } catch (err) {
+    console.error("❌ Connection error:", err);
+  }
+}
+testConnection();
+
+// ✅ تشغيل السيرفر
 app.listen(PORT, () => {
   console.log(`=============================================`);
   console.log(`✅ السيرفر شغال بنجاح على: http://localhost:${PORT}`);
