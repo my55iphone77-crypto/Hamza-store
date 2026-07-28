@@ -7,7 +7,12 @@
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
-  "keywords": ["express", "prisma", "postgresql", "backend"],
+  "keywords": [
+    "express",
+    "prisma",
+    "postgresql",
+    "backend"
+  ],
   "author": "Hamza Mohammad",
   "license": "ISC",
   "type": "commonjs",
