@@ -4,7 +4,13 @@ const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 
 const app = express();
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+});
 const PORT = process.env.PORT || 5000; // تعريف البورت في الأعلى ليكون متاحاً لجميع الروابط
 
 // Middlewares
@@ -33,7 +39,7 @@ app.get('/', async (req, res) => {
       success: true,
       message: '🚀 السيرفر وقاعدة البيانات يعملان بنجاح!',
       storeInfo: settings,
-      logoUrl: `http://localhost:${PORT}/logo.png`, // تم تعديلها لتعتمد على المتغير المعرف بالأعلى
+      logoUrl: `http://localhost:${PORT}/logo.png`,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -42,7 +48,7 @@ app.get('/', async (req, res) => {
 
 // 2. رابط لجلب الشعار مباشرة (تأكيد للخدمة)
 app.get('/logo', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'logo.png'));
+  sendFile(path.join(__dirname, 'public', 'logo.png'));
 });
 
 // تشغيل السيرفر
