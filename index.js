@@ -4,14 +4,8 @@ const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 
 const app = express();
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
-const PORT = process.env.PORT || 5000; // تعريف البورت في الأعلى ليكون متاحاً لجميع الروابط
+const prisma = new PrismaClient();
+const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(cors());
@@ -48,7 +42,7 @@ app.get('/', async (req, res) => {
 
 // 2. رابط لجلب الشعار مباشرة (تأكيد للخدمة)
 app.get('/logo', (req, res) => {
-  sendFile(path.join(__dirname, 'public', 'logo.png'));
+  res.sendFile(path.join(__dirname, 'public', 'logo.png'));
 });
 
 // تشغيل السيرفر
