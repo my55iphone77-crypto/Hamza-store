@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ⚙️ تطبيق الإعدادات والتخصيص (Odoo Studio / Settings)
+model StoreSetting {
+  id           String   @id @default("default")
+  storeName    String   @default("Hamza Enterprise")
+  logoUrl      String?
+  primaryColor String   @default("#2563eb")
+  currency     String   @default("USD")
+  description  String?
+  updatedAt    DateTime @updatedAt
+}
+
+// 👥 تطبيق الموظفين وتتبع الأداء والإنتاجية (HR & Sales KPI)
+model Employee {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  role            String   @default("Sales")
+  targetSales     Float    @default(1000)
+  dedicationScore Int      @default(100) // مؤشر الالتزام والإنضباط
+  hiredAt         DateTime @default(now())
+  createdAt       DateTime @default(now())
+  orders          Order[]
+}
+
+// 🛒 تطبيق المنتجات والأقسام والمخزون (Inventory & Store)
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int         @default(0)
+  imageUrl    String?
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// 📈 تطبيق المبيعات، نقطة البيع (POS) والفواتير المربوطة بالموظفين
+model Order {
+  id          String      @id @default(uuid())
+  customer    String      @default("عميل عام")
+  totalAmount Float
+  status      String      @default("COMPLETED")
+  employeeId  String?
+  employee    Employee?   @relation(fields: [employeeId], references: [id])
+  items       OrderItem[]
+  createdAt   DateTime    @default(now())
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// 📄 تطبيق الفواتير والمصروفات المستقلة (Invoicing & Expenses)
+model Expense {
+  id          String   @id @default(uuid())
+  title       String
+  amount      Float
+  category    String   @default("General")
+  createdAt   DateTime @default(now())
+}
