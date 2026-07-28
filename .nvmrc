@@ -1,11 +1,1 @@
-# إنشاء ملف .nvmrc يحتوي على نسخة Node المطلوبة
-echo "20" > .nvmrc
-
-# إضافة الملف إلى Git
-git add .nvmrc
-
-# عمل commit للتغييرات
-git commit -m "Force Node v20 for Render"
-
-# رفع التغييرات إلى GitHub
-git push origin main
+20

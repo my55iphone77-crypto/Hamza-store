@@ -1,0 +1,8 @@
+# تجاهل مجلد node_modules
+node_modules
+
+# تجاهل ملف البيئة (لازم يظل محلي وما ينرفع)
+.env
+
+# تجاهل ملفات Prisma المولدة تلقائيًا
+/generated/prisma
