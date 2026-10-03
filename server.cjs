@@ -25,8 +25,10 @@ app.set('trust proxy', 1);
 
 // 🔌 إعداد خادم الـ HTTP وربطه مع Express و Socket.IO لتزامن جزء من الثانية
 const server = http.createServer(app);
+const socketAllowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
 const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] },
+  cors: { origin: socketAllowedOrigins, methods: ["GET", "POST", "PUT", "DELETE"] },
   transports: ['websocket', 'polling'], // إجبار الاتصال على أسرع وسيلة نقل
   pingTimeout: 60000,
   pingInterval: 25000
@@ -58,7 +60,7 @@ if (!OWNER_EMAIL) {
 const APP_NAME = process.env.APP_NAME || 'متجر حمزة';
 
 app.use(helmet());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 
@@ -98,10 +100,11 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
+if (FRONTEND_URL && !allowedOrigins.includes(FRONTEND_URL)) allowedOrigins.push(FRONTEND_URL);
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('CORS blocked'));
@@ -109,6 +112,14 @@ app.use(cors({
   },
   credentials: true
 }));
+
+const publicActionLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'طلبات كثيرة جداً، يرجى المحاولة بعد قليل.' }
+});
 
 const MONGO_URI = process.env.MONGO_URI;
 if (!MONGO_URI) {
@@ -532,9 +543,15 @@ app.get('/api/auth/me', async (req, res) => {
 // ------------------------------------------------------------------
 // 🤖 مسارات روبوت خدمة العملاء باستخدام Groq SDK
 // ------------------------------------------------------------------
-app.post('/api/customerAiChat', async (req, res) => {
+app.post('/api/customerAiChat', publicActionLimiter, async (req, res) => {
   try {
     const { message, conversationHistory, persona, taskInstruction, data } = req.body;
+    if (typeof message !== 'string' || !message.trim() || message.length > 4000) {
+      return res.status(400).json({ error: 'الرسالة مطلوبة وبحد أقصى 4000 حرف.' });
+    }
+    if (conversationHistory !== undefined && (!Array.isArray(conversationHistory) || conversationHistory.length > 30)) {
+      return res.status(400).json({ error: 'سجل المحادثة غير صالح أو طويل جداً.' });
+    }
     
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
@@ -574,7 +591,7 @@ app.post('/api/customerAiChat', async (req, res) => {
       });
     }
 
-    messages.push({ role: 'user', content: message });
+    messages.push({ role: 'user', content: message.trim() });
 
     const completion = await groq.chat.completions.create({
       model: modelName,
@@ -591,9 +608,12 @@ app.post('/api/customerAiChat', async (req, res) => {
   }
 });
 
-app.post('/api/notifyManagerFromCustomer', async (req, res) => {
+app.post('/api/notifyManagerFromCustomer', publicActionLimiter, async (req, res) => {
   try {
     const { reason, text, customer } = req.body;
+    if (typeof text !== 'string' || !text.trim() || text.length > 4000) {
+      return res.status(400).json({ error: 'نص البلاغ مطلوب وبحد أقصى 4000 حرف.' });
+    }
     console.log('تصعيد شكوى للادارة:', { reason, text, customer });
     res.json({ success: true, message: 'تم إشعار الإدارة بنجاح' });
   } catch (error) {
