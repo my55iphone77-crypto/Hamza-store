@@ -159,6 +159,12 @@ const orderSchema = new mongoose.Schema({
   customerAddress: { type: String, required: true },
   items: [{ id: String, name: String, price: Number, quantity: Number }],
   totalAmount: { type: Number, required: true },
+  currency: { type: String, default: 'JOD' },
+  paymentMethod: { type: String, default: '' },
+  walletAmount: { type: Number, default: 0 },
+  loyaltyPointsEarned: { type: Number, default: 0 },
+  loyaltyPointsRedeemed: { type: Number, default: 0 },
+  loyaltyRewardItem: { type: String, default: '' },
   date: { type: Date, default: Date.now }
 }, { strict: false });
 const Order = mongoose.model('Order', orderSchema);
@@ -206,7 +212,10 @@ const customerSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String },
-  image: { type: String }
+  image: { type: String },
+  storeBalance: { type: Number, default: 0, min: 0 },
+  loyaltyPoints: { type: Number, default: 0, min: 0 },
+  loyaltyThreshold: { type: Number, default: 100, min: 1 }
 }, { strict: false, timestamps: true });
 const Customer = mongoose.model('Customer', customerSchema);
 
@@ -260,6 +269,9 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, default: 'customer' },
   permissions: { type: [String], default: undefined },
+  storeBalance: { type: Number, default: 0, min: 0 },
+  loyaltyPoints: { type: Number, default: 0, min: 0 },
+  loyaltyThreshold: { type: Number, default: 100, min: 1 },
   isOwner: { type: Boolean, default: false },
   emailVerified: { type: Boolean, default: false },
   emailVerificationToken: { type: String },
@@ -452,6 +464,9 @@ function publicUser(user) {
     email: user.email,
     role: user.role,
     permissions: Array.isArray(user.permissions) ? user.permissions : undefined,
+    storeBalance: Number(user.storeBalance || 0),
+    loyaltyPoints: Number(user.loyaltyPoints || 0),
+    loyaltyThreshold: Number(user.loyaltyThreshold || 100),
     isOwner: user.isOwner || checkOwnerAccess(user.email),
     emailVerified: user.emailVerified,
     twoFactorEnabled: user.twoFactorEnabled

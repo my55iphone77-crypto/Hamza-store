@@ -23,7 +23,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
 
   const isAdminUser = Boolean(currentUser && (currentUser.isOwner || currentUser.role === 'owner'));
   const isStaffUser = Boolean(currentUser && (
-    ['owner', 'admin', 'employee'].includes(currentUser.role) || currentUser.isOwner === true
+    ['owner', 'admin', 'manager', 'stock', 'sales', 'support', 'employee', 'staff'].includes(currentUser.role) || currentUser.isOwner === true
   ));
 
   const userRoleInfo = (() => {
@@ -55,13 +55,15 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   const [lastOrder, setLastOrder] = useState(null);
   // 💳 طريقة الدفع المختارة (من paymentMethods.js)
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [redeemPoints, setRedeemPoints] = useState(false);
 
   useEffect(() => {
     const active = getActivePaymentMethods();
+    if (paymentMethod === 'store_balance' && Number(currentUser?.storeBalance || 0) >= Number(totalPrice || 0) && Number(totalPrice || 0) > 0) return;
     if (active.length > 0 && !active.some(m => m.id === paymentMethod)) {
       setPaymentMethod(active[0].id);
     }
-  }, [paymentMethod]);
+  }, [paymentMethod, currentUser, totalPrice]);
 
   useEffect(() => {
     try {
@@ -180,12 +182,15 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
           playerId: item.deliveryType === 'id_topup' ? String(item.playerId || '').trim() : undefined
         })),
         totalAmount: totalPrice,
-        paymentMethod: paymentMethod || undefined
+        paymentMethod: paymentMethod || undefined,
+        redeemPoints
       });
 
       if (isMounted.current) {
+        if (response?.data?.account) setCurrentUser(prev => ({ ...(prev || {}), ...response.data.account }));
         setLastOrder(response?.data?.order || null); // 🆕 لعرض شاشة التأكيد
         setCart([]);
+        setRedeemPoints(false);
         try { localStorage.removeItem('hamza_cart'); } catch (err) {}
         setCheckoutMode(false);
         setShowCartDropdown(false);
@@ -202,7 +207,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     } finally {
       if (isMounted.current) setSubmittingCheckout(false);
     }
-  }, [api, safeCart, currentUser, totalPrice, paymentMethod, fetchProducts, searchTerm, setError, setShowLoginPage]);
+  }, [api, safeCart, currentUser, totalPrice, paymentMethod, redeemPoints, fetchProducts, searchTerm, setError, setShowLoginPage, setCurrentUser]);
 
   const handleLogout = useCallback(() => {
     setCart([]);
@@ -242,6 +247,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     checkoutMode, setCheckoutMode,
     submittingCheckout, lastOrder, setLastOrder,
     paymentMethod, setPaymentMethod,
+    redeemPoints, setRedeemPoints,
     showLoginPage, setShowLoginPage,
     handleInitiateCheckout, handleCheckout, handleLogout,
     loginSubmitting, loginError, setLoginError,

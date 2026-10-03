@@ -251,13 +251,22 @@ module.exports = function buildStoreRouter(deps) {
       catch (e) { res.status(500).json({ error: 'خطأ في جلب البيانات' }); }
     });
     router.post(path, guard(create), async (req, res) => {
-      try { res.json(await new Model(req.body).save()); }
+      try {
+        const d = await new Model(req.body).save();
+        if (path === '/customers' && User && d.email) {
+          await User.findOneAndUpdate({ email: String(d.email).trim().toLowerCase() }, { $set: { storeBalance: Math.max(0, Number(d.storeBalance || 0)), loyaltyPoints: Math.max(0, Number(d.loyaltyPoints || 0)), loyaltyThreshold: Math.max(1, Number(d.loyaltyThreshold || 100)) } });
+        }
+        res.json(d);
+      }
       catch (e) { res.status(400).json({ error: e.message || 'بيانات غير صالحة' }); }
     });
     router.put(`${path}/:id`, guard(update), async (req, res) => {
       try {
         const d = await Model.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
         if (!d) return res.status(404).json({ error: 'غير موجود' });
+        if (path === '/customers' && User && d.email) {
+          await User.findOneAndUpdate({ email: String(d.email).trim().toLowerCase() }, { $set: { storeBalance: Math.max(0, Number(d.storeBalance || 0)), loyaltyPoints: Math.max(0, Number(d.loyaltyPoints || 0)), loyaltyThreshold: Math.max(1, Number(d.loyaltyThreshold || 100)) } });
+        }
         res.json(d);
       } catch (e) { res.status(400).json({ error: e.message || 'فشل التحديث' }); }
     });
@@ -305,13 +314,14 @@ module.exports = function buildStoreRouter(deps) {
   // إنشاء طلب من الزبون (عام). المبلغ يُحسب من أسعار قاعدة البيانات، ما نثق بسعر الواجهة.
   router.post('/orders', publicActionLimiter, async (req, res) => {
     try {
-      const { customerName, customerEmail, customerAddress } = req.body || {};
+      const { customerName, customerEmail, customerAddress, paymentMethod, redeemPoints } = req.body || {};
+      const authUser = await getUserFromAuthHeader(req.headers.authorization);
       const rawItems = Array.isArray(req.body && req.body.items) ? req.body.items : [];
       const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(customerEmail || '').trim());
-      if (!customerName || !emailOk || !customerAddress || rawItems.length === 0) {
+      if (!customerName || !emailOk || rawItems.length === 0) {
         return res.status(400).json({ error: 'بيانات الطلب ناقصة.' });
       }
-      if (String(customerName).length > 120 || String(customerEmail).length > 254 || String(customerAddress).length > 500) {
+      if (String(customerName).length > 120 || String(customerEmail).length > 254 || String(customerAddress || '').length > 500) {
         return res.status(400).json({ error: 'بيانات الطلب تتجاوز الحد المسموح.' });
       }
       let total = 0;
@@ -328,13 +338,48 @@ module.exports = function buildStoreRouter(deps) {
         total += price * qty;
         items.push({ id: String(it.id || ''), name, price, quantity: qty });
       }
+      let walletAmount = 0;
+      if (paymentMethod === 'store_balance') {
+        if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام رصيد المتجر.' });
+        if (Number(authUser.storeBalance || 0) < total) return res.status(400).json({ error: 'رصيد المتجر غير كافٍ.' });
+        walletAmount = total;
+      }
+      let loyaltyPointsRedeemed = 0;
+      let loyaltyRewardItem = '';
+      const threshold = Math.max(1, Number(authUser?.loyaltyThreshold || 100));
+      if (redeemPoints === true || redeemPoints === 'true') {
+        if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام نقاط الولاء.' });
+        if (Number(authUser.loyaltyPoints || 0) < threshold) return res.status(400).json({ error: `تحتاج ${threshold} نقطة للحصول على منتج مجاني.` });
+        const reward = await Product.findOne({ stock: { $gt: 0 } }).sort({ price: 1 });
+        if (!reward) return res.status(400).json({ error: 'لا يوجد منتج متاح للمكافأة حالياً.' });
+        items.push({ id: String(reward._id), name: `${reward.name} (مكافأة ولاء)`, price: 0, quantity: 1 });
+        loyaltyPointsRedeemed = threshold;
+        loyaltyRewardItem = reward.name;
+      }
+      const pointsEarned = authUser ? Math.max(0, Math.floor(total)) : 0;
+      if (authUser) {
+        const update = { $inc: { loyaltyPoints: pointsEarned - loyaltyPointsRedeemed } };
+        if (walletAmount > 0) update.$inc.storeBalance = -walletAmount;
+        const updatedUser = await User.findOneAndUpdate(
+          { _id: authUser._id, ...(walletAmount > 0 ? { storeBalance: { $gte: walletAmount } } : {}), ...(loyaltyPointsRedeemed > 0 ? { loyaltyPoints: { $gte: loyaltyPointsRedeemed } } : {}) },
+          update, { new: true }
+        );
+        if (!updatedUser) return res.status(409).json({ error: 'تغيّرت بيانات الرصيد أو النقاط، حدّث الصفحة وحاول مرة أخرى.' });
+        await Customer.findOneAndUpdate(
+          { email: String(authUser.email).trim().toLowerCase() },
+          { $setOnInsert: { name: authUser.name || customerName, email: String(authUser.email).trim().toLowerCase() }, $inc: { storeBalance: walletAmount ? -walletAmount : 0, loyaltyPoints: pointsEarned - loyaltyPointsRedeemed } },
+          { upsert: true, new: true }
+        );
+      }
       const order = await new Order({
         customerName: String(customerName).trim(),
         customerEmail: String(customerEmail).trim().toLowerCase(),
-        customerAddress: String(customerAddress).trim(),
-        items, totalAmount: total, status: 'جديد'
+        customerAddress: String(customerAddress || 'طلب رقمي من المتجر').trim(),
+        items, totalAmount: total, currency: 'JOD', status: 'جديد',
+        paymentMethod: String(paymentMethod || ''), walletAmount,
+        loyaltyPointsEarned: pointsEarned, loyaltyPointsRedeemed, loyaltyRewardItem
       }).save();
-      res.json(order);
+      res.json({ order, account: authUser ? { storeBalance: Number(authUser.storeBalance || 0) - walletAmount, loyaltyPoints: Number(authUser.loyaltyPoints || 0) + pointsEarned - loyaltyPointsRedeemed, loyaltyThreshold: threshold } : undefined });
     } catch (e) { res.status(400).json({ error: e.message || 'فشل إنشاء الطلب' }); }
   });
   // تتبع الطلب بالرقم (عام، حقول محدودة بدون بيانات شخصية)

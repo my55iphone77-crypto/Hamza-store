@@ -502,11 +502,11 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                     <div className="hz-price-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.15)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#34d399', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>
-                          {displayPrice} $
+                          {displayPrice} دينار
                         </span>
                         {hasDiscount && (
                           <span style={{ fontSize: '12px', color: '#94a3b8', textDecoration: 'line-through' }}>
-                            {originalPrice} $
+                            {originalPrice} دينار
                           </span>
                         )}
                       </div>
@@ -571,7 +571,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
               ) : (
                 <div>
                   <p style={{ margin: '0 0 6px 0', color: '#34d399', fontWeight: 'bold' }}>✅ حالة الطلب: {orderStatusResult.status || 'مكتمل'}</p>
-                  <p style={{ margin: 0, color: '#cbd5e1' }}>المبلغ: {orderStatusResult.totalAmount || orderStatusResult.price} $</p>
+                  <p style={{ margin: 0, color: '#cbd5e1' }}>المبلغ: {orderStatusResult.totalAmount || orderStatusResult.price} دينار</p>
                 </div>
               )}
             </div>

@@ -164,7 +164,9 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
     handleCheckout = () => {},
     setCheckoutMode = () => {},
     paymentMethod = '',
-    setPaymentMethod = () => {}
+    setPaymentMethod = () => {},
+    redeemPoints = false,
+    setRedeemPoints = () => {}
   } = safeAuthCart;
   const activeMethods = getActivePaymentMethods();
 
@@ -181,6 +183,15 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
           <p style={{ margin: '0', color: '#94a3b8', fontSize: '13px' }}>
             التسليم رقمي بالكامل عبر البريد: <span style={{ color: '#38bdf8' }}>{String(currentUser?.email || 'غير متوفر')}</span>
           </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
+        <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(250,204,21,0.08)', border: '1px solid rgba(250,204,21,0.3)', color: '#fde68a', fontSize: '12px' }}>
+          رصيد المتجر: <strong>{Number(currentUser?.storeBalance || 0).toFixed(2)} دينار</strong><br /><span style={{ color: '#94a3b8' }}>للشراء فقط، غير قابل للسحب</span>
+        </div>
+        <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.3)', color: '#ddd6fe', fontSize: '12px' }}>
+          نقاط الولاء: <strong>{Number(currentUser?.loyaltyPoints || 0)}</strong> / {Number(currentUser?.loyaltyThreshold || 100)}<br /><span style={{ color: '#94a3b8' }}>كل دينار مشتريات = نقطة</span>
         </div>
       </div>
 
@@ -249,6 +260,19 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
             })}
           </div>
         </div>
+      )}
+
+      {Number(currentUser?.storeBalance || 0) >= Number(totalPrice || 0) && Number(totalPrice || 0) > 0 && (
+        <button type="button" onClick={() => setPaymentMethod(paymentMethod === 'store_balance' ? '' : 'store_balance')} style={{ padding: '12px', borderRadius: '12px', textAlign: 'right', color: '#f8fafc', cursor: 'pointer', background: paymentMethod === 'store_balance' ? 'rgba(250,204,21,0.18)' : 'rgba(11,15,25,0.75)', border: paymentMethod === 'store_balance' ? '2px solid #facc15' : '1px solid rgba(250,204,21,0.35)' }}>
+          🪙 الدفع من رصيد المتجر — {Number(totalPrice).toFixed(2)} دينار
+        </button>
+      )}
+
+      {Number(currentUser?.loyaltyPoints || 0) >= Number(currentUser?.loyaltyThreshold || 100) && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', borderRadius: '12px', color: '#ddd6fe', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.35)', cursor: 'pointer', fontSize: '13px' }}>
+          <input type="checkbox" checked={redeemPoints} onChange={(e) => setRedeemPoints(e.target.checked)} />
+          استبدال {Number(currentUser.loyaltyThreshold || 100)} نقطة بمنتج مجاني من المتجر
+        </label>
       )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '15px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
