@@ -53,6 +53,9 @@ app.use(passport.initialize());
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const SMTP_SECURE = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || SMTP_PORT === 465;
 
 const missingEnvironment = [
   ['JWT_SECRET', JWT_SECRET],
@@ -68,14 +71,26 @@ if (missingEnvironment.length > 0) {
 }
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false,
-  auth: { user: SMTP_USER, pass: SMTP_PASS }
+  host: SMTP_HOST,
+  port: SMTP_PORT,
+  secure: SMTP_SECURE,
+  auth: { user: SMTP_USER, pass: SMTP_PASS },
+  connectionTimeout: 8000,
+  greetingTimeout: 8000,
+  socketTimeout: 10000,
+  tls: { minVersion: 'TLSv1.2' }
 });
+
+transporter.verify()
+  .then(() => console.log(`SMTP ready: ${SMTP_HOST}:${SMTP_PORT}`))
+  .catch((error) => console.error('SMTP verification failed:', error.message));
 
 async function sendStoreEmail(toEmail, subject, htmlContent) {
   try {
+    if (!toEmail || !String(toEmail).includes('@')) {
+      console.error('email skipped: invalid recipient');
+      return false;
+    }
     const info = await transporter.sendMail({
       from: `"متجر حمزة" <${SMTP_FROM}>`,
       to: toEmail,
