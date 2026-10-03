@@ -195,6 +195,10 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
       if (typeof setError === 'function') setError(`لا يمكن إتمام الطلب: تحتاج ${loyaltyPointsCost} نقطة، والمتوفر لديك ${Number(currentUser.loyaltyPoints || 0)} نقطة.`);
       return;
     }
+    if (paymentMethod === 'store_balance' && Number(currentUser.storeBalance || 0) < Number(finalTotal || 0)) {
+      if (typeof setError === 'function') setError(`رصيد المتجر غير كافٍ: المطلوب ${Number(finalTotal || 0).toFixed(2)} د.أ والمتوفر ${Number(currentUser.storeBalance || 0).toFixed(2)} د.أ.`);
+      return;
+    }
 
     // 🆕 تحقق: كل منتج تعبئة آيدي لازم يكون له آيدي مُدخَل
     const missingPlayerId = safeCart.find(item => item && item.deliveryType === 'id_topup' && !String(item.playerId || '').trim());

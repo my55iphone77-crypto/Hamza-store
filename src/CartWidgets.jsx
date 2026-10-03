@@ -302,7 +302,7 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
 
       {Number(currentUser?.storeBalance || 0) >= Number(finalTotal || 0) && Number(finalTotal || 0) > 0 && (
         <button type="button" onClick={() => setPaymentMethod(paymentMethod === 'store_balance' ? '' : 'store_balance')} style={{ padding: '12px', borderRadius: '12px', textAlign: 'right', color: '#f8fafc', cursor: 'pointer', background: paymentMethod === 'store_balance' ? 'rgba(250,204,21,0.18)' : 'rgba(11,15,25,0.75)', border: paymentMethod === 'store_balance' ? '2px solid #facc15' : '1px solid rgba(250,204,21,0.35)' }}>
-          🪙 الدفع من رصيد المتجر — {Number(finalTotal).toFixed(2)} دينار
+          🪙 الدفع بالدينار من رصيد المتجر — {Number(finalTotal).toFixed(2)} د.أ <small style={{ color: '#fde68a' }}>(1 رصيد = 1 دينار للشراء)</small>
         </button>
       )}
 

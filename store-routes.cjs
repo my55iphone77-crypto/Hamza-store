@@ -519,7 +519,8 @@ module.exports = function buildStoreRouter(deps) {
         total = Math.max(0, subtotal - couponDiscount);
       }
       let walletAmount = 0;
-      if (paymentMethod === 'store_balance') {
+      const usesStoreBalance = ['store_balance', 'balance'].includes(String(paymentMethod || '').trim().toLowerCase());
+      if (usesStoreBalance) {
         if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام رصيد المتجر.' });
         if (Number(authUser.storeBalance || 0) < total) return res.status(400).json({ error: 'رصيد المتجر غير كافٍ.' });
         walletAmount = total;
