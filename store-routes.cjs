@@ -224,7 +224,8 @@ module.exports = function buildStoreRouter(deps) {
     next();
   };
 
-  async function permissionGuard(permission, fallback = 'staff') {
+  function permissionGuard(permission, fallback = 'staff') {
+    return async (req, res, next) => {
     const user = await getUserFromAuthHeader(req.headers.authorization);
     if (!user) return res.status(401).json({ error: 'غير حاصل على تصريح، يرجى تسجيل الدخول.' });
     const usesDefaultRolePermissions = !Array.isArray(user.permissions);
@@ -233,6 +234,7 @@ module.exports = function buildStoreRouter(deps) {
     }
     req.user = user;
     next();
+    };
   }
 
   const toObj = (d) => (d && typeof d.toJSON === 'function' ? d.toJSON() : { ...d });
