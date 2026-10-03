@@ -380,10 +380,10 @@ function Employees() {
   };
 
   const modalOverlayStyle = {
-    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+    position: 'fixed', inset: 0, width: '100vw', height: '100dvh', minHeight: '100%',
     background: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(8px)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    zIndex: 1100, padding: '20px', boxSizing: 'border-box', overflowY: 'auto'
+    display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+    zIndex: 1100, padding: 'clamp(12px, 3vw, 32px)', boxSizing: 'border-box', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch'
   };
 
   const modalContentStyle = {
@@ -391,16 +391,17 @@ function Employees() {
     backdropFilter: 'blur(20px)',
     border: '1px solid rgba(255, 255, 255, 0.12)',
     borderRadius: '24px',
-    padding: '30px',
+    padding: 'clamp(18px, 3vw, 32px)',
     width: '100%',
-    maxWidth: '520px',
-    maxHeight: '90vh',
+    maxWidth: 'min(100%, 900px)',
+    maxHeight: 'calc(100dvh - clamp(24px, 6vw, 64px))',
     overflowY: 'auto',
     display: 'flex',
     flexDirection: 'column',
     gap: '15px',
     position: 'relative',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)'
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+    margin: 'auto'
   };
 
   const closeButtonStyle = {

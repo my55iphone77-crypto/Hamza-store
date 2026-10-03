@@ -103,10 +103,15 @@ const GLASS_STYLE = `
   .hz-app-full-container > div { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
   .hz-section-shell { width: 100%; max-width: 100%; min-width: 0; display: block; }
   .hz-section-shell > * { width: 100%; max-width: 100%; min-width: 0; }
+  .hz-section-shell > [style*="position: fixed"] { width: 100vw !important; max-width: none !important; min-width: 0 !important; height: 100dvh !important; max-height: none !important; overflow-y: auto !important; align-items: flex-start !important; padding: clamp(12px, 3vw, 32px) !important; }
+  .hz-section-shell > [style*="position: fixed"] > div { width: min(100%, 1100px) !important; max-width: min(100%, 1100px) !important; max-height: calc(100dvh - clamp(24px, 6vw, 64px)) !important; margin: auto !important; overflow-y: auto !important; flex: 0 1 auto; }
   .hz-section-shell img, .hz-section-shell video, .hz-section-shell canvas { max-width: 100%; }
   .hz-section-shell table { width: 100%; max-width: 100%; border-collapse: collapse; }
   .hz-section-shell input, .hz-section-shell select, .hz-section-shell textarea { max-width: 100%; min-width: 0; }
   .hz-section-shell [style*="display: flex"] { min-width: 0; }
+  .hz-section-shell [style*="display: grid"] { min-width: 0; }
+  .hz-section-shell h1, .hz-section-shell h2, .hz-section-shell h3, .hz-section-shell h4, .hz-section-shell p { overflow-wrap: anywhere; }
+  .hz-section-shell [style*="position: fixed"] > div[style*="maxWidth"], .hz-section-shell [style*="position: fixed"] > div[style*="max-width"] { width: min(100%, 1100px) !important; max-width: min(100%, 1100px) !important; max-height: calc(100dvh - clamp(24px, 6vw, 64px)) !important; margin: auto !important; }
   .hz-atmosphere, .hz-atmosphere * { box-sizing: border-box; }
   .hz-atmosphere { min-width: 0; overflow-x: clip; overscroll-behavior-x: none; }
   .hz-admin-main, .hz-admin-main > div { min-width: 0; max-width: 100%; }

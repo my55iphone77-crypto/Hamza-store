@@ -776,16 +776,16 @@ const discountBadgeStyle = {
 };
 
 const modalOverlayStyle = {
-  position: "fixed", inset: 0, width: "100%", height: "100dvh",
+  position: "fixed", inset: 0, width: "100vw", height: "100dvh", minHeight: "100%",
   background: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(10px)",
-  display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1100, padding: "clamp(8px, 3vw, 20px)", boxSizing: "border-box", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch"
+  display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 1100, padding: "clamp(12px, 3vw, 32px)", boxSizing: "border-box", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch"
 };
 
 const modalContentStyle = {
   background: "rgba(30, 41, 59, 0.88)", backdropFilter: "blur(20px)",
   border: "1px solid rgba(255, 255, 255, 0.15)", borderRadius: "20px",
-  padding: "clamp(16px, 4vw, 25px)", width: "100%", maxWidth: "min(100%, 960px)", maxHeight: "calc(100dvh - 16px)",
-  overflowY: "auto", overflowX: "hidden", position: "relative", boxSizing: "border-box", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)"
+  padding: "clamp(18px, 3vw, 32px)", width: "min(100%, 1100px)", maxWidth: "1100px", maxHeight: "calc(100dvh - clamp(24px, 6vw, 64px))",
+  overflowY: "auto", overflowX: "hidden", position: "relative", boxSizing: "border-box", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)", margin: "auto"
 };
 
 const closeBtnStyle = {
