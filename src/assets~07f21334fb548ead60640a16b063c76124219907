@@ -1,0 +1,24 @@
+import React from 'react';
+import logo from './assets/logo.png';
+
+export default function App() {
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col dir-rtl">
+      {/* Header علوي احترافي */}
+      <header className="bg-[#0b2545] text-white px-6 py-4 flex justify-between items-center shadow-md">
+        <div className="flex items-center gap-3">
+          <img src={logo} alt="Hamza Store Logo" className="h-10 w-auto object-contain bg-white p-1 rounded" />
+          <span className="font-bold text-xl tracking-wide">Hamza Store</span>
+        </div>
+        <div className="text-sm bg-[#e85d04] px-3 py-1 rounded-full font-medium shadow">
+          لوحة التحكم الرئيسية
+        </div>
+      </header>
+
+      {/* باقي المحتوى */}
+      <main className="flex-1 p-6">
+        <h2 className="text-2xl font-bold text-slate-800">أهلاً بك في نظام إدارة المتجر 🚀</h2>
+      </main>
+    </div>
+  );
+}

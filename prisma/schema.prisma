@@ -1,0 +1,84 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ⚙️ إعدادات المتجر (Store Settings)
+model StoreSetting {
+  id           String   @id @default("default")
+  storeName    String   @default("Hamza Enterprise")
+  logoUrl      String?
+  primaryColor String   @default("#2563eb")
+  currency     String   @default("USD")
+  description  String?
+  updatedAt    DateTime @updatedAt
+}
+
+// 👥 الموظفين (HR & Sales KPI)
+model Employee {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  role            String   @default("Sales")
+  targetSales     Float    @default(1000)
+  dedicationScore Int      @default(100)
+  hiredAt         DateTime @default(now())
+  createdAt       DateTime @default(now())
+  orders          Order[]
+}
+
+// 🛒 الأقسام والمنتجات (Inventory & Store)
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int         @default(0)
+  imageUrl    String?
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// 📈 المبيعات والفواتير (POS & Orders)
+model Order {
+  id          String      @id @default(uuid())
+  customer    String      @default("عميل عام")
+  totalAmount Float
+  status      String      @default("COMPLETED")
+  employeeId  String?
+  employee    Employee?   @relation(fields: [employeeId], references: [id])
+  items       OrderItem[]
+  createdAt   DateTime    @default(now())
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// 📄 المصروفات (Expenses)
+model Expense {
+  id        String   @id @default(uuid())
+  title     String
+  amount    Float
+  category  String   @default("General")
+  createdAt DateTime @default(now())
+}
