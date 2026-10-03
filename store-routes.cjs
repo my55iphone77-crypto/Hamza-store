@@ -85,6 +85,29 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
+  router.put('/salaries/:id', permissionGuard('manage_salaries', 'manager'), async (req, res) => {
+    try {
+      const body = req.body || {};
+      const base = Number(body.base ?? body.amount ?? 0);
+      const deduction = Math.max(0, Number(body.deduction || 0));
+      const bonus = Math.max(0, Number(body.bonus || 0));
+      const update = {
+        ...(body.employeeName !== undefined ? { employeeName: String(body.employeeName).trim() } : {}),
+        ...(body.employeeId !== undefined ? { employeeId: String(body.employeeId) } : {}),
+        amount: base + bonus - deduction, base, deduction,
+        deductionReason: String(body.deductionReason || ''), bonus,
+        bonusReason: String(body.bonusReason || ''), netSalary: base + bonus - deduction,
+        ...(body.status !== undefined ? { status: String(body.status) } : {}),
+        ...(body.paid !== undefined ? { paid: Boolean(body.paid) } : {}),
+        ...(body.lastPaidMonth !== undefined ? { lastPaidMonth: String(body.lastPaidMonth) } : {})
+      };
+      const salary = await Salary.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
+      if (!salary) return res.status(404).json({ error: 'سجل الراتب غير موجود.' });
+      broadcast('SALARIES', salary);
+      res.json(salary);
+    } catch (e) { res.status(400).json({ error: e.message || 'فشل تحديث الراتب.' }); }
+  });
+
   // ============================= المهام =============================
   router.get('/tasks', permissionGuard('manage_tasks'), async (req, res) => {
     try {
@@ -188,6 +211,27 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
+  router.put('/coupons/:id', permissionGuard('manage_coupons'), async (req, res) => {
+    try {
+      const allowed = ['code', 'discount', 'discountType', 'audience', 'expiry', 'maxUsage', 'minOrder', 'description', 'createdBy', 'usageCount', 'users'];
+      const update = {};
+      allowed.forEach((key) => { if (req.body?.[key] !== undefined) update[key] = req.body[key]; });
+      const coupon = await Coupon.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
+      if (!coupon) return res.status(404).json({ error: 'الكوبون غير موجود.' });
+      res.json(coupon);
+      broadcastList('COUPONS', Coupon);
+    } catch (e) { res.status(400).json({ error: e.message || 'فشل تحديث الكوبون.' }); }
+  });
+
+  router.delete('/coupons/:id', permissionGuard('manage_coupons'), async (req, res) => {
+    try {
+      const coupon = await Coupon.findByIdAndDelete(req.params.id);
+      if (!coupon) return res.status(404).json({ error: 'الكوبون غير موجود.' });
+      res.json({ success: true });
+      broadcastList('COUPONS', Coupon);
+    } catch (e) { res.status(400).json({ error: 'فشل حذف الكوبون.' }); }
+  });
+
 
   // ============================= الصلاحيات =============================
   const STAFF_ROLES = ['owner', 'admin', 'manager', 'stock', 'sales', 'support', 'employee', 'staff'];
@@ -276,8 +320,11 @@ module.exports = function buildStoreRouter(deps) {
     });
     router.delete(`${path}/:id`, guard(remove), async (req, res) => {
       try {
-        const d = await Model.findByIdAndDelete(req.params.id);
+        const d = path === '/categories'
+          ? await Model.findOneAndDelete({ $or: [{ _id: req.params.id }, { name: decodeURIComponent(req.params.id) }] })
+          : await Model.findByIdAndDelete(req.params.id);
         if (!d) return res.status(404).json({ error: 'غير موجود' });
+        if (path === '/categories' && Product) await Product.updateMany({ category: d.name }, { $set: { category: 'غير مصنف' } });
         res.json({ success: true });
       } catch (e) { res.status(500).json({ error: 'فشل الحذف' }); }
     });

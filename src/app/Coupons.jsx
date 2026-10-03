@@ -3,8 +3,10 @@ import { useApp } from "./AppContext";
 import { useFullBleedStyle } from "./useWindowSize";
 
 function canManageCoupons(role) {
-  return ["admin", "manager"].includes(role);
+  return ["owner", "admin", "manager", "sales"].includes(role);
 }
+
+const couponId = (coupon) => String(coupon?._id || coupon?.id || '');
 
 const escapeHTML = (str) => {
   if (typeof str !== 'string') return str;
@@ -123,7 +125,7 @@ function Coupons({
     if (!apiRequest || !recipientEmail) return;
     try {
       setMailStatus("جاري إرسال البريد...");
-      const res = await apiRequest("/mails/send-real", "POST", { to: recipientEmail, subject, html: htmlContent });
+      const res = await apiRequest("/sendExternalMail", "POST", { to: recipientEmail, subject, body: htmlContent });
       setMailStatus(res?.success ? "✅ تم إرسال الإيميل!" : "⚠️ تم الحفظ لكن تعذر الإرسال.");
     } catch (err) {
       setMailStatus("❌ فشل في إرسال الإيميل.");
@@ -215,7 +217,7 @@ function Coupons({
     if (!window.confirm(`هل أنت متأكد من حذف الكوبون "${couponCode}"؟`)) return;
     try {
       await apiRequest(`/coupons/${id}`, "DELETE");
-      const updatedList = safeCoupons.filter(c => c && c.id !== id);
+      const updatedList = safeCoupons.filter(c => c && couponId(c) !== String(id));
       updateCoupons(updatedList);
       await sendInternalMail("manager@company.com", "🗑️ حذف كوبون", `تم حذف الكوبون ${couponCode || ''}`);
     } catch (err) { alert("فشل في حذف الكوبون."); }
@@ -223,7 +225,7 @@ function Coupons({
 
   const startEdit = (coupon) => {
     if (!canManageCoupons(currentUser?.role)) { alert("❌ لا تملك صلاحية."); return; }
-    setEditingId(coupon.id); setEditData({ ...coupon });
+    setEditingId(couponId(coupon)); setEditData({ ...coupon });
   };
 
   const saveEdit = async () => {
@@ -231,7 +233,7 @@ function Coupons({
     try {
       const updated = { ...editData, lastModified: new Date().toISOString() };
       await apiRequest(`/coupons/${editingId}`, "PUT", updated);
-      const updatedList = safeCoupons.map(c => c?.id === editingId ? updated : c);
+      const updatedList = safeCoupons.map(c => couponId(c) === String(editingId) ? { ...updated, id: couponId(c) } : c);
       updateCoupons(updatedList); setEditingId(null); setEditData({});
       await sendInternalMail("manager@company.com", "✏️ تعديل كوبون", `تم تعديل الكوبون ${updated.code}`);
     } catch (err) { alert("فشل في تحديث الكوبون."); }
@@ -240,15 +242,15 @@ function Coupons({
   const cancelEdit = () => { setEditingId(null); setEditData({}); };
 
   const handleUseCoupon = async (coupon, userName) => {
-    if (!coupon?.id) return;
+    if (!couponId(coupon)) return;
     if (isExpired(coupon.expiry)) { alert("❌ منتهي الصلاحية!"); return; }
     if ((coupon.usageCount || 0) >= (coupon.maxUsage || 1)) { alert("⛔ وصل للحد الأقصى!"); return; }
     if (!apiRequest) return;
     const sanitizedUserName = typeof userName === 'string' ? userName.trim() : "مستخدم";
     try {
       const updatedData = { ...coupon, usageCount: (coupon.usageCount || 0) + 1, users: [...(coupon.users || []), sanitizedUserName] };
-      await apiRequest(`/coupons/${coupon.id}`, "PUT", updatedData);
-      const updatedCoupons = safeCoupons.map(c => c?.id === coupon.id ? updatedData : c);
+      await apiRequest(`/coupons/${couponId(coupon)}`, "PUT", updatedData);
+      const updatedCoupons = safeCoupons.map(c => couponId(c) === couponId(coupon) ? updatedData : c);
       updateCoupons(updatedCoupons);
       alert(`✅ تم استخدام الكوبون ${coupon.code} بنجاح`);
     } catch (err) { alert("فشل في تسجيل استخدام الكوبون."); }

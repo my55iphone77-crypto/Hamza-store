@@ -12,6 +12,13 @@ function Salaries({ mails, setMails }) {
     updateEmployee,
   } = useApp() || {};
   const dismissals = [];
+  const salaryId = (s) => String(s?._id || s?.id || '');
+  const normalizeSalary = (s) => {
+    const base = Number(s?.base ?? s?.amount ?? s?.salary ?? 0);
+    const deduction = Number(s?.deduction || 0);
+    const bonus = Number(s?.bonus || 0);
+    return { ...s, id: salaryId(s), name: s?.name || s?.employeeName || 'موظف', base, salary: base, deduction, bonus, netSalary: Number(s?.netSalary ?? (base + bonus - deduction)), paid: Boolean(s?.paid || s?.status === 'مدفوع') };
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSalary, setSelectedSalary] = useState(null);
@@ -86,7 +93,7 @@ function Salaries({ mails, setMails }) {
   // 💾 الحفظ الشامل والمزامنة العكسية مع الموظفين والمحاسبة
   const handleEditEmployeeSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedSalary || !selectedSalary.id) return;
+    if (!selectedSalary || !salaryId(selectedSalary)) return;
 
     const baseVal = parseFloat(editBase) || 0;
     const dedVal = parseFloat(deductionAmt) || 0;
@@ -95,9 +102,17 @@ function Salaries({ mails, setMails }) {
     const currentEmpName = selectedSalary.name && typeof selectedSalary.name === 'string' ? selectedSalary.name.trim() : 'موظف';
     const empEmail = selectedSalary.email || '';
 
-    // 1. تحديث جدول الرواتب
+    const salaryKey = salaryId(selectedSalary);
+    if (typeof apiRequest === 'function') {
+      try {
+        const saved = await apiRequest(`/salaries/${salaryKey}`, 'PUT', { employeeId: selectedSalary.employeeId, employeeName: currentEmpName, base: baseVal, deduction: dedVal, deductionReason: deductionRes || '', bonus: bonVal, bonusReason: bonusRes || '', netSalary: netVal });
+        setSalaries(prev => (Array.isArray(prev) ? prev.map(s => salaryId(s) === salaryKey ? saved : s) : []));
+      } catch (err) { alert(err.message || 'فشل حفظ الراتب على الخادم.'); return; }
+    }
+
+    // 1. تحديث جدول الرواتب محلياً بعد نجاح الخادم
     setSalaries(prev => (Array.isArray(prev) ? prev.map(s => (
-      s.id === selectedSalary.id
+      salaryId(s) === salaryKey
         ? {
             ...s,
             name: currentEmpName,
@@ -124,9 +139,9 @@ function Salaries({ mails, setMails }) {
   };
 
   // 💵 الصرف والربط التلقائي بقسم المحاسبة والمصروفات
-  const togglePaid = (id) => {
+  const togglePaid = async (id) => {
     const safeSalaries = Array.isArray(salaries) ? salaries : [];
-    const targetEmp = safeSalaries.find(s => s.id === id);
+    const targetEmp = safeSalaries.find(s => salaryId(s) === String(id));
     if (!targetEmp) return;
 
     const isCurrentlyPaid = targetEmp.paid || targetEmp.status === 'مدفوع';
@@ -139,8 +154,17 @@ function Salaries({ mails, setMails }) {
     const newPaidStatus = !isCurrentlyPaid;
     const netVal = targetEmp.netSalary ?? targetEmp.base ?? 500;
 
+    if (typeof apiRequest === 'function') {
+      try {
+        await apiRequest(`/salaries/${id}`, 'PUT', { paid: newPaidStatus, status: newPaidStatus ? 'مدفوع' : 'مستحق', lastPaidMonth: newPaidStatus ? currentMonthYear : '' });
+      } catch (err) {
+        alert(err.message || 'فشل حفظ حالة التسديد على الخادم.');
+        return;
+      }
+    }
+
     setSalaries(prev => (Array.isArray(prev) ? prev.map(s => (
-      s.id === id
+      salaryId(s) === String(id)
         ? {
             ...s,
             paid: newPaidStatus,
@@ -179,7 +203,7 @@ function Salaries({ mails, setMails }) {
     logEventAndEmail(actionText, targetEmp.email || '');
   };
 
-  const safeSalariesList = Array.isArray(salaries) ? salaries : [];
+  const safeSalariesList = Array.isArray(salaries) ? salaries.map(normalizeSalary) : [];
   const safeEmployeesList = Array.isArray(employees) ? employees : [];
 
   const filteredSalaries = safeSalariesList.filter(s =>
@@ -240,14 +264,14 @@ function Salaries({ mails, setMails }) {
           const netVal = s.netSalary ?? baseVal;
           const isPaid = s.paid || s.status === 'مدفوع';
 
-          const currentEmp = safeEmployeesList.find(emp => emp && emp.id === s.id) || {};
+          const currentEmp = safeEmployeesList.find(emp => emp && String(emp._id || emp.id) === String(s.employeeId || '')) || {};
           const displayName = currentEmp.name || s.name || 'موظف';
           const displayImage = currentEmp.image || s.image;
           const isDismissed = Array.isArray(dismissals) && dismissals.some(d => d.employeeId === s.id || d.name === s.name);
 
           return (
             <div
-              key={s.id}
+              key={salaryId(s)}
               onClick={() => handleCardClick(s)}
               style={{ background: 'rgba(17, 24, 39, 0.7)', backdropFilter: 'blur(12px)', border: `1px solid ${isDismissed ? 'rgba(239, 68, 68, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`, borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)', gap: '10px' }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.5)'; }}
@@ -395,7 +419,7 @@ function Salaries({ mails, setMails }) {
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  onClick={() => togglePaid(selectedSalary.id)}
+                  onClick={() => togglePaid(salaryId(selectedSalary))}
                   style={{
                     flex: 1,
                     minWidth: '130px',

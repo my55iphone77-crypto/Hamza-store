@@ -5,7 +5,7 @@ import { useApp } from './app/AppContext';
 import LoginPage from './app/LoginPage';
 import { useProducts, ProductSearchBar, ProductGrid } from './StoreProducts';
 import SupportSection from './SupportSection';
-import { useAuthCart, HeaderControls } from './AuthCartCheckout';
+import { useAuthCart, HeaderControls, CheckoutForm, OrderConfirmation } from './AuthCartCheckout';
 
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const API_BASE_URL = isLocal ? 'http://localhost:4000/api' : '/api';
@@ -402,6 +402,9 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
         <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
       </div>
+
+      <CheckoutForm authCart={authCart} inputStyle={inputStyle} />
+      <OrderConfirmation authCart={authCart} />
 
       <div style={{ marginBottom: '20px' }}>
         <h2 style={{ margin: '0 0 5px 0', color: '#f97316', fontSize: 'clamp(19px, 3vw, 24px)', fontWeight: 'bold' }}>

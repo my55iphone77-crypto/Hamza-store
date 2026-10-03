@@ -4,6 +4,15 @@ import { permissionsForUser } from '../permissions';
 
 const AppContext = createContext();
 
+const uniqueRecords = (items, fallbackKey = 'id') => {
+  const map = new Map();
+  (Array.isArray(items) ? items : []).forEach((item) => {
+    const id = String(item?._id || item?.[fallbackKey] || item?.email || item?.code || '');
+    if (id) map.set(id, item);
+  });
+  return Array.from(map.values());
+};
+
 export function AppProvider({ children }) {
   // 🔐 حالة المصادقة والمستخدم
   const [token, setToken] = useState(() => localStorage.getItem('hamza_token') || localStorage.getItem('token') || '');
@@ -328,14 +337,14 @@ export function AppProvider({ children }) {
       if (transRes?.ok) { const d = await transRes.json().catch(() => []); setAccountingTransactions(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'accountingTransactions', value: d }); }
       if (mailsRes?.ok) { const d = await mailsRes.json().catch(() => []); setMails(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'mails', value: d }); }
       if (reqsRes?.ok) { const d = await reqsRes.json().catch(() => []); setRequests(d); setCustomerService(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'requests', value: d }); }
-      if (empRes?.ok) { const d = await empRes.json().catch(() => ({})); const empList = Array.isArray(d) ? d : (d.employees || []); setEmployees(empList); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'employees', value: empList }); }
+      if (empRes?.ok) { const d = await empRes.json().catch(() => ({})); const empList = uniqueRecords(Array.isArray(d) ? d : (d.employees || []), 'email'); setEmployees(empList); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'employees', value: empList }); }
       if (ordersRes?.ok) { const d = await ordersRes.json().catch(() => []); setOrders(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'orders', value: d }); }
       if (custRes?.ok) { const d = await custRes.json().catch(() => []); setCustomers(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'customers', value: d }); }
       if (ticketsRes?.ok) { const d = await ticketsRes.json().catch(() => []); setTickets(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'tickets', value: d }); }
       if (salesRes?.ok) { const d = await salesRes.json().catch(() => []); setSalesLog(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'salesLog', value: d }); }
       if (couponsRes?.ok) { const d = await couponsRes.json().catch(() => []); setCoupons(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'coupons', value: d }); }
       if (attendanceRes?.ok) { const d = await attendanceRes.json().catch(() => []); setAttendance(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'attendance', value: d }); }
-      if (salariesRes?.ok) { const d = await salariesRes.json().catch(() => []); setSalaries(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'salaries', value: d }); }
+      if (salariesRes?.ok) { const d = await salariesRes.json().catch(() => []); const salaryList = uniqueRecords(d, 'employeeId'); setSalaries(salaryList); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'salaries', value: salaryList }); }
       if (tasksRes?.ok) { const d = await tasksRes.json().catch(() => []); setTasks(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'tasks', value: d }); }
       if (documentsRes?.ok) { const d = await documentsRes.json().catch(() => []); setDocuments(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'documents', value: d }); }
       if (settingsRes?.ok) { const d = await settingsRes.json().catch(() => ({})); setSettings(d); globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'settings', value: d }); }
@@ -467,7 +476,8 @@ export function AppProvider({ children }) {
     const result = await apiRequest('/employees', 'POST', employee);
     const created = result.employee || result;
     setEmployees(prev => {
-      const nextVal = [...(Array.isArray(prev) ? prev : []), created];
+      const createdKey = String(created?._id || created?.id || created?.email || '');
+      const nextVal = uniqueRecords([...(Array.isArray(prev) ? prev : []).filter((item) => String(item?._id || item?.id || item?.email || '') !== createdKey), created], 'email');
       globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'employees', value: nextVal });
       return nextVal;
     });
