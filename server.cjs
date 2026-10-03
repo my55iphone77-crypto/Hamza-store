@@ -40,22 +40,8 @@ app.set('io', io);
 // ملاحظة: اتصالات Socket والصلاحيات (غرف staff/public) تُدار داخل realtime-sync.cjs
 
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error('JWT_SECRET missing');
-  process.exit(1);
-}
-
 const FRONTEND_URL = process.env.FRONTEND_URL;
-if (!FRONTEND_URL) {
-  console.error('FRONTEND_URL missing');
-  process.exit(1);
-}
-
 const OWNER_EMAIL = (process.env.OWNER_EMAIL || '').trim();
-if (!OWNER_EMAIL) {
-  console.error('OWNER_EMAIL missing');
-  process.exit(1);
-}
 
 const APP_NAME = process.env.APP_NAME || 'متجر حمزة';
 
@@ -68,8 +54,16 @@ const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
 
-if (!SMTP_USER || !SMTP_PASS) {
-  console.error('SMTP_USER/SMTP_PASS missing');
+const missingEnvironment = [
+  ['JWT_SECRET', JWT_SECRET],
+  ['FRONTEND_URL', FRONTEND_URL],
+  ['OWNER_EMAIL', OWNER_EMAIL],
+  ['SMTP_USER', SMTP_USER],
+  ['SMTP_PASS', SMTP_PASS],
+].filter(([, value]) => !value).map(([name]) => name);
+
+if (missingEnvironment.length > 0) {
+  console.error(`Missing required environment variables: ${missingEnvironment.join(', ')}`);
   process.exit(1);
 }
 
