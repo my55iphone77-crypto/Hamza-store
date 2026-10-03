@@ -596,11 +596,13 @@ module.exports = function buildStoreRouter(deps) {
       const delivered = items.flatMap((item) => (item.deliveredCodes || []).map((code) => `<li><b>${esc(item.name)}:</b> <code style="background:#e0f2fe;padding:4px 8px;border-radius:6px">${esc(code)}</code></li>`)).join('');
       const invoiceHtml = `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:720px;margin:auto;padding:28px;color:#172033;background:linear-gradient(135deg,#f0f9ff,#fff);border:1px solid #dbeafe;border-radius:20px"><h1 style="color:#0f766e">فاتورة متجر حمزة</h1><p>مرحباً ${esc(customerName)}، شكراً لطلبك.</p><p><b>رقم الطلب:</b> ${esc(order.orderNumber)}<br><b>التاريخ:</b> ${new Date(order.date).toLocaleString('ar-JO')}<br><b>طريقة الدفع:</b> ${esc(paymentMethod || 'غير محددة')}</p><table style="width:100%;border-collapse:collapse;background:#fff"><thead><tr><th style="padding:10px;text-align:right">المنتج</th><th style="padding:10px">الكمية</th><th style="padding:10px;text-align:left">السعر</th></tr></thead><tbody>${itemRows}</tbody></table><h2 style="text-align:left">الإجمالي: ${Number(total).toFixed(2)} JOD</h2><p>نقاط الولاء المكتسبة: <b>${pointsEarned}</b> | المستخدم من النقاط: <b>${loyaltyPointsRedeemed}</b></p>${delivered ? `<h3>الأكواد الخاصة بطلبك</h3><ul>${delivered}</ul>` : ''}<p style="font-size:12px;color:#64748b">رصيد المتجر ونقاط الولاء غير قابلين للسحب ويستخدمان للشراء داخل المتجر فقط.</p></div>`;
       const ownerHtml = `<div dir="rtl" style="font-family:Arial,sans-serif"><h2>إشعار بيع جديد</h2><p>تم إنشاء الطلب <b>${esc(order.orderNumber)}</b> للعميل ${esc(customerName)} (${esc(customerEmail)}).</p><p>الإجمالي: <b>${Number(total).toFixed(2)} JOD</b> — العناصر: ${items.length} — النقاط: ${pointsEarned}</p><p>تم حفظ الطلب في قاعدة البيانات وإصدار الأكواد تلقائياً إن وجدت.</p></div>`;
-      await Promise.allSettled([
+      const accountPayload = authUser ? { storeBalance: Number(authUser.storeBalance || 0) - walletAmount, loyaltyPoints: Number(authUser.loyaltyPoints || 0) + pointsEarned - loyaltyPointsRedeemed, loyaltyThreshold: threshold } : undefined;
+      // نعيد تأكيد الطلب فوراً؛ إرسال الفاتورة وإشعار المالك عملية خلفية لا يجب أن تؤخر الدفع.
+      res.json({ order, account: accountPayload });
+      Promise.allSettled([
         sendStoreEmail(String(customerEmail).trim().toLowerCase(), `فاتورتك ${order.orderNumber} - متجر حمزة`, invoiceHtml),
         ...(Array.isArray(NOTIFY_EMAILS) ? NOTIFY_EMAILS : []).map((email) => sendStoreEmail(email, `بيع جديد ${order.orderNumber} - ${Number(total).toFixed(2)} JOD`, ownerHtml))
-      ]);
-      res.json({ order, account: authUser ? { storeBalance: Number(authUser.storeBalance || 0) - walletAmount, loyaltyPoints: Number(authUser.loyaltyPoints || 0) + pointsEarned - loyaltyPointsRedeemed, loyaltyThreshold: threshold } : undefined });
+      ]).catch((emailError) => console.error('[orders] background email failure:', emailError));
     } catch (e) {
       console.error('[orders] failed to create order:', e && e.stack ? e.stack : e);
       res.status(400).json({ error: e.message || 'فشل إنشاء الطلب' });
