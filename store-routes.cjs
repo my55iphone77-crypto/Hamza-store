@@ -481,6 +481,7 @@ module.exports = function buildStoreRouter(deps) {
       const items = [];
       const creditCardsToIssue = [];
       const creditStockNeeds = [];
+      const codeStockNeeds = [];
       for (const it of rawItems.slice(0, 50)) {
         const qty = Math.max(1, Math.min(100, Number(it.quantity) || 1));
         let name = it.name, price = Number(it.price) || 0, deliveryType = String(it.deliveryType || ''), storeCreditAmount = Number(it.storeCreditAmount || 0), itemPoints = Math.max(0, Number(it.loyaltyPoints || 0));
@@ -498,6 +499,9 @@ module.exports = function buildStoreRouter(deps) {
           if (loyaltyOnly && loyaltyPrice <= 0) loyaltyOnly = false;
           if (deliveryType === 'store_credit' || storeCreditAmount > 0) {
             creditStockNeeds.push({ productId: prod._id, quantity: qty, productName: prod.name });
+          }
+          if ((deliveryType === 'code' || deliveryType === 'subscription') && (!Array.isArray(prod.codes) || prod.codes.length < qty)) {
+            return res.status(409).json({ error: `لا يوجد عدد كافٍ من الأكواد للمنتج: ${prod.name}.` });
           }
         }
         if (loyaltyOnly) {
@@ -517,6 +521,9 @@ module.exports = function buildStoreRouter(deps) {
           }
         }
         items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, loyaltyOnly, loyaltyPrice, playerId: it.playerId ? String(it.playerId) : undefined, deliveredCodes });
+        if (it.id && mongoose.isValidObjectId(it.id) && (deliveryType === 'code' || deliveryType === 'subscription')) {
+          codeStockNeeds.push({ productId: String(it.id), quantity: qty, itemIndex: items.length - 1, productName: name });
+        }
       }
       const subtotal = total;
       let couponDiscount = 0;
@@ -560,6 +567,19 @@ module.exports = function buildStoreRouter(deps) {
         loyaltyPointsRedeemed += loyaltyPointsCost;
         loyaltyRewardItem = reward.name;
       }
+      // حجز أكواد المنتجات الرقمية بعد نجاح تحقق الرصيد والنقاط.
+      for (const need of codeStockNeeds) {
+        const current = await Product.findById(need.productId).select('codes');
+        const selectedCodes = Array.isArray(current?.codes) ? current.codes.slice(0, need.quantity) : [];
+        if (selectedCodes.length < need.quantity) return res.status(409).json({ error: `نفدت أكواد المنتج: ${need.productName}.` });
+        const reserved = await Product.findOneAndUpdate(
+          { _id: need.productId, codes: { $all: selectedCodes } },
+          { $pull: { codes: { $in: selectedCodes } }, $inc: { stock: -need.quantity } },
+          { new: true }
+        );
+        if (!reserved) return res.status(409).json({ error: `تم حجز أكواد المنتج ${need.productName} للتو، أعد المحاولة.` });
+        items[need.itemIndex].deliveredCodes = selectedCodes;
+      }
       const pointsEarned = authUser ? Math.max(0, Math.floor(earnedPoints)) : 0;
       if (authUser) {
         const update = { $inc: { loyaltyPoints: pointsEarned - loyaltyPointsRedeemed } };
@@ -598,6 +618,21 @@ module.exports = function buildStoreRouter(deps) {
         paymentMethod: String(paymentMethod || ''), couponCode: appliedCouponCode, couponDiscount, walletAmount,
         loyaltyPointsEarned: pointsEarned, loyaltyPointsRedeemed, loyaltyRewardItem
       }).save();
+      if (Sale) {
+        try {
+          await Sale.insertMany(items.map((item) => ({
+            customerName: String(customerName).trim(),
+            product: item.name,
+            quantity: Number(item.quantity) || 1,
+            price: Number(item.price) || 0,
+            total: (Number(item.price) || 0) * (Number(item.quantity) || 1),
+            date: new Date().toISOString()
+          })));
+          broadcastList('SALES', Sale);
+        } catch (salesError) {
+          console.error('[orders] sales log failure:', salesError.message);
+        }
+      }
       if (creditCardsToIssue.length > 0 && StoreCreditCard) {
         await StoreCreditCard.insertMany(creditCardsToIssue.map(card => ({ ...card, orderId: String(order._id), customerEmail: String(customerEmail).trim().toLowerCase() })));
       }

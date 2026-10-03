@@ -12,7 +12,7 @@ const escapeCSV = (str) => {
 };
 
 function Employees() {
-  const responsiveSectionStyle = useFullBleedStyle() || {};
+  const fullBleedStyle = useFullBleedStyle();
   const { employees = [], hireEmployee, updateEmployee, fireEmployee, currentUser, apiRequest } = useApp();
 
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -260,7 +260,7 @@ function Employees() {
   };
 
   const glassContainerStyle = {
-    ...responsiveSectionStyle,
+    ...fullBleedStyle,
     background: 'rgba(11, 15, 25, 0.85)',
     backdropFilter: 'blur(16px)',
     WebkitBackdropFilter: 'blur(16px)',

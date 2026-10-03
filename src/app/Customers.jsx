@@ -9,6 +9,7 @@ function canManageCustomers(role) {
 
 function Customers({ inputStyle = {} }) {
   const contextData = useApp() || {};
+  const fullBleedStyle = useFullBleedStyle();
   const {
     apiUrl, getAuthHeaders, apiRequest,
     currentUser = {},
