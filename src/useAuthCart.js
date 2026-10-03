@@ -95,7 +95,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
 
     setCart(prevCart => {
       const safePrevCart = Array.isArray(prevCart) ? prevCart : [];
-      const existing = safePrevCart.find(item => item && (item.id === prodId || item._id === prodId));
+      const existing = safePrevCart.find(item => item && (item.id === prodId || item._id === prodId) && Boolean(item.loyaltyOnly) === Boolean(product.loyaltyOnly));
       if (existing) {
         const currentQty = typeof existing.quantity === 'number' ? existing.quantity : 1;
         if (currentQty >= stockCount) {
@@ -103,7 +103,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
           return safePrevCart;
         }
         return safePrevCart.map(item =>
-          item && (item.id === prodId || item._id === prodId) ? { ...item, quantity: currentQty + 1 } : item
+          item && (item.id === prodId || item._id === prodId) && Boolean(item.loyaltyOnly) === Boolean(product.loyaltyOnly) ? { ...item, quantity: currentQty + 1 } : item
         );
       }
       // 🆕 نحتفظ بـ deliveryType بالعنصر ونضيف playerId فاضي لو النوع id_topup
@@ -223,6 +223,8 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
           name: item.name || 'منتج',
           price: item.price || 0,
           quantity: item.quantity || 1,
+          loyaltyOnly: Boolean(item.loyaltyOnly),
+          loyaltyPrice: Number(item.loyaltyPrice || 0),
           playerId: item.deliveryType === 'id_topup' ? String(item.playerId || '').trim() : undefined
         })),
         totalAmount: finalTotal,

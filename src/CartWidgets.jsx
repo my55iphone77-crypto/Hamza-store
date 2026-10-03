@@ -63,9 +63,9 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
 
                   return (
                     <div key={itemId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(11,15,25,0.7)', border: '1px solid rgba(255,255,255,0.06)', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>
-                      <span style={{ color: '#f8fafc' }}>{itemName} (×{itemQty})</span>
+                      <span style={{ color: '#f8fafc' }}>{itemName} (×{itemQty}) {item.loyaltyOnly && <small style={{ color: '#e9d5ff' }}>⭐ {Number(item.loyaltyPrice || 0) * itemQty} نقطة</small>}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ color: '#facc15', fontWeight: 'bold' }}>{itemPrice * itemQty} دينار</span>
+                        {!item.loyaltyOnly && <span style={{ color: '#facc15', fontWeight: 'bold' }}>{itemPrice * itemQty} دينار</span>}
                         <button
                           type="button"
                           onClick={() => removeFromCart(item.id || item._id)}
@@ -226,7 +226,7 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
             <div key={itemId} style={{ background: 'rgba(11, 15, 25, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                 <span style={{ color: '#f8fafc', fontWeight: 'bold' }}>{item.name} (×{item.quantity})</span>
-                <span style={{ color: '#facc15', fontWeight: 'bold' }}>{(item.price || 0) * (item.quantity || 1)} دينار</span>
+                {item.loyaltyOnly ? <span style={{ color: '#e9d5ff', fontWeight: 'bold' }}>⭐ {Number(item.loyaltyPrice || 0) * (item.quantity || 1)} نقطة</span> : <span style={{ color: '#facc15', fontWeight: 'bold' }}>{(item.price || 0) * (item.quantity || 1)} دينار</span>}
               </div>
 
               {item.deliveryType === 'id_topup' && (

@@ -470,6 +470,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
               const discountPrice = Number(rawDiscount);
               const hasDiscount = discountPrice > 0 && discountPrice < originalPrice;
               const displayPrice = hasDiscount ? discountPrice : originalPrice;
+              const loyaltyPrice = Math.max(0, Number(product.loyaltyPrice || 0));
 
               const name = product.name || product.title || 'منتج رقمي';
               const imageUrl = product.image || product.imageUrl || product.img || product.photo || product.picture || '';
@@ -513,11 +514,12 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                       </p>
                     </div>
 
-                    <div className="hz-price-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.15)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="hz-price-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '15px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.15)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#34d399', textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>
                           {displayPrice} دينار
                         </span>
+                        {loyaltyPrice > 0 && <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#e9d5ff' }}>أو ⭐ {loyaltyPrice} نقطة</span>}
                         {hasDiscount && (
                           <span style={{ fontSize: '12px', color: '#94a3b8', textDecoration: 'line-through' }}>
                             {originalPrice} دينار
@@ -540,6 +542,15 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                       >
                         أضف للسلة 🛒
                       </button>
+                      {loyaltyPrice > 0 && (
+                        <button
+                          onClick={() => authCart && authCart.addToCart && authCart.addToCart({ ...product, price: 0, loyaltyOnly: true, loyaltyPrice })}
+                          className="hz-glass-btn hz-add-btn"
+                          style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
+                        >
+                          شراء بالنقاط ⭐
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -152,6 +152,7 @@ const productSchema = new mongoose.Schema({
   maxStockThreshold: { type: Number, default: 50 },
   storeCreditAmount: { type: Number, default: 0, min: 0 },
   loyaltyPoints: { type: Number, default: 0, min: 0 },
+  loyaltyPrice: { type: Number, default: 0, min: 0 },
   description: { type: String }
 }, { strict: false, timestamps: true });
 const Product = mongoose.model('Product', productSchema);
@@ -161,7 +162,7 @@ const orderSchema = new mongoose.Schema({
   customerName: { type: String, required: true },
   customerEmail: { type: String, required: true },
   customerAddress: { type: String, required: true },
-  items: [{ id: String, name: String, price: Number, quantity: Number, loyaltyPoints: Number }],
+  items: [{ id: String, name: String, price: Number, quantity: Number, loyaltyPoints: Number, loyaltyOnly: Boolean, loyaltyPrice: Number }],
   totalAmount: { type: Number, required: true },
   currency: { type: String, default: 'JOD' },
   paymentMethod: { type: String, default: '' },

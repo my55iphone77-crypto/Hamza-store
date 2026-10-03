@@ -461,12 +461,15 @@ module.exports = function buildStoreRouter(deps) {
       }
       let total = 0;
       let earnedPoints = 0;
+      let loyaltyPointsCost = 0;
       const items = [];
       const creditCardsToIssue = [];
       const creditStockNeeds = [];
       for (const it of rawItems.slice(0, 50)) {
         const qty = Math.max(1, Math.min(100, Number(it.quantity) || 1));
         let name = it.name, price = Number(it.price) || 0, deliveryType = String(it.deliveryType || ''), storeCreditAmount = Number(it.storeCreditAmount || 0), itemPoints = Math.max(0, Number(it.loyaltyPoints || 0));
+        let loyaltyOnly = Boolean(it.loyaltyOnly);
+        let loyaltyPrice = Math.max(0, Number(it.loyaltyPrice || 0));
         if (it.id && mongoose.isValidObjectId(it.id)) {
           const prod = await Product.findById(it.id);
           if (!prod) return res.status(400).json({ error: 'أحد المنتجات لم يعد متوفراً.' });
@@ -475,9 +478,16 @@ module.exports = function buildStoreRouter(deps) {
           deliveryType = String(prod.deliveryType || deliveryType);
           storeCreditAmount = Number(prod.storeCreditAmount || 0);
           itemPoints = Math.max(0, Number(prod.loyaltyPoints || 0));
+          loyaltyPrice = Math.max(0, Number(prod.loyaltyPrice || 0));
+          if (loyaltyOnly && loyaltyPrice <= 0) loyaltyOnly = false;
           if (deliveryType === 'store_credit' || storeCreditAmount > 0) {
             creditStockNeeds.push({ productId: prod._id, quantity: qty, productName: prod.name });
           }
+        }
+        if (loyaltyOnly) {
+          price = 0;
+          itemPoints = 0;
+          loyaltyPointsCost += loyaltyPrice * qty;
         }
         total += price * qty;
         earnedPoints += itemPoints * qty;
@@ -490,7 +500,7 @@ module.exports = function buildStoreRouter(deps) {
             creditCardsToIssue.push({ codeHash: creditCodeHash(code), amount });
           }
         }
-        items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, deliveredCodes });
+        items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, loyaltyOnly, loyaltyPrice, deliveredCodes });
       }
       const subtotal = total;
       let couponDiscount = 0;
@@ -514,18 +524,23 @@ module.exports = function buildStoreRouter(deps) {
         if (Number(authUser.storeBalance || 0) < total) return res.status(400).json({ error: 'رصيد المتجر غير كافٍ.' });
         walletAmount = total;
       }
-      let loyaltyPointsRedeemed = 0;
+      if (loyaltyPointsCost > 0) {
+        if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام نقاط الولاء.' });
+        if (Number(authUser.loyaltyPoints || 0) < loyaltyPointsCost) return res.status(400).json({ error: `تحتاج ${loyaltyPointsCost} نقطة لشراء المنتجات المختارة.` });
+      }
+      let loyaltyPointsRedeemed = loyaltyPointsCost;
       let loyaltyRewardItem = '';
       const threshold = Math.max(1, Number(authUser?.loyaltyThreshold || 100));
       if (redeemPoints === true || redeemPoints === 'true') {
         if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام نقاط الولاء.' });
-        if (Number(authUser.loyaltyPoints || 0) < threshold) return res.status(400).json({ error: `تحتاج ${threshold} نقطة للحصول على منتج مجاني.` });
+        if (Number(authUser.loyaltyPoints || 0) < loyaltyPointsCost + threshold) return res.status(400).json({ error: `تحتاج ${loyaltyPointsCost + threshold} نقطة لإتمام الطلب ومكافأة الولاء.` });
         const reward = await Product.findOne({ stock: { $gt: 0 } }).sort({ price: 1 });
         if (!reward) return res.status(400).json({ error: 'لا يوجد منتج متاح للمكافأة حالياً.' });
         const reservedReward = await Product.findOneAndUpdate({ _id: reward._id, stock: { $gt: 0 } }, { $inc: { stock: -1 } }, { new: true });
         if (!reservedReward) return res.status(409).json({ error: 'انتهى مخزون المكافأة للتو، اختر المحاولة مرة أخرى.' });
         items.push({ id: String(reward._id), name: `${reward.name} (مكافأة ولاء)`, price: 0, quantity: 1 });
         loyaltyPointsRedeemed = threshold;
+        loyaltyPointsRedeemed += loyaltyPointsCost;
         loyaltyRewardItem = reward.name;
       }
       const pointsEarned = authUser ? Math.max(0, Math.floor(earnedPoints)) : 0;
