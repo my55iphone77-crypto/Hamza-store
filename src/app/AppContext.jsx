@@ -179,6 +179,16 @@ export function AppProvider({ children }) {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/me`, { headers: getAuthHeaders() });
       const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        setToken('');
+        setCurrentUser(null);
+        setShowLoginPage(true);
+        localStorage.removeItem('hamza_token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('hamza_user');
+        localStorage.removeItem('user');
+        return null;
+      }
       if (!res.ok || !data?.success || !data.user) return null;
       setCurrentUser(data.user);
       localStorage.setItem('hamza_user', JSON.stringify(data.user));

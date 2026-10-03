@@ -256,7 +256,14 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     } catch (err) {
       const errorMsg = err && err.response && err.response.data && err.response.data.error;
       if (isMounted.current && typeof setError === 'function') {
-        setError(errorMsg || 'فشل إتمام عملية الشراء عبر الخادم.');
+        if (err?.response?.status === 401) {
+          setToken('');
+          setCurrentUser(null);
+          setShowLoginPage(true);
+          setError('انتهت جلسة الدخول أو لم تعد صالحة. سجّل الدخول مرة أخرى ثم أعد المحاولة.');
+        } else {
+          setError(errorMsg || (err?.message ? `تعذر إتمام الطلب: ${err.message}` : 'فشل إتمام عملية الشراء عبر الخادم.'));
+        }
       }
     } finally {
       if (isMounted.current) setSubmittingCheckout(false);
