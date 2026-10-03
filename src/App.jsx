@@ -343,10 +343,44 @@ function MainContent() {
   );
 }
 
+class AppErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, message: '' };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, message: error?.message || 'حدث خطأ غير متوقع.' };
+  }
+
+  componentDidCatch(error, info) {
+    console.error('واجهة التطبيق تعطلت:', error, info);
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return (
+      <div className="hz-atmosphere" dir="rtl" style={{ display: 'grid', placeItems: 'center', padding: '24px', color: '#fff' }}>
+        <section className="hz-glass-card" style={{ maxWidth: '560px', textAlign: 'center', cursor: 'default' }}>
+          <div className="hz-glass-icon" style={{ '--glow': '#ef4444', margin: '0 auto 16px' }}>!</div>
+          <h2 style={{ color: '#fff', margin: '0 0 10px' }}>تعذر تحميل هذا القسم</h2>
+          <p style={{ color: '#cbd5e1', marginBottom: '18px' }}>تم إيقاف العرض المتعطل لحماية بقية النظام. أعد المحاولة أو ارجع للصفحة الرئيسية.</p>
+          <p dir="ltr" style={{ color: '#fca5a5', fontSize: '12px', wordBreak: 'break-word', marginBottom: '18px' }}>{this.state.message}</p>
+          <button type="button" className="hz-glass-btn" onClick={() => window.location.reload()} style={{ color: '#fff', padding: '10px 18px', borderRadius: '12px', cursor: 'pointer' }}>
+            إعادة تحميل النظام
+          </button>
+        </section>
+      </div>
+    );
+  }
+}
+
 export default function App() {
   return (
     <AppProvider>
-      <MainContent />
+      <AppErrorBoundary>
+        <MainContent />
+      </AppErrorBoundary>
     </AppProvider>
   );
 }
