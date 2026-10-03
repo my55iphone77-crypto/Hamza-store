@@ -203,8 +203,15 @@ function Salaries({ mails, setMails }) {
     logEventAndEmail(actionText, targetEmp.email || '');
   };
 
-  const safeSalariesList = Array.isArray(salaries) ? salaries.map(normalizeSalary) : [];
   const safeEmployeesList = Array.isArray(employees) ? employees : [];
+  const activeEmployeeIds = new Set(safeEmployeesList.map((emp) => String(emp?._id || emp?.id || '')).filter(Boolean));
+  const salaryByEmployee = new Map();
+  (Array.isArray(salaries) ? salaries.map(normalizeSalary) : []).forEach((salary) => {
+    const employeeId = String(salary.employeeId || '');
+    if (!employeeId || !activeEmployeeIds.has(employeeId) || salaryByEmployee.has(employeeId)) return;
+    salaryByEmployee.set(employeeId, salary);
+  });
+  const safeSalariesList = Array.from(salaryByEmployee.values());
 
   const filteredSalaries = safeSalariesList.filter(s =>
     ((s && s.name) || '').toLowerCase().includes((searchTerm || '').toLowerCase())

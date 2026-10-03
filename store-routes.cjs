@@ -73,8 +73,24 @@ module.exports = function buildStoreRouter(deps) {
   // ============================= الرواتب =============================
   router.get('/salaries', permissionGuard('manage_salaries', 'manager'), async (req, res) => {
     try {
-      const salaries = await Salary.find().sort({ date: -1 });
-      res.json(salaries);
+      const [employees, rows] = await Promise.all([
+        Employee.find({}).select('_id name salary').lean(),
+        Salary.find().sort({ date: -1, createdAt: -1 }).lean()
+      ]);
+      const currentMonth = monthStr();
+      const result = [];
+      for (const emp of employees) {
+        const employeeId = String(emp._id);
+        const candidates = rows.filter((s) => String(s.employeeId || '') === employeeId);
+        const selected = candidates.find((s) => String(s.month || '') === currentMonth) || candidates[0];
+        if (selected) {
+          result.push({ ...selected, employeeId, employeeName: emp.name });
+        } else {
+          const created = await Salary.create({ employeeId, employeeName: emp.name, amount: Number(emp.salary) || 0, base: Number(emp.salary) || 0, month: currentMonth });
+          result.push(created.toObject());
+        }
+      }
+      res.json(result);
     } catch (err) {
       res.status(500).json({ error: 'خطأ في جلب الرواتب' });
     }
@@ -687,7 +703,11 @@ module.exports = function buildStoreRouter(deps) {
 
       // ── الربط التلقائي بباقي الأقسام ──
       const id = String(emp._id);
-      try { await Salary.create({ employeeId: id, employeeName: emp.name, amount: Number(emp.salary) || 0, month: monthStr() }); }
+      try { await Salary.findOneAndUpdate(
+        { employeeId: id, month: monthStr() },
+        { $setOnInsert: { employeeId: id, employeeName: emp.name, amount: Number(emp.salary) || 0, base: Number(emp.salary) || 0, month: monthStr() } },
+        { upsert: true, new: true }
+      ); }
       catch (e) { console.warn('[link] راتب:', e.message); }
       try {
         if (User) {
@@ -766,7 +786,10 @@ module.exports = function buildStoreRouter(deps) {
     try {
       const emp = await Employee.findByIdAndDelete(req.params.id);
       if (!emp) return res.status(404).json({ error: 'الموظف غير موجود' });
-      // الموظف المفصول يفقد صلاحيات الدخول فوراً، والرواتب القديمة تبقى للتاريخ المحاسبي
+      // حذف سجلات الراتب المرتبطة حتى لا يبقى الموظف المحذوف ظاهراً في قسم الرواتب.
+      try { await Salary.deleteMany({ employeeId: String(emp._id) }); }
+      catch (e) { console.warn('[link] حذف رواتب الموظف:', e.message); }
+      // الموظف المفصول يفقد صلاحيات الدخول فوراً.
       if (User) {
         try {
           const u = await User.findOne({ email: emp.email });

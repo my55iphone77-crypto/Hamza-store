@@ -529,6 +529,11 @@ export function AppProvider({ children }) {
       globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'employees', value: nextVal });
       return nextVal;
     });
+    setSalaries(prev => {
+      const nextVal = (Array.isArray(prev) ? prev : []).filter(s => String(s.employeeId || '') !== String(employeeId));
+      globalEventBus.publish('GLOBAL_SYNC_EVENT', { key: 'salaries', value: nextVal });
+      return nextVal;
+    });
   }, [apiRequest, globalEventBus]);
 
   // الصلاحيات الفعلية: تخصيص الموظف يتغلب على صلاحيات الدور الافتراضية.
