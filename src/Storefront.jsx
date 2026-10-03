@@ -14,7 +14,7 @@ const SOCKET_URL = isLocal ? 'http://localhost:4000' : window.location.origin;
 const GLASS_STYLE = `
   /* ✅ إصلاح السكرول: overflow-x:hidden على html و body معاً كان يحوّل body لحاوية سكرول ثانية */
   html { margin: 0; padding: 0; background: #05060a; -webkit-text-size-adjust: 100%; }
-  body { margin: 0; padding: 0; background: #05060a; overflow-x: clip; }
+  body { margin: 0; padding: 0; background: #05060a; overflow-x: clip; overscroll-behavior-x: none; }
   @keyframes fadeSlideIn {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
@@ -111,8 +111,9 @@ const GLASS_STYLE = `
   .hz-product-card.hz-has-img { backdrop-filter: none; -webkit-backdrop-filter: none; }
   /* زر "أضف للسلة": خلفيته خضراء معتمة، فالبلور فيه مش ظاهر */
   .hz-add-btn { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-  /* المتصفح يرسم فقط البطاقات اللي ظاهرة على الشاشة */
-  .hz-product-card { content-visibility: auto; contain-intrinsic-size: 340px 320px; }
+  /* لا نستخدم content-visibility هنا لأنه يسبب قفزات وتعليقاً في بعض متصفحات الهاتف أثناء التمرير */
+  .hz-grid { min-width: 0; touch-action: pan-y; overscroll-behavior-y: contain; }
+  .hz-product-card { min-width: 0; touch-action: pan-y; }
   /* شات البوت: بلور داخل بلور (الخلفية تحته نفس اللون) → ما بيظهر فرق بس بيكلّف كتير */
   .hz-bot-inner-panel, .hz-bot-bubble-user, .hz-bot-bubble-bot, .hz-bot-input {
     backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
@@ -126,7 +127,7 @@ const GLASS_STYLE = `
   }
 
   /* ================= تجاوب الأبعاد مع كل الأجهزة ================= */
-  .hz-container { width: 100%; max-width: 1680px; margin: 0 auto; }
+  .hz-container { width: 100%; max-width: 1680px; min-width: 0; margin: 0 auto; }
   .hz-grid {
     display: grid; width: 100%; box-sizing: border-box;
     grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
@@ -134,7 +135,7 @@ const GLASS_STYLE = `
   }
   /* موبايل */
   @media (max-width: 559px) {
-    .hz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .hz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
     .hz-category-glass-bar { padding: 12px; border-radius: 16px; }
     /* بطاقات مضغوطة عشان تكفي عمودين جنب بعض بالموبايل */
     .hz-product-card { border-radius: 18px; }

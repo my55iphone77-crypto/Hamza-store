@@ -440,7 +440,7 @@ export default function Products() {
       </div>
 
       {/* شبكة المنتجات */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "20px", marginTop: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: "20px", marginTop: "20px", width: "100%", minWidth: 0, overflow: "visible" }}>
         {products.filter(prod => {
           const matchesSearch = !searchTerm || prod.name.toLowerCase().includes(searchTerm.toLowerCase()) || prod.category.toLowerCase().includes(searchTerm.toLowerCase());
           const matchesCat = selectedCategoryFilter === "الكل" || prod.category === selectedCategoryFilter;
@@ -566,7 +566,7 @@ export default function Products() {
                       <Row label="الكمية الحالية" value={stockOf(selectedProduct)} color="#fff" />
                       <Row label="الحالة" value={selectedProduct.status} color={selectedProduct.status === "منشور" ? "#34d399" : "#f87171"} />
                     </div>
-                    <div style={{ display: "flex", gap: "8px", marginTop: "15px" }}>
+              <div style={{ display: "flex", gap: "8px", marginTop: "15px", flexWrap: "wrap" }}>
                       <button onClick={() => handleStartEdit(selectedProduct)} style={actionBtn("#3b82f6")}>تعديل ✏️</button>
                       <button onClick={() => handleTogglePublish(selectedProduct)} style={actionBtn(selectedProduct.status === "منشور" ? "#d97706" : "#059669")}>
                         {selectedProduct.status === "منشور" ? "إلغاء النشر 🛑" : "نشر 🌐"}
@@ -624,7 +624,7 @@ export default function Products() {
                 <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} style={glassInputStyle}>
                   {categories.map((c, i) => <option key={i} value={c} style={{ background: "#1e293b" }}>{c}</option>)}
                 </select>
-                <div style={{ display: "flex", gap: "10px" }}>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                   <input type="number" step="0.01" placeholder="السعر..." value={editPrice} onChange={(e) => setEditPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} required />
                   <input type="number" step="0.01" placeholder="سعر الخصم..." value={editDiscountPrice} onChange={(e) => setEditDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
                 </div>
@@ -662,8 +662,12 @@ const glassContainerStyle = {
   backdropFilter: "blur(18px)",
   WebkitBackdropFilter: "blur(18px)",
   border: "1px solid rgba(255, 255, 255, 0.1)",
-  padding: "30px",
+  padding: "clamp(12px, 3vw, 30px)",
   borderRadius: "24px",
+  width: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
+  overflowX: "hidden",
   color: "#fff",
   fontFamily: "Tajawal, sans-serif",
   boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.75)"
@@ -696,7 +700,9 @@ const glassInputStyle = {
   color: "#fff",
   fontSize: "13px",
   outline: "none",
-  width: "100%"
+  width: "100%",
+  minWidth: 0,
+  boxSizing: "border-box"
 };
 
 const primaryButtonStyle = {
@@ -750,16 +756,16 @@ const discountBadgeStyle = {
 };
 
 const modalOverlayStyle = {
-  position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+  position: "fixed", inset: 0, width: "100%", height: "100dvh",
   background: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(10px)",
-  display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1100, padding: "20px"
+  display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1100, padding: "clamp(8px, 3vw, 20px)", boxSizing: "border-box", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch"
 };
 
 const modalContentStyle = {
   background: "rgba(30, 41, 59, 0.88)", backdropFilter: "blur(20px)",
   border: "1px solid rgba(255, 255, 255, 0.15)", borderRadius: "20px",
-  padding: "25px", width: "100%", maxWidth: "480px", maxHeight: "90vh",
-  overflowY: "auto", position: "relative", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)"
+  padding: "clamp(16px, 4vw, 25px)", width: "100%", maxWidth: "480px", maxHeight: "calc(100dvh - 16px)",
+  overflowY: "auto", overflowX: "hidden", position: "relative", boxSizing: "border-box", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)"
 };
 
 const closeBtnStyle = {
@@ -779,7 +785,7 @@ const tabButtonStyle = (active, activeColor) => ({
 });
 
 const actionBtn = (bg) => ({
-  flex: 1, background: bg, color: "#fff", border: "none", padding: "10px", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", fontSize: "12px"
+  flex: "1 1 120px", minWidth: 0, background: bg, color: "#fff", border: "none", padding: "10px", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", fontSize: "12px"
 });
 
 const stockBtnStyle = {

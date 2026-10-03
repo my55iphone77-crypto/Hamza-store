@@ -351,6 +351,16 @@ module.exports = function buildStoreRouter(deps) {
       res.json(p);
     } catch (e) { res.status(400).json({ error: e.message || 'فشل تحديث المنتج' }); }
   });
+  router.patch('/products/:id/status', guard('staff'), async (req, res) => {
+    try {
+      const requested = String(req.body?.status || '').trim();
+      const status = requested === 'منشور' ? 'منشور' : requested === 'غير منشور' ? 'غير منشور' : null;
+      if (!status) return res.status(400).json({ error: 'حالة نشر غير صالحة.' });
+      const p = await Product.findByIdAndUpdate(req.params.id, { $set: { status } }, { new: true, runValidators: true });
+      if (!p) return res.status(404).json({ error: 'المنتج غير موجود' });
+      res.json(p);
+    } catch (e) { res.status(400).json({ error: e.message || 'فشل تغيير حالة نشر المنتج' }); }
+  });
   router.delete('/products/:id', guard('manager'), async (req, res) => {
     try {
       const p = await Product.findByIdAndDelete(req.params.id);
