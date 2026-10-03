@@ -62,7 +62,7 @@ function Accounting({ currentUser: currentUserProp, inputStyle = {} }) {
     return data;
   }
 
-  const fetchTransactions = async () => {
+  async function fetchTransactions() {
     setLoading(true);
     try {
       const data = await apiFetch('/accounting/transactions');
@@ -72,7 +72,7 @@ function Accounting({ currentUser: currentUserProp, inputStyle = {} }) {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     fetchTransactions();

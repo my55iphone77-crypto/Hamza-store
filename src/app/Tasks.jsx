@@ -70,23 +70,6 @@ function Tasks({
     }
   };
 
-  // 🔄 ربط المزامنة اللحظية مع Global State Bus وإدارة جلب البيانات
-  useEffect(() => {
-    fetchDataFromApi();
-
-    // الاستماع لأي أحداث قادمة من الأقسام الأخرى عبر ناقل الحركة العالمي
-    if (globalEventBus && typeof globalEventBus.subscribe === 'function') {
-      const unsubscribe = globalEventBus.subscribe('GLOBAL_SYNC_EVENT', (eventData) => {
-        if (eventData && eventData.type === 'TASK_OR_STORAGE_UPDATE') {
-          fetchDataFromApi(); // مزامنة فورية عند حدوث تغيير في قسم آخر
-        }
-      });
-      return () => {
-        if (typeof unsubscribe === 'function') unsubscribe();
-      };
-    }
-  }, [globalEventBus]);
-
   // دالة إرسال الإشعار أو البريد الحقيقي وتحديث النظام الموحد
   const dispatchRealMailAndLog = (logText, subject = 'تحديث نظام المهام والخوادم') => {
     const timestamp = new Date().toLocaleTimeString('ar-SA');
@@ -137,6 +120,17 @@ function Tasks({
       setLoading(false);
     }
   };
+
+  // 🔄 ربط المزامنة اللحظية مع Global State Bus بعد تعريف دالة الجلب
+  useEffect(() => {
+    fetchDataFromApi();
+    if (globalEventBus && typeof globalEventBus.subscribe === 'function') {
+      const unsubscribe = globalEventBus.subscribe('GLOBAL_SYNC_EVENT', (eventData) => {
+        if (eventData && eventData.type === 'TASK_OR_STORAGE_UPDATE') fetchDataFromApi();
+      });
+      return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
+    }
+  }, [globalEventBus]);
 
   // 💽 إضافة مساحة تخزين جديدة عبر الـ API
   const addStorageSpace = async (e) => {
