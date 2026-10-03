@@ -114,12 +114,17 @@ const GLASS_STYLE = `
   .hz-products-section { width: 100% !important; max-width: none !important; min-width: 0 !important; overflow: visible !important; }
   .hz-products-grid { width: 100% !important; max-width: none !important; min-width: 0 !important; align-items: stretch; }
   .hz-products-grid > * { min-width: 0; max-width: none; }
-  .hz-product-modal { width: min(100%, 760px) !important; max-width: 760px !important; }
+  .hz-admin-main { width: 100% !important; padding: 12px 18px !important; }
+  .hz-products-section { min-height: calc(100dvh - 150px); }
+  .hz-section-shell .hz-product-modal { width: min(100%, 560px) !important; max-width: 560px !important; padding: 18px !important; }
+  .hz-product-modal h3 { font-size: 16px !important; margin-bottom: 10px !important; }
+  .hz-product-modal input, .hz-product-modal select, .hz-product-modal textarea { padding: 8px 10px !important; font-size: 12px !important; }
+  .hz-product-modal .hz-product-form { gap: 8px !important; }
   .hz-field-label { display: flex; flex-direction: column; gap: 5px; color: #c4b5fd; font-size: 12px; font-weight: 700; }
   .hz-schedule-box { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; border: 1px solid rgba(56,189,248,0.28); border-radius: 12px; background: rgba(15,23,42,0.55); color: #bae6fd; font-size: 12px; }
   .hz-schedule-box strong, .hz-schedule-box > span { grid-column: 1 / -1; }
   .hz-schedule-box label { display: flex; flex-direction: column; gap: 5px; color: #cbd5e1; }
-  @media (max-width: 720px) { .hz-product-modal { width: 100% !important; max-width: 100% !important; } .hz-schedule-box { grid-template-columns: minmax(0, 1fr); } .hz-schedule-box strong, .hz-schedule-box > span { grid-column: auto; } }
+  @media (max-width: 720px) { .hz-section-shell .hz-product-modal { width: 100% !important; max-width: 100% !important; } .hz-schedule-box { grid-template-columns: minmax(0, 1fr); } .hz-schedule-box strong, .hz-schedule-box > span { grid-column: auto; } }
   .hz-section-shell [style*="position: fixed"] { inset: 0 !important; width: 100vw !important; height: 100dvh !important; max-width: none !important; max-height: none !important; align-items: flex-start !important; padding: clamp(12px, 3vw, 32px) !important; overflow-y: auto !important; }
   .hz-section-shell [style*="position: fixed"] > div { width: min(100%, 1100px) !important; max-width: min(100%, 1100px) !important; max-height: calc(100dvh - clamp(24px, 6vw, 64px)) !important; margin: auto !important; overflow-y: auto !important; }
   .hz-product-form, .hz-employee-form { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px !important; }
