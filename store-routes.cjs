@@ -402,11 +402,12 @@ module.exports = function buildStoreRouter(deps) {
         return res.status(400).json({ error: 'بيانات الطلب تتجاوز الحد المسموح.' });
       }
       let total = 0;
+      let earnedPoints = 0;
       const items = [];
       const creditCardsToIssue = [];
       for (const it of rawItems.slice(0, 50)) {
         const qty = Math.max(1, Math.min(100, Number(it.quantity) || 1));
-        let name = it.name, price = Number(it.price) || 0, deliveryType = String(it.deliveryType || ''), storeCreditAmount = Number(it.storeCreditAmount || 0);
+        let name = it.name, price = Number(it.price) || 0, deliveryType = String(it.deliveryType || ''), storeCreditAmount = Number(it.storeCreditAmount || 0), itemPoints = Math.max(0, Number(it.loyaltyPoints || 0));
         if (it.id && mongoose.isValidObjectId(it.id)) {
           const prod = await Product.findById(it.id);
           if (!prod) return res.status(400).json({ error: 'أحد المنتجات لم يعد متوفراً.' });
@@ -414,8 +415,10 @@ module.exports = function buildStoreRouter(deps) {
           price = Number(prod.discountPrice || prod.price);
           deliveryType = String(prod.deliveryType || deliveryType);
           storeCreditAmount = Number(prod.storeCreditAmount || 0);
+          itemPoints = Math.max(0, Number(prod.loyaltyPoints || 0));
         }
         total += price * qty;
+        earnedPoints += itemPoints * qty;
         const deliveredCodes = [];
         if (deliveryType === 'store_credit' || storeCreditAmount > 0) {
           const amount = storeCreditAmount > 0 ? storeCreditAmount : price;
@@ -425,7 +428,7 @@ module.exports = function buildStoreRouter(deps) {
             creditCardsToIssue.push({ codeHash: creditCodeHash(code), amount });
           }
         }
-        items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, deliveredCodes });
+        items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, deliveredCodes });
       }
       let walletAmount = 0;
       if (paymentMethod === 'store_balance') {
@@ -447,7 +450,7 @@ module.exports = function buildStoreRouter(deps) {
         loyaltyPointsRedeemed = threshold;
         loyaltyRewardItem = reward.name;
       }
-      const pointsEarned = authUser ? Math.max(0, Math.floor(total)) : 0;
+      const pointsEarned = authUser ? Math.max(0, Math.floor(earnedPoints)) : 0;
       if (authUser) {
         const update = { $inc: { loyaltyPoints: pointsEarned - loyaltyPointsRedeemed } };
         if (walletAmount > 0) update.$inc.storeBalance = -walletAmount;

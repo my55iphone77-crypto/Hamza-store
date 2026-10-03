@@ -109,6 +109,12 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
           }}>
             الحالة: {safeUserRoleInfo.label || 'ضيف'}
           </span>
+          <span title="رصيد المتجر للشراء فقط" style={{ color: '#fde68a', background: 'rgba(250,204,21,0.12)', border: '1px solid rgba(250,204,21,0.35)', padding: '4px 8px', borderRadius: '9px', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+            الرصيد: {Number(currentUser.storeBalance || 0).toFixed(2)} د.أ
+          </span>
+          <span title="نقاط الولاء المتاحة" style={{ color: '#e9d5ff', background: 'rgba(168,85,247,0.14)', border: '1px solid rgba(168,85,247,0.35)', padding: '4px 8px', borderRadius: '9px', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+            الولاء: {Number(currentUser.loyaltyPoints || 0)} نقطة
+          </span>
           <form onSubmit={(e) => { e.preventDefault(); redeemStoreCredit(); }} style={{ display: 'flex', alignItems: 'center', gap: '5px' }} title="الرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط">
             <input value={storeCreditCode} onChange={(e) => setStoreCreditCode(e.target.value.toUpperCase())} placeholder="كود بطاقة الرصيد" maxLength={23} style={{ width: '130px', background: 'rgba(11,15,25,0.7)', border: '1px solid rgba(250,204,21,0.35)', borderRadius: '8px', padding: '6px 8px', color: '#fff', fontSize: '11px' }} />
             <button type="submit" disabled={redeemingStoreCredit || !storeCreditCode.trim()} style={{ background: '#a16207', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 8px', cursor: 'pointer', fontSize: '11px' }}>{redeemingStoreCredit ? '...' : 'استبدال'}</button>

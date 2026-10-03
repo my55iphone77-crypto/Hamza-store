@@ -81,6 +81,7 @@ export default function Products() {
   const [category, setCategory] = useState("");
   const [deliveryType, setDeliveryType] = useState("code");
   const [storeCreditAmount, setStoreCreditAmount] = useState("");
+  const [loyaltyPoints, setLoyaltyPoints] = useState("0");
   const [price, setPrice] = useState("");
   const [discountPrice, setDiscountPrice] = useState("");
   const [image, setImage] = useState("");
@@ -98,6 +99,7 @@ export default function Products() {
   const [editCategory, setEditCategory] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editDiscountPrice, setEditDiscountPrice] = useState("");
+  const [editLoyaltyPoints, setEditLoyaltyPoints] = useState("0");
   const [editImage, setEditImage] = useState("");
   const [editStatus, setEditStatus] = useState("");
   const [editScheduledDate, setEditScheduledDate] = useState("");
@@ -213,6 +215,7 @@ export default function Products() {
     const payload = {
       name, description, category: category || UNCATEGORIZED, deliveryType,
       storeCreditAmount: deliveryType === "store_credit" ? (parseFloat(storeCreditAmount) || parseFloat(price)) : undefined,
+      loyaltyPoints: Math.max(0, parseInt(loyaltyPoints, 10) || 0),
       price: parseFloat(price), discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
       image: image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300",
       status, scheduledDate: scheduledDate || undefined, unpublishDate: unpublishDate || undefined,
@@ -226,7 +229,7 @@ export default function Products() {
       setProducts((prev) => [newProduct, ...prev]);
       flashSaving("✅ تم حفظ وإضافة المنتج بنجاح");
       setIsAddModalOpen(false);
-      setName(""); setDescription(""); setPrice(""); setDiscountPrice(""); setImage(""); setNewCodeText(""); setManualStock("");
+      setName(""); setDescription(""); setPrice(""); setDiscountPrice(""); setImage(""); setNewCodeText(""); setManualStock(""); setLoyaltyPoints("0");
     } catch (err) {
       alert(err.message);
     }
@@ -239,6 +242,7 @@ export default function Products() {
     setEditCategory(prod.category || "");
     setEditPrice(prod.price || "");
     setEditDiscountPrice(prod.discountPrice || "");
+    setEditLoyaltyPoints(prod.loyaltyPoints ?? 0);
     setEditImage(prod.image || "");
     setEditStatus(prod.status || "منشور");
     setEditScheduledDate(prod.scheduledDate ? String(prod.scheduledDate).slice(0, 16) : "");
@@ -255,6 +259,7 @@ export default function Products() {
     const payload = {
       name: editName, description: editDescription || "", category: editCategory,
       price: parseFloat(editPrice), discountPrice: editDiscountPrice !== "" ? parseFloat(editDiscountPrice) : null,
+      loyaltyPoints: Math.max(0, parseInt(editLoyaltyPoints, 10) || 0),
       image: editImage, status: editStatus,
       scheduledDate: editScheduledDate || null, unpublishDate: editUnpublishDate || null,
       lowStockThreshold: parseInt(editLowStockThreshold) || 3,
@@ -504,6 +509,7 @@ export default function Products() {
                 <input type="number" step="0.01" placeholder="السعر *" value={price} onChange={(e) => setPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} required />
                 <input type="number" step="0.01" placeholder="سعر الخصم" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
               </div>
+              <input type="number" min="0" step="1" placeholder="نقاط الولاء عند شراء المنتج" value={loyaltyPoints} onChange={(e) => setLoyaltyPoints(e.target.value)} style={glassInputStyle} />
               {deliveryType === "store_credit" && <>
                 <input type="number" min="0.01" step="0.01" placeholder="قيمة الرصيد داخل البطاقة (دينار)" value={storeCreditAmount} onChange={(e) => setStoreCreditAmount(e.target.value)} style={glassInputStyle} />
                 <div style={{ color: "#facc15", fontSize: "12px" }}>هذه البطاقة تُسلّم كوداً للعميل، والرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط.</div>
@@ -556,6 +562,7 @@ export default function Products() {
                       {selectedProduct.description && <div style={{ paddingBottom: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", color: "#cbd5e1" }}>{selectedProduct.description}</div>}
                       <Row label="السعر الأصلي" value={fmtJOD(selectedProduct.price)} color="#10b981" />
                       <Row label="سعر الخصم" value={selectedProduct.discountPrice ? fmtJOD(selectedProduct.discountPrice) : "لا يوجد"} color="#facc15" />
+                      <Row label="نقاط الولاء عند الشراء" value={`${Number(selectedProduct.loyaltyPoints || 0)} نقطة`} color="#c084fc" />
                       <Row label="الكمية الحالية" value={stockOf(selectedProduct)} color="#fff" />
                       <Row label="الحالة" value={selectedProduct.status} color={selectedProduct.status === "منشور" ? "#34d399" : "#f87171"} />
                     </div>
@@ -621,6 +628,7 @@ export default function Products() {
                   <input type="number" step="0.01" placeholder="السعر..." value={editPrice} onChange={(e) => setEditPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} required />
                   <input type="number" step="0.01" placeholder="سعر الخصم..." value={editDiscountPrice} onChange={(e) => setEditDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
                 </div>
+                <input type="number" min="0" step="1" placeholder="نقاط الولاء عند شراء المنتج" value={editLoyaltyPoints} onChange={(e) => setEditLoyaltyPoints(e.target.value)} style={glassInputStyle} />
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <input type="file" accept="image/*" onChange={(e) => handleImageFileSelect(e, true)} style={{ color: "#94a3b8", fontSize: "12px" }} />
                   {isUploadingEditImage && <span style={{ color: "#38bdf8", fontSize: "11px" }}>⏳ جاري المعالجة...</span>}
