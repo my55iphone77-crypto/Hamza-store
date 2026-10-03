@@ -5,7 +5,7 @@ module.exports = function buildStoreRouter(deps) {
     Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification,
     Customer, Transaction, Ticket, Sale, Employee, Achievement, Announcement,
     WorkHour, AttendanceLog, AppState,
-    Settings, Salary, Task, DocumentModel, Coupon,
+    Settings, Salary, Task, DocumentModel, Coupon, StoreCreditCard,
     mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
     io, User, getUserFromAuthHeader, publicActionLimiter
   } = deps;
@@ -238,6 +238,8 @@ module.exports = function buildStoreRouter(deps) {
   const toObj = (d) => (d && typeof d.toJSON === 'function' ? d.toJSON() : { ...d });
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const monthStr = () => new Date().toISOString().slice(0, 7);
+  const creditCodeHash = (code) => crypto.createHash('sha256').update(String(code || '').trim().toUpperCase()).digest('hex');
+  const newCreditCode = () => `HZ-${crypto.randomBytes(10).toString('hex').toUpperCase()}`;
   const sysMail = (subject, body) => Mail.create({
     sender: 'النظام', recipient: (process.env.OWNER_EMAIL || '').toLowerCase(),
     subject, body, title: subject, message: body, read: false,
@@ -311,6 +313,32 @@ module.exports = function buildStoreRouter(deps) {
   crud('/categories', Category, { list: 'public', create: 'staff', update: 'staff', remove: 'manager', sort: { name: 1 } });
 
   // ============================= الطلبات =============================
+  router.post('/store-credit/redeem', async (req, res) => {
+    try {
+      const code = String(req.body?.code || '').trim().toUpperCase();
+      if (!/^HZ-[A-F0-9]{20}$/.test(code)) return res.status(400).json({ error: 'كود بطاقة الرصيد غير صالح.' });
+      const user = await getUserFromAuthHeader(req.headers.authorization);
+      if (!user) return res.status(401).json({ error: 'سجّل الدخول أولاً لاستبدال بطاقة الرصيد.' });
+      const card = await StoreCreditCard.findOneAndUpdate(
+        { codeHash: creditCodeHash(code), status: 'issued' },
+        { $set: { status: 'redeemed', redeemedAt: new Date(), customerEmail: user.email } },
+        { new: true }
+      );
+      if (!card) return res.status(400).json({ error: 'الكود غير موجود أو تم استخدامه مسبقاً.' });
+      const updatedUser = await User.findByIdAndUpdate(user._id, { $inc: { storeBalance: Number(card.amount) } }, { new: true });
+      if (!updatedUser) {
+        await StoreCreditCard.updateOne({ _id: card._id, status: 'redeemed' }, { $set: { status: 'issued', redeemedAt: null, customerEmail: '' } });
+        return res.status(500).json({ error: 'تعذر إضافة الرصيد، لم يتم استهلاك الكود.' });
+      }
+      await Customer.findOneAndUpdate(
+        { email: String(user.email).trim().toLowerCase() },
+        { $setOnInsert: { name: user.name || user.email, email: String(user.email).trim().toLowerCase() }, $inc: { storeBalance: Number(card.amount) } },
+        { upsert: true }
+      );
+      res.json({ success: true, amount: Number(card.amount), storeBalance: Number(updatedUser.storeBalance || 0), message: `تمت إضافة ${Number(card.amount).toFixed(2)} دينار إلى رصيد المتجر. الرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط.` });
+    } catch (e) { res.status(500).json({ error: 'تعذر استبدال بطاقة الرصيد حالياً.' }); }
+  });
+
   // إنشاء طلب من الزبون (عام). المبلغ يُحسب من أسعار قاعدة البيانات، ما نثق بسعر الواجهة.
   router.post('/orders', publicActionLimiter, async (req, res) => {
     try {
@@ -326,17 +354,29 @@ module.exports = function buildStoreRouter(deps) {
       }
       let total = 0;
       const items = [];
+      const creditCardsToIssue = [];
       for (const it of rawItems.slice(0, 50)) {
         const qty = Math.max(1, Math.min(100, Number(it.quantity) || 1));
-        let name = it.name, price = Number(it.price) || 0;
+        let name = it.name, price = Number(it.price) || 0, deliveryType = String(it.deliveryType || ''), storeCreditAmount = Number(it.storeCreditAmount || 0);
         if (it.id && mongoose.isValidObjectId(it.id)) {
           const prod = await Product.findById(it.id);
           if (!prod) return res.status(400).json({ error: 'أحد المنتجات لم يعد متوفراً.' });
           name = prod.name;
           price = Number(prod.discountPrice || prod.price);
+          deliveryType = String(prod.deliveryType || deliveryType);
+          storeCreditAmount = Number(prod.storeCreditAmount || 0);
         }
         total += price * qty;
-        items.push({ id: String(it.id || ''), name, price, quantity: qty });
+        const deliveredCodes = [];
+        if (deliveryType === 'store_credit' || storeCreditAmount > 0) {
+          const amount = storeCreditAmount > 0 ? storeCreditAmount : price;
+          for (let i = 0; i < qty; i += 1) {
+            const code = newCreditCode();
+            deliveredCodes.push(code);
+            creditCardsToIssue.push({ codeHash: creditCodeHash(code), amount });
+          }
+        }
+        items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, deliveredCodes });
       }
       let walletAmount = 0;
       if (paymentMethod === 'store_balance') {
@@ -381,6 +421,9 @@ module.exports = function buildStoreRouter(deps) {
         paymentMethod: String(paymentMethod || ''), walletAmount,
         loyaltyPointsEarned: pointsEarned, loyaltyPointsRedeemed, loyaltyRewardItem
       }).save();
+      if (creditCardsToIssue.length > 0 && StoreCreditCard) {
+        await StoreCreditCard.insertMany(creditCardsToIssue.map(card => ({ ...card, orderId: String(order._id), customerEmail: String(customerEmail).trim().toLowerCase() })));
+      }
       res.json({ order, account: authUser ? { storeBalance: Number(authUser.storeBalance || 0) - walletAmount, loyaltyPoints: Number(authUser.loyaltyPoints || 0) + pointsEarned - loyaltyPointsRedeemed, loyaltyThreshold: threshold } : undefined });
     } catch (e) { res.status(400).json({ error: e.message || 'فشل إنشاء الطلب' }); }
   });

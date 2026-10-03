@@ -10,6 +10,7 @@ const DELIVERY_TYPES = [
   { value: "code", label: "🔑 كود جاهز (جوجل بلاي / ستيم / آيتونز...)" },
   { value: "id_topup", label: "🆔 تعبئة عن طريق آيدي (ببجي / فري فاير...)" },
   { value: "subscription", label: "🔁 اشتراك موقع (نتفليكس / شاهد...)" },
+  { value: "store_credit", label: "🪙 بطاقة رصيد المتجر (غير قابلة للسحب)" },
 ];
 
 function fileToCompressedBase64(file) {
@@ -79,6 +80,7 @@ export default function Products() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [deliveryType, setDeliveryType] = useState("code");
+  const [storeCreditAmount, setStoreCreditAmount] = useState("");
   const [price, setPrice] = useState("");
   const [discountPrice, setDiscountPrice] = useState("");
   const [image, setImage] = useState("");
@@ -210,12 +212,13 @@ export default function Products() {
 
     const payload = {
       name, description, category: category || UNCATEGORIZED, deliveryType,
+      storeCreditAmount: deliveryType === "store_credit" ? (parseFloat(storeCreditAmount) || parseFloat(price)) : undefined,
       price: parseFloat(price), discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
       image: image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300",
       status, scheduledDate: scheduledDate || undefined, unpublishDate: unpublishDate || undefined,
       lowStockThreshold: parseInt(lowStockThreshold) || 3,
       maxStockThreshold: parseInt(maxStockThreshold) || 50,
-      codes: codesArray, stock: deliveryType === "id_topup" ? parseInt(manualStock) || 0 : codesArray.length,
+      codes: codesArray, stock: deliveryType === "id_topup" || deliveryType === "store_credit" ? parseInt(manualStock) || 0 : codesArray.length,
     };
 
     try {
@@ -359,7 +362,7 @@ export default function Products() {
     }
   };
 
-  const stockOf = (prod) => (prod.deliveryType === "id_topup" ? prod.stock || 0 : prod.codes?.length || 0);
+  const stockOf = (prod) => (prod.deliveryType === "id_topup" || prod.deliveryType === "store_credit" ? prod.stock || 0 : prod.codes?.length || 0);
   const deliveryLabel = (type) => DELIVERY_TYPES.find((d) => d.value === type)?.label || type;
   const fmtJOD = (n) => `${n} د.أ`;
 
@@ -501,12 +504,16 @@ export default function Products() {
                 <input type="number" step="0.01" placeholder="السعر *" value={price} onChange={(e) => setPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} required />
                 <input type="number" step="0.01" placeholder="سعر الخصم" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
               </div>
+              {deliveryType === "store_credit" && <>
+                <input type="number" min="0.01" step="0.01" placeholder="قيمة الرصيد داخل البطاقة (دينار)" value={storeCreditAmount} onChange={(e) => setStoreCreditAmount(e.target.value)} style={glassInputStyle} />
+                <div style={{ color: "#facc15", fontSize: "12px" }}>هذه البطاقة تُسلّم كوداً للعميل، والرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط.</div>
+              </>}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <input type="file" accept="image/*" onChange={(e) => handleImageFileSelect(e, false)} style={{ color: "#94a3b8", fontSize: "12px" }} />
                 {isUploadingImage && <span style={{ color: "#38bdf8", fontSize: "11px" }}>⏳ جاري معالجة وضغط الصورة...</span>}
               </div>
               {image && <img src={image} alt="معاينة" style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />}
-              {deliveryType === "id_topup" ? (
+              {deliveryType === "id_topup" || deliveryType === "store_credit" ? (
                 <input type="number" placeholder="الكمية المتوفرة يدوياً" value={manualStock} onChange={(e) => setManualStock(e.target.value)} style={glassInputStyle} />
               ) : (
                 <textarea placeholder="الأكواد أو الاشتراكات (كل كود في سطر)..." value={newCodeText} onChange={(e) => setNewCodeText(e.target.value)} rows={3} style={{ ...glassInputStyle, fontFamily: "monospace" }} />

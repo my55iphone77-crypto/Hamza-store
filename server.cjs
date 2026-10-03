@@ -219,6 +219,16 @@ const customerSchema = new mongoose.Schema({
 }, { strict: false, timestamps: true });
 const Customer = mongoose.model('Customer', customerSchema);
 
+const storeCreditCardSchema = new mongoose.Schema({
+  codeHash: { type: String, required: true, unique: true, index: true },
+  amount: { type: Number, required: true, min: 0.01 },
+  status: { type: String, enum: ['issued', 'redeemed'], default: 'issued', index: true },
+  orderId: { type: String, default: '' },
+  customerEmail: { type: String, default: '' },
+  redeemedAt: { type: Date }
+}, { timestamps: true });
+const StoreCreditCard = mongoose.model('StoreCreditCard', storeCreditCardSchema);
+
 const transactionSchema = new mongoose.Schema({
   type: { type: String, enum: ['income', 'expense'], required: true },
   amount: { type: Number, required: true },
@@ -648,7 +658,7 @@ setupRealtime({
   models: {
     Product, Order, Support, Mail, Notification, Customer, Transaction, Ticket, Sale,
     Employee, Achievement, Announcement, WorkHour, AttendanceLog, AppState, Settings, Salary, Task,
-    DocumentModel, Coupon, User // User للمصادقة فقط، غير مراقب
+    DocumentModel, Coupon, StoreCreditCard, User // User للمصادقة فقط، غير مراقب
   }
 });
 
@@ -659,7 +669,7 @@ app.use('/api', buildStoreRouter({
   Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification,
   Customer, Transaction, Ticket, Sale, Employee, Achievement, Announcement,
   WorkHour, AttendanceLog, AppState,
-  Settings, Salary, Task, DocumentModel, Coupon,
+  Settings, Salary, Task, DocumentModel, Coupon, StoreCreditCard,
   mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
   io, User, getUserFromAuthHeader, publicActionLimiter
 }));

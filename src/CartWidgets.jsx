@@ -24,6 +24,10 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
     setShowLoginPage = () => {},
     handleLogout = () => {},
     handleInitiateCheckout = () => {},
+    storeCreditCode = '',
+    setStoreCreditCode = () => {},
+    redeemStoreCredit = () => {},
+    redeemingStoreCredit = false,
   } = safeAuthCart;
 
   const safeCart = Array.isArray(cart) ? cart : [];
@@ -105,6 +109,10 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
           }}>
             الحالة: {safeUserRoleInfo.label || 'ضيف'}
           </span>
+          <form onSubmit={(e) => { e.preventDefault(); redeemStoreCredit(); }} style={{ display: 'flex', alignItems: 'center', gap: '5px' }} title="الرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط">
+            <input value={storeCreditCode} onChange={(e) => setStoreCreditCode(e.target.value.toUpperCase())} placeholder="كود بطاقة الرصيد" maxLength={23} style={{ width: '130px', background: 'rgba(11,15,25,0.7)', border: '1px solid rgba(250,204,21,0.35)', borderRadius: '8px', padding: '6px 8px', color: '#fff', fontSize: '11px' }} />
+            <button type="submit" disabled={redeemingStoreCredit || !storeCreditCode.trim()} style={{ background: '#a16207', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 8px', cursor: 'pointer', fontSize: '11px' }}>{redeemingStoreCredit ? '...' : 'استبدال'}</button>
+          </form>
           <button
             type="button"
             onClick={handleLogout}
@@ -191,7 +199,7 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
           رصيد المتجر: <strong>{Number(currentUser?.storeBalance || 0).toFixed(2)} دينار</strong><br /><span style={{ color: '#94a3b8' }}>للشراء فقط، غير قابل للسحب</span>
         </div>
         <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.3)', color: '#ddd6fe', fontSize: '12px' }}>
-          نقاط الولاء: <strong>{Number(currentUser?.loyaltyPoints || 0)}</strong> / {Number(currentUser?.loyaltyThreshold || 100)}<br /><span style={{ color: '#94a3b8' }}>كل دينار مشتريات = نقطة</span>
+          نقاط الولاء: <strong>{Number(currentUser?.loyaltyPoints || 0)}</strong> / {Number(currentUser?.loyaltyThreshold || 100)}<br /><span style={{ color: '#94a3b8' }}>كل دينار مشتريات = نقطة — غير قابلة للسحب</span>
         </div>
       </div>
 

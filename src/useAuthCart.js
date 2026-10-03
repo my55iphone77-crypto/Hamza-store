@@ -56,6 +56,23 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   // 💳 طريقة الدفع المختارة (من paymentMethods.js)
   const [paymentMethod, setPaymentMethod] = useState('');
   const [redeemPoints, setRedeemPoints] = useState(false);
+  const [storeCreditCode, setStoreCreditCode] = useState('');
+  const [redeemingStoreCredit, setRedeemingStoreCredit] = useState(false);
+
+  const redeemStoreCredit = useCallback(async () => {
+    if (!currentUser || !storeCreditCode.trim()) return;
+    setRedeemingStoreCredit(true);
+    try {
+      const response = await api.post('/store-credit/redeem', { code: storeCreditCode.trim() });
+      if (response?.data) setCurrentUser(prev => ({ ...(prev || {}), storeBalance: response.data.storeBalance }));
+      setStoreCreditCode('');
+      alert(response?.data?.message || 'تمت إضافة الرصيد بنجاح. الرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط.');
+    } catch (err) {
+      alert(err?.response?.data?.error || 'تعذر استبدال كود بطاقة الرصيد.');
+    } finally {
+      setRedeemingStoreCredit(false);
+    }
+  }, [api, currentUser, storeCreditCode, setCurrentUser]);
 
   useEffect(() => {
     const active = getActivePaymentMethods();
@@ -248,6 +265,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     submittingCheckout, lastOrder, setLastOrder,
     paymentMethod, setPaymentMethod,
     redeemPoints, setRedeemPoints,
+    storeCreditCode, setStoreCreditCode, redeemingStoreCredit, redeemStoreCredit,
     showLoginPage, setShowLoginPage,
     handleInitiateCheckout, handleCheckout, handleLogout,
     loginSubmitting, loginError, setLoginError,
