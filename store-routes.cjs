@@ -7,7 +7,7 @@ module.exports = function buildStoreRouter(deps) {
     WorkHour, AttendanceLog, AppState,
     Settings, Salary, Task, DocumentModel, Coupon,
     mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
-    io, User, getUserFromAuthHeader
+    io, User, getUserFromAuthHeader, publicActionLimiter
   } = deps;
 
   const router = express.Router();
@@ -49,7 +49,7 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
-  router.put('/settings', verifyOwnerMiddleware, async (req, res) => {
+  router.put('/settings', permissionGuard('manage_settings', 'manager'), async (req, res) => {
     try {
       let setting = await Settings.findOne();
       if (!setting) {
@@ -65,7 +65,7 @@ module.exports = function buildStoreRouter(deps) {
   });
 
   // ============================= الرواتب =============================
-  router.get('/salaries', verifyOwnerMiddleware, async (req, res) => {
+  router.get('/salaries', permissionGuard('manage_salaries', 'manager'), async (req, res) => {
     try {
       const salaries = await Salary.find().sort({ date: -1 });
       res.json(salaries);
@@ -74,7 +74,7 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
-  router.post('/salaries', verifyOwnerMiddleware, async (req, res) => {
+  router.post('/salaries', permissionGuard('manage_salaries', 'manager'), async (req, res) => {
     try {
       const newSalary = new Salary(req.body);
       await newSalary.save();
@@ -86,7 +86,7 @@ module.exports = function buildStoreRouter(deps) {
   });
 
   // ============================= المهام =============================
-  router.get('/tasks', verifyOwnerMiddleware, async (req, res) => {
+  router.get('/tasks', permissionGuard('manage_tasks'), async (req, res) => {
     try {
       const tasks = await Task.find().sort({ date: -1 });
       res.json(tasks);
@@ -95,7 +95,7 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
-  router.post('/tasks', verifyOwnerMiddleware, async (req, res) => {
+  router.post('/tasks', permissionGuard('manage_tasks'), async (req, res) => {
     try {
       const newTask = new Task(req.body);
       await newTask.save();
@@ -107,7 +107,7 @@ module.exports = function buildStoreRouter(deps) {
   });
 
   // ============================= الوثائق =============================
-  router.get('/documents', verifyOwnerMiddleware, async (req, res) => {
+  router.get('/documents', permissionGuard('manage_documents'), async (req, res) => {
     try {
       const q = {};
       const search = String(req.query.search || '').trim();
@@ -122,7 +122,7 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
-  router.post('/documents', verifyOwnerMiddleware, upload.single('file'), async (req, res) => {
+  router.post('/documents', permissionGuard('manage_documents'), upload.single('file'), async (req, res) => {
     try {
       const body = { ...req.body };
       if (typeof body.tags === 'string') body.tags = body.tags.split(',').map(t => t.trim()).filter(Boolean);
@@ -137,7 +137,7 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
-  router.put('/documents/:id', verifyOwnerMiddleware, async (req, res) => {
+  router.put('/documents/:id', permissionGuard('manage_documents'), async (req, res) => {
     try {
       const doc = await DocumentModel.findById(req.params.id);
       if (!doc) return res.status(404).json({ error: 'الوثيقة غير موجودة' });
@@ -156,7 +156,7 @@ module.exports = function buildStoreRouter(deps) {
   });
 
   // حذف ناعم (soft delete) لأن الواجهة تعرض "المحذوفة" وتسمح بالاستعادة
-  router.delete('/documents/:id', verifyOwnerMiddleware, async (req, res) => {
+  router.delete('/documents/:id', permissionGuard('manage_documents'), async (req, res) => {
     try {
       const doc = await DocumentModel.findByIdAndUpdate(req.params.id, { deleted: true }, { new: true });
       if (!doc) return res.status(404).json({ error: 'الوثيقة غير موجودة' });
@@ -168,7 +168,7 @@ module.exports = function buildStoreRouter(deps) {
   });
 
   // ============================= الكوبونات =============================
-  router.get('/coupons', verifyOwnerMiddleware, async (req, res) => {
+  router.get('/coupons', permissionGuard('manage_coupons'), async (req, res) => {
     try {
       const coupons = await Coupon.find().sort({ date: -1 });
       res.json(coupons);
@@ -177,7 +177,7 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
-  router.post('/coupons', verifyOwnerMiddleware, async (req, res) => {
+  router.post('/coupons', permissionGuard('manage_coupons'), async (req, res) => {
     try {
       const newCoupon = new Coupon(req.body);
       await newCoupon.save();
@@ -192,9 +192,25 @@ module.exports = function buildStoreRouter(deps) {
   // ============================= الصلاحيات =============================
   const STAFF_ROLES = ['owner', 'admin', 'manager', 'stock', 'sales', 'support', 'employee', 'staff'];
   const MANAGER_ROLES = ['owner', 'admin', 'manager'];
+  const ROLE_PERMISSIONS = {
+    owner: ['*'],
+    admin: ['*'],
+    manager: ['manage_products', 'manage_employees', 'manage_salaries', 'manage_attendance', 'manage_work_hours', 'manage_tasks', 'manage_performance', 'manage_achievements', 'manage_commissions', 'manage_accounting', 'manage_orders', 'manage_customers', 'manage_support', 'manage_tickets', 'manage_documents', 'send_email', 'manage_announcements', 'view_analytics', 'manage_coupons', 'view_logs', 'view_dashboard'],
+    stock: ['view_dashboard', 'manage_products', 'manage_work_hours', 'manage_tasks'],
+    sales: ['view_dashboard', 'manage_products', 'manage_orders', 'manage_customers', 'manage_coupons', 'manage_commissions'],
+    support: ['view_dashboard', 'manage_customers', 'manage_support', 'manage_tickets', 'manage_documents', 'send_email'],
+    employee: ['view_dashboard', 'manage_tasks', 'manage_work_hours', 'manage_achievements'],
+    staff: ['view_dashboard'],
+  };
   const roleOf = (u) => String((u && u.role) || '').toLowerCase();
   const isStaff = (u) => !!u && (u.isOwner || STAFF_ROLES.includes(roleOf(u)));
   const isManager = (u) => !!u && (u.isOwner || MANAGER_ROLES.includes(roleOf(u)));
+  const hasPermission = (u, permission) => {
+    if (!u || !permission) return false;
+    if (u.isOwner || roleOf(u) === 'owner') return true;
+    const allowed = Array.isArray(u.permissions) ? u.permissions : ROLE_PERMISSIONS[roleOf(u)] || [];
+    return allowed.includes('*') || allowed.includes(permission);
+  };
 
   // level: public | staff | manager | owner
   const guard = (level) => async (req, res, next) => {
@@ -207,6 +223,17 @@ module.exports = function buildStoreRouter(deps) {
     req.user = user;
     next();
   };
+
+  async function permissionGuard(permission, fallback = 'staff') {
+    const user = await getUserFromAuthHeader(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: 'غير حاصل على تصريح، يرجى تسجيل الدخول.' });
+    const usesDefaultRolePermissions = !Array.isArray(user.permissions);
+    if (!hasPermission(user, permission) && !(usesDefaultRolePermissions && fallback === 'manager' && isManager(user))) {
+      return res.status(403).json({ error: 'ليس لديك صلاحية لهذه العملية.' });
+    }
+    req.user = user;
+    next();
+  }
 
   const toObj = (d) => (d && typeof d.toJSON === 'function' ? d.toJSON() : { ...d });
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -224,13 +251,22 @@ module.exports = function buildStoreRouter(deps) {
       catch (e) { res.status(500).json({ error: 'خطأ في جلب البيانات' }); }
     });
     router.post(path, guard(create), async (req, res) => {
-      try { res.json(await new Model(req.body).save()); }
+      try {
+        const d = await new Model(req.body).save();
+        if (path === '/customers' && User && d.email) {
+          await User.findOneAndUpdate({ email: String(d.email).trim().toLowerCase() }, { $set: { storeBalance: Math.max(0, Number(d.storeBalance || 0)), loyaltyPoints: Math.max(0, Number(d.loyaltyPoints || 0)), loyaltyThreshold: Math.max(1, Number(d.loyaltyThreshold || 100)) } });
+        }
+        res.json(d);
+      }
       catch (e) { res.status(400).json({ error: e.message || 'بيانات غير صالحة' }); }
     });
     router.put(`${path}/:id`, guard(update), async (req, res) => {
       try {
         const d = await Model.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
         if (!d) return res.status(404).json({ error: 'غير موجود' });
+        if (path === '/customers' && User && d.email) {
+          await User.findOneAndUpdate({ email: String(d.email).trim().toLowerCase() }, { $set: { storeBalance: Math.max(0, Number(d.storeBalance || 0)), loyaltyPoints: Math.max(0, Number(d.loyaltyPoints || 0)), loyaltyThreshold: Math.max(1, Number(d.loyaltyThreshold || 100)) } });
+        }
         res.json(d);
       } catch (e) { res.status(400).json({ error: e.message || 'فشل التحديث' }); }
     });
@@ -276,12 +312,17 @@ module.exports = function buildStoreRouter(deps) {
 
   // ============================= الطلبات =============================
   // إنشاء طلب من الزبون (عام). المبلغ يُحسب من أسعار قاعدة البيانات، ما نثق بسعر الواجهة.
-  router.post('/orders', async (req, res) => {
+  router.post('/orders', publicActionLimiter, async (req, res) => {
     try {
-      const { customerName, customerEmail, customerAddress } = req.body || {};
+      const { customerName, customerEmail, customerAddress, paymentMethod, redeemPoints } = req.body || {};
+      const authUser = await getUserFromAuthHeader(req.headers.authorization);
       const rawItems = Array.isArray(req.body && req.body.items) ? req.body.items : [];
-      if (!customerName || !customerEmail || !customerAddress || rawItems.length === 0) {
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(customerEmail || '').trim());
+      if (!customerName || !emailOk || rawItems.length === 0) {
         return res.status(400).json({ error: 'بيانات الطلب ناقصة.' });
+      }
+      if (String(customerName).length > 120 || String(customerEmail).length > 254 || String(customerAddress || '').length > 500) {
+        return res.status(400).json({ error: 'بيانات الطلب تتجاوز الحد المسموح.' });
       }
       let total = 0;
       const items = [];
@@ -297,13 +338,48 @@ module.exports = function buildStoreRouter(deps) {
         total += price * qty;
         items.push({ id: String(it.id || ''), name, price, quantity: qty });
       }
+      let walletAmount = 0;
+      if (paymentMethod === 'store_balance') {
+        if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام رصيد المتجر.' });
+        if (Number(authUser.storeBalance || 0) < total) return res.status(400).json({ error: 'رصيد المتجر غير كافٍ.' });
+        walletAmount = total;
+      }
+      let loyaltyPointsRedeemed = 0;
+      let loyaltyRewardItem = '';
+      const threshold = Math.max(1, Number(authUser?.loyaltyThreshold || 100));
+      if (redeemPoints === true || redeemPoints === 'true') {
+        if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام نقاط الولاء.' });
+        if (Number(authUser.loyaltyPoints || 0) < threshold) return res.status(400).json({ error: `تحتاج ${threshold} نقطة للحصول على منتج مجاني.` });
+        const reward = await Product.findOne({ stock: { $gt: 0 } }).sort({ price: 1 });
+        if (!reward) return res.status(400).json({ error: 'لا يوجد منتج متاح للمكافأة حالياً.' });
+        items.push({ id: String(reward._id), name: `${reward.name} (مكافأة ولاء)`, price: 0, quantity: 1 });
+        loyaltyPointsRedeemed = threshold;
+        loyaltyRewardItem = reward.name;
+      }
+      const pointsEarned = authUser ? Math.max(0, Math.floor(total)) : 0;
+      if (authUser) {
+        const update = { $inc: { loyaltyPoints: pointsEarned - loyaltyPointsRedeemed } };
+        if (walletAmount > 0) update.$inc.storeBalance = -walletAmount;
+        const updatedUser = await User.findOneAndUpdate(
+          { _id: authUser._id, ...(walletAmount > 0 ? { storeBalance: { $gte: walletAmount } } : {}), ...(loyaltyPointsRedeemed > 0 ? { loyaltyPoints: { $gte: loyaltyPointsRedeemed } } : {}) },
+          update, { new: true }
+        );
+        if (!updatedUser) return res.status(409).json({ error: 'تغيّرت بيانات الرصيد أو النقاط، حدّث الصفحة وحاول مرة أخرى.' });
+        await Customer.findOneAndUpdate(
+          { email: String(authUser.email).trim().toLowerCase() },
+          { $setOnInsert: { name: authUser.name || customerName, email: String(authUser.email).trim().toLowerCase() }, $inc: { storeBalance: walletAmount ? -walletAmount : 0, loyaltyPoints: pointsEarned - loyaltyPointsRedeemed } },
+          { upsert: true, new: true }
+        );
+      }
       const order = await new Order({
         customerName: String(customerName).trim(),
         customerEmail: String(customerEmail).trim().toLowerCase(),
-        customerAddress: String(customerAddress).trim(),
-        items, totalAmount: total, status: 'جديد'
+        customerAddress: String(customerAddress || 'طلب رقمي من المتجر').trim(),
+        items, totalAmount: total, currency: 'JOD', status: 'جديد',
+        paymentMethod: String(paymentMethod || ''), walletAmount,
+        loyaltyPointsEarned: pointsEarned, loyaltyPointsRedeemed, loyaltyRewardItem
       }).save();
-      res.json(order);
+      res.json({ order, account: authUser ? { storeBalance: Number(authUser.storeBalance || 0) - walletAmount, loyaltyPoints: Number(authUser.loyaltyPoints || 0) + pointsEarned - loyaltyPointsRedeemed, loyaltyThreshold: threshold } : undefined });
     } catch (e) { res.status(400).json({ error: e.message || 'فشل إنشاء الطلب' }); }
   });
   // تتبع الطلب بالرقم (عام، حقول محدودة بدون بيانات شخصية)
@@ -333,10 +409,13 @@ module.exports = function buildStoreRouter(deps) {
   });
 
   // ============================= شكاوى / رسائل العملاء (requests) =============================
-  router.post('/requests', async (req, res) => {
+  router.post('/requests', publicActionLimiter, async (req, res) => {
     try {
       const { customerName, customerEmail, phone, location, issue } = req.body || {};
       if (!customerName || !issue) return res.status(400).json({ error: 'الاسم ونص المشكلة مطلوبان.' });
+      if (String(customerName).length > 120 || String(issue).length > 3000 || String(phone || '').length > 40 || String(location || '').length > 200) {
+        return res.status(400).json({ error: 'بيانات الشكوى تتجاوز الحد المسموح.' });
+      }
       res.json(await new Support({ customerName, customerEmail, phone, location, issue }).save());
     } catch (e) { res.status(400).json({ error: 'فشل إرسال الشكوى' }); }
   });
@@ -381,13 +460,13 @@ module.exports = function buildStoreRouter(deps) {
   });
 
   // ============================= الموظفون (مرتبطون بالرواتب والحسابات والدوام) =============================
-  const EMP_FIELDS = ['name', 'email', 'role', 'salary', 'phone', 'age', 'nationalId', 'idCardImage', 'bankAccount', 'image', 'hireDate', 'status', 'isActive', 'attendanceStatus', 'lastCheckIn', 'lastCheckOut'];
+  const EMP_FIELDS = ['name', 'email', 'role', 'permissions', 'salary', 'phone', 'age', 'nationalId', 'idCardImage', 'bankAccount', 'image', 'hireDate', 'status', 'isActive', 'attendanceStatus', 'lastCheckIn', 'lastCheckOut'];
   const EMP_ROLES = ['admin', 'manager', 'stock', 'sales', 'support'];
   const SAFE_EMP_FIELDS = ['_id', 'id', 'name', 'email', 'role', 'image', 'status', 'isActive', 'hireDate', 'attendanceStatus', 'lastCheckIn', 'lastCheckOut', 'createdAt', 'updatedAt'];
   const limitEmp = (e) => { const o = cleanEmp(e); const r = {}; SAFE_EMP_FIELDS.forEach((k) => { if (o[k] !== undefined) r[k] = o[k]; }); return r; };
   const cleanEmp = (e) => { const o = toObj(e); delete o.password; return o; };
 
-  router.get('/employees', guard('staff'), async (req, res) => {
+  router.get('/employees', permissionGuard('manage_employees', 'manager'), async (req, res) => {
     try {
       const list = await Employee.find().sort({ createdAt: -1 });
       // الراتب والهوية والحساب البنكي لا يراها إلا المدراء
@@ -396,7 +475,7 @@ module.exports = function buildStoreRouter(deps) {
     catch (e) { res.status(500).json({ error: 'خطأ في جلب الموظفين' }); }
   });
 
-  router.post('/employees', guard('manager'), async (req, res) => {
+  router.post('/employees', permissionGuard('manage_employees', 'manager'), async (req, res) => {
     try {
       const b = req.body || {};
       if (!b.name || !b.email) return res.status(400).json({ error: 'الاسم والإيميل مطلوبان.' });
@@ -407,6 +486,11 @@ module.exports = function buildStoreRouter(deps) {
       EMP_FIELDS.forEach((k) => { if (b[k] !== undefined) data[k] = b[k]; });
       data.email = String(b.email).trim().toLowerCase();
       data.role = EMP_ROLES.includes(b.role) ? b.role : 'stock';
+      if (Array.isArray(b.permissions) && (req.user.isOwner || roleOf(req.user) === 'admin')) {
+        data.permissions = [...new Set(b.permissions.map(String).filter(Boolean))].slice(0, 100);
+      } else {
+        delete data.permissions;
+      }
       // مدير عادي ما يقدر يعيّن admin
       if (data.role === 'admin' && !req.user.isOwner && roleOf(req.user) !== 'admin') data.role = 'manager';
       const hash = await bcrypt.hash(String(b.password), 10);
@@ -420,7 +504,7 @@ module.exports = function buildStoreRouter(deps) {
         if (User) {
           const existing = await User.findOne({ email: emp.email });
           if (!existing) {
-            await User.create({ name: emp.name, email: emp.email, password: hash, role: emp.role, emailVerified: true });
+            await User.create({ name: emp.name, email: emp.email, password: hash, role: emp.role, permissions: emp.permissions, emailVerified: true });
           } else if (!existing.isOwner) {
             existing.role = emp.role; existing.name = existing.name || emp.name;
             await existing.save();
@@ -437,7 +521,7 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
-  router.put('/employees/:id', guard('manager'), async (req, res) => {
+  router.put('/employees/:id', permissionGuard('manage_employees', 'manager'), async (req, res) => {
     try {
       const emp = await Employee.findById(req.params.id);
       if (!emp) return res.status(404).json({ error: 'الموظف غير موجود' });
@@ -446,6 +530,9 @@ module.exports = function buildStoreRouter(deps) {
       EMP_FIELDS.forEach((k) => { if (b[k] !== undefined) emp[k] = b[k]; });
       if (b.email) emp.email = String(b.email).trim().toLowerCase();
       if (b.role && !EMP_ROLES.includes(b.role)) emp.role = old.role;
+      if (Array.isArray(b.permissions) && (req.user.isOwner || roleOf(req.user) === 'admin')) {
+        emp.permissions = [...new Set(b.permissions.map(String).filter(Boolean))].slice(0, 100);
+      }
       let newHash = null;
       if (b.password) {
         if (String(b.password).length < 6) return res.status(400).json({ error: 'كلمة المرور قصيرة.' });
@@ -468,11 +555,12 @@ module.exports = function buildStoreRouter(deps) {
         await safe('رواتب-مبلغ', () => Salary.updateMany(
           { employeeId: id, month: monthStr(), status: 'قيد الانتظار' }, { $set: { amount: Number(emp.salary) || 0 } }));
       }
-      if (User && (emp.email !== old.email || emp.role !== old.role || emp.name !== old.name || newHash)) {
+      if (User && (emp.email !== old.email || emp.role !== old.role || emp.name !== old.name || newHash || Array.isArray(b.permissions))) {
         await safe('حساب دخول', async () => {
           const u = await User.findOne({ email: old.email });
           if (u && !u.isOwner) {
             u.email = emp.email; u.role = emp.role; u.name = emp.name;
+            if (Array.isArray(emp.permissions)) u.permissions = emp.permissions;
             if (newHash) u.password = newHash;
             await u.save();
           }
@@ -485,7 +573,7 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
-  router.delete('/employees/:id', guard('manager'), async (req, res) => {
+  router.delete('/employees/:id', permissionGuard('manage_employees', 'manager'), async (req, res) => {
     try {
       const emp = await Employee.findByIdAndDelete(req.params.id);
       if (!emp) return res.status(404).json({ error: 'الموظف غير موجود' });
@@ -502,29 +590,29 @@ module.exports = function buildStoreRouter(deps) {
   });
 
   // ============================= الدوام والحضور =============================
-  router.get('/work-hours', guard('staff'), async (req, res) => {
+  router.get('/work-hours', permissionGuard('manage_work_hours'), async (req, res) => {
     try { res.json(await WorkHour.find().sort({ date: -1 })); }
     catch (e) { res.status(500).json({ error: 'خطأ في جلب سجلات الدوام' }); }
   });
-  router.post('/work-hours', guard('staff'), async (req, res) => {
+  router.post('/work-hours', permissionGuard('manage_work_hours'), async (req, res) => {
     try {
       const { name, department, date, start, end } = req.body || {};
       res.json(await new WorkHour({ name, department, date, start, end }).save());
     } catch (e) { res.status(400).json({ error: 'بيانات الدوام غير صالحة' }); }
   });
-  router.delete('/work-hours/:id', guard('staff'), async (req, res) => {
+  router.delete('/work-hours/:id', permissionGuard('manage_work_hours'), async (req, res) => {
     try { await WorkHour.findByIdAndDelete(req.params.id); res.json({ success: true }); }
     catch (e) { res.status(500).json({ error: 'فشل الحذف' }); }
   });
-  router.get('/attendance', guard('staff'), async (req, res) => {
+  router.get('/attendance', permissionGuard('manage_attendance'), async (req, res) => {
     try { res.json(await Employee.find().select('name attendanceStatus lastCheckIn lastCheckOut')); }
     catch (e) { res.status(500).json({ error: 'خطأ في جلب الحضور' }); }
   });
-  router.get('/attendance-logs', guard('staff'), async (req, res) => {
+  router.get('/attendance-logs', permissionGuard('manage_attendance'), async (req, res) => {
     try { res.json((await AttendanceLog.find().sort({ createdAt: -1 }).limit(500)).map((d) => d.log)); }
     catch (e) { res.status(500).json({ error: 'خطأ' }); }
   });
-  router.post('/attendance-logs', guard('staff'), async (req, res) => {
+  router.post('/attendance-logs', permissionGuard('manage_attendance'), async (req, res) => {
     try { res.json(await new AttendanceLog({ log: String(req.body.log || '') }).save()); }
     catch (e) { res.status(400).json({ error: 'سجل غير صالح' }); }
   });
@@ -544,19 +632,19 @@ module.exports = function buildStoreRouter(deps) {
       res.json({ employee: cleanEmp(emp) });
     } catch (e) { res.status(500).json({ error: 'فشل تسجيل الحضور' }); }
   }
-  router.post('/employees/:id/check-in', guard('staff'), (req, res) => markAttendance(req, res, 'in'));
-  router.post('/employees/:id/check-out', guard('staff'), (req, res) => markAttendance(req, res, 'out'));
+  router.post('/employees/:id/check-in', permissionGuard('manage_attendance'), (req, res) => markAttendance(req, res, 'in'));
+  router.post('/employees/:id/check-out', permissionGuard('manage_attendance'), (req, res) => markAttendance(req, res, 'out'));
 
   // ── البريد الداخلي: المدير يشوف الكل، الموظف يشوف رسائله فقط ──
   const mineKeys = (u) => [u.email, u.name].filter(Boolean).flatMap((v) => [v, String(v).toLowerCase()]);
   const ownsMail = (u, m) => isManager(u) || mineKeys(u).includes(m.recipient) || mineKeys(u).includes(m.sender);
-  router.get('/mails', guard('staff'), async (req, res) => {
+  router.get('/mails', permissionGuard('send_email'), async (req, res) => {
     try {
       const q = isManager(req.user) ? {} : { $or: [{ recipient: { $in: mineKeys(req.user) } }, { sender: { $in: mineKeys(req.user) } }] };
       res.json(await Mail.find(q).sort({ date: -1 }).limit(500));
     } catch (e) { res.status(500).json({ error: 'خطأ في جلب البريد' }); }
   });
-  router.put('/mails/:id', guard('staff'), async (req, res) => {
+  router.put('/mails/:id', permissionGuard('send_email'), async (req, res) => {
     try {
       const m = await Mail.findById(req.params.id);
       if (!m) return res.status(404).json({ error: 'غير موجود' });
@@ -564,7 +652,7 @@ module.exports = function buildStoreRouter(deps) {
       Object.assign(m, req.body); await m.save(); res.json(m);
     } catch (e) { res.status(400).json({ error: 'فشل التحديث' }); }
   });
-  router.delete('/mails/:id', guard('staff'), async (req, res) => {
+  router.delete('/mails/:id', permissionGuard('send_email'), async (req, res) => {
     try {
       const m = await Mail.findById(req.params.id);
       if (!m) return res.status(404).json({ error: 'غير موجود' });
@@ -608,7 +696,7 @@ module.exports = function buildStoreRouter(deps) {
     b.push(now); mailBuckets.set(uid, b); return true;
   };
   const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || ''));
-  router.post('/sendExternalMail', guard('staff'), async (req, res) => {
+  router.post('/sendExternalMail', permissionGuard('send_email'), async (req, res) => {
     try {
       const { to, subject, body } = req.body || {};
       if (!validEmail(to)) return res.status(400).json({ error: 'إيميل المستلم غير صالح.' });
@@ -628,17 +716,17 @@ module.exports = function buildStoreRouter(deps) {
   crud('/achievements', Achievement, { remove: 'manager' });
   crud('/mails', Mail, { sort: { date: -1 } });
 
-  router.get('/notifications', guard('staff'), async (req, res) => {
+  router.get('/notifications', permissionGuard('view_dashboard'), async (req, res) => {
     try { res.json(await Notification.find().sort({ date: -1 }).limit(200)); }
     catch (e) { res.status(500).json({ error: 'خطأ' }); }
   });
-  router.put('/notifications/:id/read', guard('staff'), async (req, res) => {
+  router.put('/notifications/:id/read', permissionGuard('view_dashboard'), async (req, res) => {
     try { res.json(await Notification.findByIdAndUpdate(req.params.id, { read: true }, { new: true })); }
     catch (e) { res.status(400).json({ error: 'فشل' }); }
   });
 
   // إرسال إيميل (للموظفين فقط)
-  router.post('/send-email', guard('staff'), async (req, res) => {
+  router.post('/send-email', permissionGuard('send_email'), async (req, res) => {
     try {
       const { to, subject, message } = req.body || {};
       if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(to))) return res.status(400).json({ error: 'إيميل المستلم غير صالح.' });

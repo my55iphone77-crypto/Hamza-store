@@ -311,12 +311,12 @@ function WorkHours({ inputStyle = {} }) {
         {filteredHours.length === 0 ? (
           <p style={{ color: '#9ca3af', textAlign: 'center', padding: '20px', gridColumn: '1 / -1' }}>لا توجد سجلات دوام مطابقة لخيارات البحث</p>
         ) : (
-          filteredHours.map(record => {
+          filteredHours.map((record, index) => {
             if (!record) return null;
             const recordId = record._id || record.id;
             const duration = calculateDuration(record.start, record.end);
             return (
-              <div key={recordId || Math.random()} style={recordCardStyle}>
+              <div key={recordId || `work-hour-${index}`} style={recordCardStyle}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px' }}>
                   <h4 style={{ margin: '0', color: '#f97316', fontSize: '16px' }}>👤 {record.name}</h4>

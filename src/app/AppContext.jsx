@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { io } from 'socket.io-client';
+import { permissionsForUser } from '../permissions';
 
 const AppContext = createContext();
 
@@ -495,13 +496,7 @@ export function AppProvider({ children }) {
     });
   }, [apiRequest, globalEventBus]);
 
-  // مصفوفة الصلاحيات (RBAC)
-  const PERMISSIONS_MATRIX = {
-    admin: ['view_dashboard', 'manage_products', 'delete_product', 'manage_employees', 'fire_employee', 'hire_employee', 'manage_accounting', 'send_marketing', 'escalate_complaint', 'manage_coupons', 'manage_orders', 'manage_tickets'],
-    manager: ['view_dashboard', 'manage_products', 'manage_employees', 'hire_employee', 'manage_accounting', 'send_marketing', 'escalate_complaint', 'manage_coupons', 'manage_orders', 'manage_tickets'],
-    sales: ['view_dashboard', 'manage_products', 'view_orders', 'manage_coupons'],
-    support: ['view_dashboard', 'customer_trouble', 'escalate_complaint', 'manage_tickets']
-  };
+  // الصلاحيات الفعلية: تخصيص الموظف يتغلب على صلاحيات الدور الافتراضية.
 
   // 🔗 ربط بالمرجع: الأقسام الأخرى تخزّن employeeId فقط وتجيب الاسم/الإيميل من هون، فيتحدّث كل شيء لحظياً
   const employeesById = useMemo(() => {
@@ -511,8 +506,7 @@ export function AppProvider({ children }) {
   }, [employees]);
 
   const hasPermission = useCallback((permissionKey) => {
-    const role = currentUser?.role || 'sales';
-    return (PERMISSIONS_MATRIX[role] || []).includes(permissionKey);
+    return permissionsForUser(currentUser).includes(permissionKey);
   }, [currentUser]);
 
   return (

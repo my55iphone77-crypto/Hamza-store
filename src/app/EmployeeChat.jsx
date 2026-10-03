@@ -369,11 +369,11 @@ function EmployeeChatOriginal({
               <span>لا توجد رسائل حالياً. ابدأ بالتواصل مع بقية الأقسام الآن! 🚀</span>
             </div>
           ) : (
-            filteredChats.map(c => {
+            filteredChats.map((c, index) => {
               const isMe = c.sender === currentUser;
               return (
                 <div 
-                  key={c.id || Math.random()} 
+                  key={c.id || `chat-${index}`}
                   style={{ 
                     background: isMe ? 'rgba(30, 41, 59, 0.9)' : 'rgba(30, 41, 59, 0.55)', 
                     border: isMe ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)', 

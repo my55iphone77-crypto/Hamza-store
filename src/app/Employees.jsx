@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useApp } from "./AppContext";
 import { useFullBleedStyle } from "./useWindowSize";
+import { PERMISSION_CATALOG, ROLE_DEFAULT_PERMISSIONS } from "../permissions";
 
 // دالة حماية CSV
 const escapeCSV = (str) => {
@@ -34,6 +35,8 @@ function Employees() {
   const [newImage, setNewImage] = useState('');
   const [newSalary, setNewSalary] = useState('');
   const [newRole, setNewRole] = useState('stock');
+  const [newPermissions, setNewPermissions] = useState(ROLE_DEFAULT_PERMISSIONS.stock);
+  const [newCustomPermission, setNewCustomPermission] = useState('');
 
   // حقول التعديل
   const [editName, setEditName] = useState('');
@@ -46,9 +49,12 @@ function Employees() {
   const [editImage, setEditImage] = useState('');
   const [editSalary, setEditSalary] = useState('');
   const [editRole, setEditRole] = useState('');
+  const [editPermissions, setEditPermissions] = useState([]);
+  const [editCustomPermission, setEditCustomPermission] = useState('');
 
   const safeEmployees = Array.isArray(employees) ? employees : [];
   const empId = (e) => e?.id || e?._id;
+  const canManagePermissions = Boolean(currentUser?.isOwner || currentUser?.role === 'admin');
 
   // ➕ إضافة موظف جديد
   const handleAddEmployee = async (e) => {
@@ -71,13 +77,14 @@ function Employees() {
         image: newImage.trim() || '',
         salary: newSalary ? parseFloat(newSalary) : 0,
         role: newRole,
+        ...(canManagePermissions ? { permissions: newPermissions } : {}),
         status: 'نشط',
         hireDate: new Date().toISOString().split('T')[0]
       });
 
       setNewName(''); setNewEmail(''); setNewPhone(''); setNewAge('');
       setNewNationalId(''); setNewIdCardImage(''); setNewBankAccount('');
-      setNewImage(''); setNewSalary(''); setNewRole('stock');
+      setNewImage(''); setNewSalary(''); setNewRole('stock'); setNewPermissions(ROLE_DEFAULT_PERMISSIONS.stock); setNewCustomPermission('');
       setIsAddModalOpen(false);
       setStatusMsg('✅ تمت إضافة الموظف بنجاح!');
       setTimeout(() => setStatusMsg(''), 3000);
@@ -100,6 +107,8 @@ function Employees() {
     setEditImage(emp.image || '');
     setEditSalary(emp.salary !== undefined ? emp.salary : '');
     setEditRole(emp.role || 'stock');
+    setEditPermissions(Array.isArray(emp.permissions) ? emp.permissions : (ROLE_DEFAULT_PERMISSIONS[emp.role] || []));
+    setEditCustomPermission('');
     setIsEditing(true);
   };
 
@@ -124,6 +133,7 @@ function Employees() {
         image: editImage.trim() || '',
         salary: editSalary !== '' ? parseFloat(editSalary) : 0,
         role: editRole,
+        ...(canManagePermissions ? { permissions: editPermissions } : {}),
         lastModified: new Date().toISOString()
       });
 
@@ -527,6 +537,22 @@ function Employees() {
                 </select>
               </div>
 
+              {canManagePermissions && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '7px', padding: '12px', borderRadius: '12px', background: 'rgba(15,23,42,0.65)', border: '1px solid rgba(139,92,246,0.35)' }}>
+                  <strong style={{ gridColumn: '1 / -1', color: '#c4b5fd', fontSize: '12px' }}>صلاحيات الموظف المخصصة</strong>
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '6px' }}>
+                    <input value={newCustomPermission} onChange={(e) => setNewCustomPermission(e.target.value)} placeholder="مفتاح صلاحية جديد مثل: manage_reports" style={{ ...glassInputStyle, flex: 1, fontSize: '11px' }} />
+                    <button type="button" onClick={() => { const key = newCustomPermission.trim(); if (key && !newPermissions.includes(key)) setNewPermissions(prev => [...prev, key]); setNewCustomPermission(''); }} style={{ ...successButtonStyle, padding: '8px 10px', fontSize: '11px' }}>إضافة</button>
+                  </div>
+                  {PERMISSION_CATALOG.map(({ key, label }) => (
+                    <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1', fontSize: '11px', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={newPermissions.includes(key)} onChange={() => setNewPermissions(prev => prev.includes(key) ? prev.filter(p => p !== key) : [...prev, key])} />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              )}
+
               <button type="submit" disabled={isSaving} style={{ ...successButtonStyle, opacity: isSaving ? 0.7 : 1 }}>
                 {isSaving ? 'جاري الحفظ...' : 'حفظ وتوظيف الموظف 🚀'}
               </button>
@@ -598,6 +624,22 @@ function Employees() {
                     <option value="stock" style={{ background: '#111827' }}>موظف مخزون (Stock)</option>
                   </select>
                 </div>
+
+                {canManagePermissions && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '7px', padding: '12px', borderRadius: '12px', background: 'rgba(15,23,42,0.65)', border: '1px solid rgba(139,92,246,0.35)' }}>
+                    <strong style={{ gridColumn: '1 / -1', color: '#c4b5fd', fontSize: '12px' }}>تعديل صلاحيات الموظف</strong>
+                    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '6px' }}>
+                      <input value={editCustomPermission} onChange={(e) => setEditCustomPermission(e.target.value)} placeholder="مفتاح صلاحية مخصص جديد" style={{ ...glassInputStyle, flex: 1, fontSize: '11px' }} />
+                      <button type="button" onClick={() => { const key = editCustomPermission.trim(); if (key && !editPermissions.includes(key)) setEditPermissions(prev => [...prev, key]); setEditCustomPermission(''); }} style={{ ...successButtonStyle, padding: '8px 10px', fontSize: '11px' }}>إضافة</button>
+                    </div>
+                    {PERMISSION_CATALOG.map(({ key, label }) => (
+                      <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1', fontSize: '11px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={editPermissions.includes(key)} onChange={() => setEditPermissions(prev => prev.includes(key) ? prev.filter(p => p !== key) : [...prev, key])} />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                   <button type="submit" disabled={isSaving} style={{ flex: 1, background: '#10b981', color: '#fff', border: 'none', padding: '12px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', opacity: isSaving ? 0.7 : 1 }}>

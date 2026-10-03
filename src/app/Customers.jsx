@@ -422,6 +422,8 @@ function Customers({ inputStyle = {} }) {
                       <div>📧 {c.email}</div>
                       <div>📱 {c.phone}</div>
                       {c.address && <div>📍 {c.address}</div>}
+                      <div style={{ color: '#facc15' }}>🪙 رصيد المتجر: {Number(c.storeBalance || 0).toFixed(2)} دينار</div>
+                      <div style={{ color: '#c4b5fd' }}>⭐ نقاط الولاء: {Number(c.loyaltyPoints || 0)} / {Number(c.loyaltyThreshold || 100)}</div>
                     </div>
                     <span style={{ fontSize: '11px', color: '#64748b' }}>انقر للتفاصيل والتعديل 🔍</span>
                   </div>
@@ -492,6 +494,14 @@ function Customers({ inputStyle = {} }) {
               <div>
                 <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>رابط الصورة:</label>
                 <input type="text" defaultValue={selectedCustomer.image || ""} onBlur={(e) => handleUpdateCustomer(selectedCustomer._id || selectedCustomer.id, "image", e.target.value)} style={glassInputStyle} disabled={!canManage} dir="ltr" />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: '#facc15', display: 'block', marginBottom: '4px' }}>رصيد المتجر (دينار — لا يُسحب):</label>
+                <input type="number" min="0" step="0.01" defaultValue={Number(selectedCustomer.storeBalance || 0)} onBlur={(e) => handleUpdateCustomer(selectedCustomer._id || selectedCustomer.id, "storeBalance", Math.max(0, Number(e.target.value) || 0))} style={glassInputStyle} disabled={!canManage} dir="ltr" />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: '#c4b5fd', display: 'block', marginBottom: '4px' }}>نقاط الولاء:</label>
+                <input type="number" min="0" step="1" defaultValue={Number(selectedCustomer.loyaltyPoints || 0)} onBlur={(e) => handleUpdateCustomer(selectedCustomer._id || selectedCustomer.id, "loyaltyPoints", Math.max(0, Math.floor(Number(e.target.value) || 0)))} style={glassInputStyle} disabled={!canManage} dir="ltr" />
               </div>
             </div>
 

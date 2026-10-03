@@ -40,22 +40,8 @@ app.set('io', io);
 // ملاحظة: اتصالات Socket والصلاحيات (غرف staff/public) تُدار داخل realtime-sync.cjs
 
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error('JWT_SECRET missing');
-  process.exit(1);
-}
-
 const FRONTEND_URL = process.env.FRONTEND_URL;
-if (!FRONTEND_URL) {
-  console.error('FRONTEND_URL missing');
-  process.exit(1);
-}
-
 const OWNER_EMAIL = (process.env.OWNER_EMAIL || '').trim();
-if (!OWNER_EMAIL) {
-  console.error('OWNER_EMAIL missing');
-  process.exit(1);
-}
 
 const APP_NAME = process.env.APP_NAME || 'متجر حمزة';
 
@@ -68,8 +54,16 @@ const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
 
-if (!SMTP_USER || !SMTP_PASS) {
-  console.error('SMTP_USER/SMTP_PASS missing');
+const missingEnvironment = [
+  ['JWT_SECRET', JWT_SECRET],
+  ['FRONTEND_URL', FRONTEND_URL],
+  ['OWNER_EMAIL', OWNER_EMAIL],
+  ['SMTP_USER', SMTP_USER],
+  ['SMTP_PASS', SMTP_PASS],
+].filter(([, value]) => !value).map(([name]) => name);
+
+if (missingEnvironment.length > 0) {
+  console.error(`Missing required environment variables: ${missingEnvironment.join(', ')}`);
   process.exit(1);
 }
 
@@ -165,6 +159,12 @@ const orderSchema = new mongoose.Schema({
   customerAddress: { type: String, required: true },
   items: [{ id: String, name: String, price: Number, quantity: Number }],
   totalAmount: { type: Number, required: true },
+  currency: { type: String, default: 'JOD' },
+  paymentMethod: { type: String, default: '' },
+  walletAmount: { type: Number, default: 0 },
+  loyaltyPointsEarned: { type: Number, default: 0 },
+  loyaltyPointsRedeemed: { type: Number, default: 0 },
+  loyaltyRewardItem: { type: String, default: '' },
   date: { type: Date, default: Date.now }
 }, { strict: false });
 const Order = mongoose.model('Order', orderSchema);
@@ -212,7 +212,10 @@ const customerSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String },
-  image: { type: String }
+  image: { type: String },
+  storeBalance: { type: Number, default: 0, min: 0 },
+  loyaltyPoints: { type: Number, default: 0, min: 0 },
+  loyaltyThreshold: { type: Number, default: 100, min: 1 }
 }, { strict: false, timestamps: true });
 const Customer = mongoose.model('Customer', customerSchema);
 
@@ -265,6 +268,10 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   role: { type: String, default: 'customer' },
+  permissions: { type: [String], default: undefined },
+  storeBalance: { type: Number, default: 0, min: 0 },
+  loyaltyPoints: { type: Number, default: 0, min: 0 },
+  loyaltyThreshold: { type: Number, default: 100, min: 1 },
   isOwner: { type: Boolean, default: false },
   emailVerified: { type: Boolean, default: false },
   emailVerificationToken: { type: String },
@@ -286,6 +293,7 @@ const EmployeeSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['admin', 'manager', 'stock', 'sales', 'support'], default: 'stock' },
+  permissions: { type: [String], default: undefined },
   salary: { type: Number, default: 0 },
   phone: { type: String, default: 'غير متوفر' },
   age: { type: String, default: 'غير متوفر' },
@@ -455,6 +463,10 @@ function publicUser(user) {
     name: user.name,
     email: user.email,
     role: user.role,
+    permissions: Array.isArray(user.permissions) ? user.permissions : undefined,
+    storeBalance: Number(user.storeBalance || 0),
+    loyaltyPoints: Number(user.loyaltyPoints || 0),
+    loyaltyThreshold: Number(user.loyaltyThreshold || 100),
     isOwner: user.isOwner || checkOwnerAccess(user.email),
     emailVerified: user.emailVerified,
     twoFactorEnabled: user.twoFactorEnabled
@@ -649,7 +661,7 @@ app.use('/api', buildStoreRouter({
   WorkHour, AttendanceLog, AppState,
   Settings, Salary, Task, DocumentModel, Coupon,
   mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
-  io, User, getUserFromAuthHeader
+  io, User, getUserFromAuthHeader, publicActionLimiter
 }));
 
 const fs = require('fs');
