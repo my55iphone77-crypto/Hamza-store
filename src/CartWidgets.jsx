@@ -95,6 +95,13 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
         )}
       </div>
 
+      {currentUser && (
+        <div className="hz-header-balances" title="الرصيد والنقاط مخصصة للشراء داخل المتجر فقط">
+          <span className="hz-balance-pill">🪙 {Number(currentUser.storeBalance || 0).toFixed(2)} د.أ</span>
+          <span className="hz-loyalty-pill">⭐ {Number(currentUser.loyaltyPoints || 0)} نقطة</span>
+        </div>
+      )}
+
       {currentUser ? (
         <div style={{ ...glassBtn, display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 14px', borderRadius: '14px' }}>
           <span style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 'bold', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>{String(currentUser.name || currentUser.email || 'مستخدم')}</span>
@@ -108,12 +115,6 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
             fontWeight: 'bold'
           }}>
             الحالة: {safeUserRoleInfo.label || 'ضيف'}
-          </span>
-          <span title="رصيد المتجر للشراء فقط" style={{ color: '#fde68a', background: 'rgba(250,204,21,0.12)', border: '1px solid rgba(250,204,21,0.35)', padding: '4px 8px', borderRadius: '9px', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-            الرصيد: {Number(currentUser.storeBalance || 0).toFixed(2)} د.أ
-          </span>
-          <span title="نقاط الولاء المتاحة" style={{ color: '#e9d5ff', background: 'rgba(168,85,247,0.14)', border: '1px solid rgba(168,85,247,0.35)', padding: '4px 8px', borderRadius: '9px', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-            الولاء: {Number(currentUser.loyaltyPoints || 0)} نقطة
           </span>
           <form onSubmit={(e) => { e.preventDefault(); redeemStoreCredit(); }} style={{ display: 'flex', alignItems: 'center', gap: '5px' }} title="الرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط">
             <input value={storeCreditCode} onChange={(e) => setStoreCreditCode(e.target.value.toUpperCase())} placeholder="كود بطاقة الرصيد" maxLength={23} style={{ width: '130px', background: 'rgba(11,15,25,0.7)', border: '1px solid rgba(250,204,21,0.35)', borderRadius: '8px', padding: '6px 8px', color: '#fff', fontSize: '11px' }} />
