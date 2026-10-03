@@ -380,7 +380,7 @@ export default function Products() {
   }
 
   return (
-    <div style={glassContainerStyle} dir="rtl">
+    <div className="hz-products-section" style={glassContainerStyle} dir="rtl">
       {/* الهيدر العلوي */}
       <div style={headerStyle}>
         <div>
@@ -397,7 +397,7 @@ export default function Products() {
             placeholder="بحث عن منتج أو قسم..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={glassInputStyle}
+            style={{ ...glassInputStyle, width: "min(360px, 100%)" }}
           />
           <button onClick={() => setIsEmailModalOpen(true)} style={secondaryButtonStyle}>
             📨 إرسال تقرير إيميل
@@ -437,7 +437,7 @@ export default function Products() {
       </div>
 
       {/* شبكة المنتجات */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: "20px", marginTop: "20px", width: "100%", minWidth: 0, overflow: "visible" }}>
+      <div className="hz-products-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "20px", marginTop: "20px", width: "100%", minWidth: 0, overflow: "visible" }}>
         <div
           role="button"
           tabIndex={0}
@@ -674,9 +674,10 @@ const glassContainerStyle = {
   padding: "clamp(12px, 3vw, 30px)",
   borderRadius: "24px",
   width: "100%",
+  maxWidth: "none",
   minWidth: 0,
   boxSizing: "border-box",
-  overflowX: "hidden",
+  overflow: "visible",
   color: "#fff",
   fontFamily: "Tajawal, sans-serif",
   boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.75)"
