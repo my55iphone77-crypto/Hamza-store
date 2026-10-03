@@ -75,14 +75,6 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   }, [api, currentUser, storeCreditCode, setCurrentUser]);
 
   useEffect(() => {
-    const active = getActivePaymentMethods();
-    if (paymentMethod === 'store_balance' && Number(currentUser?.storeBalance || 0) >= Number(totalPrice || 0) && Number(totalPrice || 0) > 0) return;
-    if (active.length > 0 && !active.some(m => m.id === paymentMethod)) {
-      setPaymentMethod(active[0].id);
-    }
-  }, [paymentMethod, currentUser, totalPrice]);
-
-  useEffect(() => {
     try {
       localStorage.setItem('hamza_cart', JSON.stringify(cart));
     } catch (e) {}
@@ -132,6 +124,14 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   const safeCart = Array.isArray(cart) ? cart : [];
   const totalPrice = safeCart.reduce((sum, item) => sum + (Number(item?.price) || 0) * (Number(item?.quantity) || 1), 0);
   const totalItemsCount = safeCart.reduce((acc, item) => acc + (Number(item?.quantity) || 1), 0);
+
+  useEffect(() => {
+    const active = getActivePaymentMethods();
+    if (paymentMethod === 'store_balance' && Number(currentUser?.storeBalance || 0) >= Number(totalPrice || 0) && Number(totalPrice || 0) > 0) return;
+    if (active.length > 0 && !active.some(m => m.id === paymentMethod)) {
+      setPaymentMethod(active[0].id);
+    }
+  }, [paymentMethod, currentUser, totalPrice]);
 
   // 🆕 هل بالسلة منتج بيحتاج آيدي لاعب؟
   const requiresPlayerId = safeCart.some(item => item && item.deliveryType === 'id_topup');
