@@ -405,6 +405,7 @@ module.exports = function buildStoreRouter(deps) {
       let earnedPoints = 0;
       const items = [];
       const creditCardsToIssue = [];
+      const creditStockNeeds = [];
       for (const it of rawItems.slice(0, 50)) {
         const qty = Math.max(1, Math.min(100, Number(it.quantity) || 1));
         let name = it.name, price = Number(it.price) || 0, deliveryType = String(it.deliveryType || ''), storeCreditAmount = Number(it.storeCreditAmount || 0), itemPoints = Math.max(0, Number(it.loyaltyPoints || 0));
@@ -416,6 +417,9 @@ module.exports = function buildStoreRouter(deps) {
           deliveryType = String(prod.deliveryType || deliveryType);
           storeCreditAmount = Number(prod.storeCreditAmount || 0);
           itemPoints = Math.max(0, Number(prod.loyaltyPoints || 0));
+          if (deliveryType === 'store_credit' || storeCreditAmount > 0) {
+            creditStockNeeds.push({ productId: prod._id, quantity: qty, productName: prod.name });
+          }
         }
         total += price * qty;
         earnedPoints += itemPoints * qty;
@@ -464,6 +468,20 @@ module.exports = function buildStoreRouter(deps) {
           { $setOnInsert: { name: authUser.name || customerName, email: String(authUser.email).trim().toLowerCase() }, $inc: { storeBalance: walletAmount ? -walletAmount : 0, loyaltyPoints: pointsEarned - loyaltyPointsRedeemed } },
           { upsert: true, new: true }
         );
+      }
+      // حجز مخزون بطاقات الرصيد بشكل ذري حتى لا تُباع وحدات أكثر من المتاح.
+      const reservedCreditStock = [];
+      for (const need of creditStockNeeds) {
+        const reserved = await Product.findOneAndUpdate(
+          { _id: need.productId, stock: { $gte: need.quantity } },
+          { $inc: { stock: -need.quantity } },
+          { new: true }
+        );
+        if (!reserved) {
+          for (const previous of reservedCreditStock) await Product.updateOne({ _id: previous.productId }, { $inc: { stock: previous.quantity } });
+          return res.status(409).json({ error: `لا يوجد مخزون كافٍ من بطاقة الرصيد: ${need.productName}.` });
+        }
+        reservedCreditStock.push(need);
       }
       const order = await new Order({
         customerName: String(customerName).trim(),
