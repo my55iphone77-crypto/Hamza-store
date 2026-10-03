@@ -14,9 +14,12 @@ function Contacts({ inputStyle = {} }) {
     apiUrl,
     apiRequest,
     getAuthHeaders,
+    employees = [],
+    hireEmployee,
+    updateEmployee,
+    fireEmployee,
     contacts = [],
     setContacts = () => {},
-    setEmployees = () => {},
     setMails = () => {},
     currentUser = { role: "guest", name: "زائر" }
   } = contextData;
@@ -33,7 +36,10 @@ function Contacts({ inputStyle = {} }) {
   const [selectedContact, setSelectedContact] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const rawContacts = Array.isArray(contacts) && contacts.length > 0 ? contacts : internalContacts;
+  // جهات اتصال الموظفين تُشتق من Employee المركزي؛ لا ننشئ نسخة موظف ثانية.
+  const rawContacts = Array.isArray(employees) && employees.length > 0
+    ? employees
+    : (Array.isArray(contacts) && contacts.length > 0 ? contacts : internalContacts);
   const safeContacts = Array.isArray(rawContacts) ? rawContacts : [];
 
   const getGlassEmailTemplate = (title, contentHtml) => `
@@ -68,23 +74,19 @@ function Contacts({ inputStyle = {} }) {
   const updateContacts = useCallback((newList) => {
     setInternalContacts(newList);
     if (typeof setContacts === "function") setContacts(newList);
-    if (typeof setEmployees === "function") setEmployees(newList);
-  }, [setContacts, setEmployees]);
+  }, [setContacts]);
 
   const fetchServerData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await secureApiRequest("/contacts", "GET");
-      if (response) {
-        const list = Array.isArray(response) ? response : (response.contacts || []);
-        updateContacts(list);
-      }
+      // الموظفون هم المصدر الوحيد لبيانات البريد والهاتف.
+      updateContacts(Array.isArray(employees) ? employees : []);
     } catch (err) {
       console.error("خطأ في جلب جهات الاتصال من السيرفر:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [secureApiRequest, updateContacts]);
+  }, [employees, updateContacts]);
 
   useEffect(() => {
     fetchServerData();
@@ -140,8 +142,15 @@ function Contacts({ inputStyle = {} }) {
     };
 
     try {
-      const response = await secureApiRequest("/contacts", "POST", newContactObj);
-      const savedContact = response?.contact || response || newContactObj;
+      if (typeof hireEmployee !== 'function') throw new Error('خدمة الموظفين غير متاحة حالياً');
+      const savedContact = await hireEmployee({
+        name: newContactObj.name,
+        email: newContactObj.email,
+        phone: newContactObj.phone,
+        image: newContactObj.image || '',
+        role: ['admin', 'manager', 'stock', 'sales', 'support'].includes(newRole) ? newRole : 'stock',
+        status: newContactObj.status,
+      });
       const updatedList = [...safeContacts, savedContact];
       updateContacts(updatedList);
 
@@ -168,7 +177,8 @@ function Contacts({ inputStyle = {} }) {
     if (!id || !window.confirm(`هل أنت متأكد من حذف الموظف "${empName}" بشكل نهائي؟`)) return;
 
     try {
-      await secureApiRequest(`/contacts/${encodeURIComponent(id)}`, "DELETE");
+      if (typeof fireEmployee !== 'function') throw new Error('خدمة الموظفين غير متاحة حالياً');
+      await fireEmployee(id);
       const updatedList = safeContacts.filter((c) => (c._id || c.id) !== id);
       updateContacts(updatedList);
       await sendNotifications("manager@company.com", "🗑️ حذف موظف", `تم حذف الموظف ${empName || 'غير معروف'} من النظام.`);
@@ -195,8 +205,9 @@ function Contacts({ inputStyle = {} }) {
       if (!contactToUpdate) return;
       const sanitizedValue = typeof value === 'string' ? value.trim() : value;
       const updatedData = { ...contactToUpdate, [field]: sanitizedValue, lastModified: new Date().toISOString() };
-      await secureApiRequest(`/contacts/${encodeURIComponent(id)}`, "PUT", updatedData);
-      const updatedList = safeContacts.map((c) => ((c._id || c.id) === id ? updatedData : c));
+      if (typeof updateEmployee !== 'function') throw new Error('خدمة الموظفين غير متاحة حالياً');
+      const saved = await updateEmployee(id, { [field]: sanitizedValue });
+      const updatedList = safeContacts.map((c) => ((c._id || c.id) === id ? (saved || { ...c, ...updatedData }) : c));
       updateContacts(updatedList);
     } catch (err) {
       console.error("خطأ في تحديث بيانات الموظف:", err);

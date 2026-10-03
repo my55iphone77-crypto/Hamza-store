@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { useSyncedState } from './useSyncedState.jsx';
+import React, { useState } from 'react';
+import { useApp } from './AppContext';
 
 function Salaries({ mails, setMails }) {
-  // 🌐 الربط الشامل مع كافة أقسام النظام الحالية والمستقبلية حرفياً
-  const [employees, setEmployees] = useSyncedState('store_employees', []); // إدارة الموظفين
-  const [salaries, setSalaries] = useSyncedState('store_salaries', []);     // الرواتب
-  const [attendance] = useSyncedState('store_attendance', []);             // الحضور والانصراف
-  const [workHours] = useSyncedState('store_work_hours', []);               // تتبع ساعات العمل
-  const [dismissals] = useSyncedState('store_dismissals', []);             // قسم فصل وتسريح الموظفين
-  const [contacts] = useSyncedState('store_contacts', []);                 // إيميلات وأرقام الموظفين
-  const [tasks] = useSyncedState('store_tasks', []);                       // المهام والإنجازات
-  const [accounting, setAccounting] = useSyncedState('store_accounting', []); // المحاسبة والمصروفات
-  
-  // 🔮 قسم مرن للمستقبل: أي بيانات لأي قسم جديد سيتم رصدها والتعامل معها تلقائياً
-  const [futureModulesData, setFutureModulesData] = useState({});
+  // المصدر المركزي: AppContext يتغذى من API وSocket.IO، وليس localStorage المنفصل.
+  const {
+    employees = [], salaries = [], setSalaries = () => {},
+    attendance = [], workHours = [], tasks = [], contacts = [],
+    accountingTransactions: accounting = [],
+    setAccountingTransactions: setAccounting = () => {},
+    apiRequest,
+    updateEmployee,
+  } = useApp() || {};
+  const dismissals = [];
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSalary, setSelectedSalary] = useState(null);
@@ -28,32 +26,6 @@ function Salaries({ mails, setMails }) {
   const inputStyle = { outline: 'none' };
   const now = new Date();
   const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-  // 🔮 رصد تلقائي لأي مفتاح جديد يُضاف للمستقبل في الـ localStorage
-  useEffect(() => {
-    const handleGlobalSync = () => {
-      const allKeys = Object.keys(localStorage);
-      const dynamicData = {};
-      allKeys.forEach(k => {
-        if (k.startsWith('store_') && !['store_employees', 'store_salaries', 'store_attendance', 'store_work_hours', 'store_dismissals', 'store_contacts', 'store_tasks', 'store_accounting'].includes(k)) {
-          try {
-            dynamicData[k] = JSON.parse(localStorage.getItem(k));
-          } catch (e) {
-            // تجاهل البيانات غير القابلة للتحويل
-          }
-        }
-      });
-      setFutureModulesData(dynamicData);
-    };
-
-    handleGlobalSync();
-    window.addEventListener('storage', handleGlobalSync);
-    window.addEventListener('storage_updated', handleGlobalSync);
-    return () => {
-      window.removeEventListener('storage', handleGlobalSync);
-      window.removeEventListener('storage_updated', handleGlobalSync);
-    };
-  }, []);
 
   // 📢 تسجيل الأحداث وإرسال الإيميلات الفورية عبر قسم (إيميلات وأرقام الموظفين)
   const logEventAndEmail = (text, employeeEmail = '') => {
@@ -112,7 +84,7 @@ function Salaries({ mails, setMails }) {
   };
 
   // 💾 الحفظ الشامل والمزامنة العكسية مع الموظفين والمحاسبة
-  const handleEditEmployeeSubmit = (e) => {
+  const handleEditEmployeeSubmit = async (e) => {
     e.preventDefault();
     if (!selectedSalary || !selectedSalary.id) return;
 
@@ -139,12 +111,11 @@ function Salaries({ mails, setMails }) {
         : s
     )) : []));
 
-    // 2. تحديث قسم الموظفين الأساسي (HR)
-    setEmployees(prev => (Array.isArray(prev) ? prev.map(emp => (
-      emp.id === selectedSalary.id
-        ? { ...emp, name: currentEmpName, salary: baseVal }
-        : emp
-    )) : []));
+    // 2. تحديث الموظف المركزي عبر API؛ لا نعدّل نسخة محلية منفصلة.
+    const employeeId = selectedSalary.employeeId || selectedSalary.id;
+    if (typeof updateEmployee === 'function' && employeeId) {
+      await updateEmployee(employeeId, { name: currentEmpName, salary: baseVal });
+    }
 
     logEventAndEmail(`⚙️ تم تحديث بيانات الموظف (${currentEmpName}) ومرتبة الصافي ($${netVal}) بالتزامن مع كافة الأقسام.`, empEmail);
 

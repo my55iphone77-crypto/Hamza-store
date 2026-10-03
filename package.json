@@ -34,7 +34,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.0",
     "multer": "^2.2.0",
-    "nodemailer": "^9.0.3",
+    "nodemailer": "^10.0.13",
     "passport": "^0.7.0",
     "passport-apple": "^2.0.2",
     "passport-facebook": "^3.0.0",
