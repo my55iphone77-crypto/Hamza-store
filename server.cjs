@@ -643,7 +643,7 @@ app.use('/api', buildStoreRouter({
   WorkHour, AttendanceLog, AppState,
   Settings, Salary, Task, DocumentModel, Coupon,
   mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
-  io, User, getUserFromAuthHeader
+  io, User, getUserFromAuthHeader, publicActionLimiter
 }));
 
 const fs = require('fs');

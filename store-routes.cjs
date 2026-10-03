@@ -7,7 +7,7 @@ module.exports = function buildStoreRouter(deps) {
     WorkHour, AttendanceLog, AppState,
     Settings, Salary, Task, DocumentModel, Coupon,
     mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
-    io, User, getUserFromAuthHeader
+    io, User, getUserFromAuthHeader, publicActionLimiter
   } = deps;
 
   const router = express.Router();
@@ -276,12 +276,16 @@ module.exports = function buildStoreRouter(deps) {
 
   // ============================= الطلبات =============================
   // إنشاء طلب من الزبون (عام). المبلغ يُحسب من أسعار قاعدة البيانات، ما نثق بسعر الواجهة.
-  router.post('/orders', async (req, res) => {
+  router.post('/orders', publicActionLimiter, async (req, res) => {
     try {
       const { customerName, customerEmail, customerAddress } = req.body || {};
       const rawItems = Array.isArray(req.body && req.body.items) ? req.body.items : [];
-      if (!customerName || !customerEmail || !customerAddress || rawItems.length === 0) {
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(customerEmail || '').trim());
+      if (!customerName || !emailOk || !customerAddress || rawItems.length === 0) {
         return res.status(400).json({ error: 'بيانات الطلب ناقصة.' });
+      }
+      if (String(customerName).length > 120 || String(customerEmail).length > 254 || String(customerAddress).length > 500) {
+        return res.status(400).json({ error: 'بيانات الطلب تتجاوز الحد المسموح.' });
       }
       let total = 0;
       const items = [];
@@ -333,10 +337,13 @@ module.exports = function buildStoreRouter(deps) {
   });
 
   // ============================= شكاوى / رسائل العملاء (requests) =============================
-  router.post('/requests', async (req, res) => {
+  router.post('/requests', publicActionLimiter, async (req, res) => {
     try {
       const { customerName, customerEmail, phone, location, issue } = req.body || {};
       if (!customerName || !issue) return res.status(400).json({ error: 'الاسم ونص المشكلة مطلوبان.' });
+      if (String(customerName).length > 120 || String(issue).length > 3000 || String(phone || '').length > 40 || String(location || '').length > 200) {
+        return res.status(400).json({ error: 'بيانات الشكوى تتجاوز الحد المسموح.' });
+      }
       res.json(await new Support({ customerName, customerEmail, phone, location, issue }).save());
     } catch (e) { res.status(400).json({ error: 'فشل إرسال الشكوى' }); }
   });
