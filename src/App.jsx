@@ -43,7 +43,7 @@ const GLASS_STYLE = `
       radial-gradient(ellipse 900px 600px at 50% 105%, rgba(168,85,247,0.30), transparent 55%),
       radial-gradient(ellipse 500px 350px at 25% 55%, rgba(16,185,129,0.20), transparent 60%),
       #05060a;
-    min-height: 100vh;
+    min-height: 100dvh;
     width: 100%;
     box-sizing: border-box;
   }
@@ -93,7 +93,7 @@ const GLASS_STYLE = `
 
   .hz-app-full-container {
     width: 100% !important;
-    min-height: calc(100vh - 120px);
+    min-height: calc(100dvh - 120px);
     margin: 0 !important;
     border-radius: 20px;
     box-sizing: border-box;
@@ -111,6 +111,9 @@ const GLASS_STYLE = `
     .hz-app-full-container { padding: 12px !important; border-radius: 16px; }
     .hz-glass-card { padding: 14px; border-radius: 18px; }
     .hz-glass-icon { width: 42px; height: 42px; font-size: 19px; }
+    .hz-admin-main [style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
+    .hz-admin-main [style*="min-width"] { min-width: 0 !important; }
+    .hz-admin-main [style*="width:"] { max-width: 100% !important; }
   }
 
   .hz-glass-icon {

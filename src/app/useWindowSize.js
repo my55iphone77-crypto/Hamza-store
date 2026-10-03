@@ -2,9 +2,13 @@ import { useState, useEffect, useMemo } from 'react';
 
 // ─── useWindowSize ───
 export function useWindowSize() {
+  const getViewport = () => {
+    if (typeof window === 'undefined') return { width: 1024, height: 768 };
+    const viewport = window.visualViewport;
+    return { width: Math.round(viewport?.width || window.innerWidth), height: Math.round(viewport?.height || window.innerHeight) };
+  };
   const [size, setSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-    height: typeof window !== 'undefined' ? window.innerHeight : 768,
+    ...getViewport(),
   });
 
   useEffect(() => {
@@ -14,11 +18,12 @@ export function useWindowSize() {
 
     function handleResize() {
       if (!ticking) {
-        window.requestAnimationFrame(() => {
-          setSize({
-            width: window.innerWidth,
-            height: window.innerHeight,
-          });
+        const frame = window.requestAnimationFrame || ((callback) => window.setTimeout(callback, 0));
+        frame(() => {
+          const next = getViewport();
+          document.documentElement.style.setProperty('--hz-viewport-width', `${next.width}px`);
+          document.documentElement.style.setProperty('--hz-viewport-height', `${next.height}px`);
+          setSize(next);
           ticking = false;
         });
         ticking = true;
@@ -26,8 +31,16 @@ export function useWindowSize() {
     }
 
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    window.visualViewport?.addEventListener('resize', handleResize);
+    window.visualViewport?.addEventListener('scroll', handleResize);
     handleResize();
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('scroll', handleResize);
+    };
   }, []);
 
   const { width, height } = size;
@@ -50,9 +63,9 @@ export function useFullBleedStyle() {
   return useMemo(() => ({
     width: '100%',
     maxWidth: '100%',
-    minHeight: '100vh',
+    minHeight: '100dvh',
     boxSizing: 'border-box',
-    overflowX: 'hidden',
+    overflowX: 'clip',
     borderRadius: 0,
     padding: isMobile ? '12px' : isTablet ? '20px' : '30px',
   }), [isMobile, isTablet]);
@@ -63,9 +76,9 @@ export function useFullBleedStyle() {
 export const fullBleedStyle = {
   width: '100%',
   maxWidth: '100%',
-  minHeight: '100vh',
+  minHeight: '100dvh',
   boxSizing: 'border-box',
-  overflowX: 'hidden',
+  overflowX: 'clip',
   borderRadius: 0,
   padding: '0px',
 };
