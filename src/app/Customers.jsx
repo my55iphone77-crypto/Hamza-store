@@ -75,6 +75,7 @@ function Customers({ inputStyle = {} }) {
   }, [fetchServerData]);
 
   const sendMail = async (to, subject, rawBody, attachment = null) => {
+    let externalSent = false;
     try {
       const mailPayload = {
         sender: safeCurrentUser?.name || "نظام CRM المركزي",
@@ -85,10 +86,13 @@ function Customers({ inputStyle = {} }) {
       if (typeof setMails === "function") setMails((prev) => [...(Array.isArray(prev) ? prev : []), savedMail]);
       if (to) {
         const styledHtml = getGlassEmailTemplate(subject, `<p>${rawBody}</p>${attachment ? `<p style="margin-top: 15px; color: #38bdf8;">📎 المرفق: ${attachment}</p>` : ''}`);
-        await secureApiRequest("/sendExternalMail", "POST", { to, subject, body: styledHtml }).catch(() => {});
+        await secureApiRequest("/sendExternalMail", "POST", { to, subject, body: styledHtml });
+        externalSent = true;
       }
+      return externalSent;
     } catch (err) {
       console.error("خطأ في إرسال البريد والإشعارات:", err);
+      return false;
     }
   };
 
@@ -119,12 +123,12 @@ function Customers({ inputStyle = {} }) {
       setCustomers((prev) => [...(Array.isArray(prev) ? prev : []), savedCustomer]);
       if (typeof setContacts === "function") setContacts((prev) => [...(Array.isArray(prev) ? prev : []), savedCustomer]);
 
-      await sendMail(trimmedEmail, "🎉 أهلاً بك في متجرنا",
+      const welcomeSent = await sendMail(trimmedEmail, "🎉 أهلاً بك في متجرنا",
         `مرحباً ${trimmedName}، شكراً لتسجيلك معنا! نتطلع لخدمتك.`, "welcome_coupon.pdf");
 
       setNewName(""); setNewEmail(""); setNewPhone(""); setNewImage(""); setNewAddress("");
       setShowAddModal(false);
-      setStatusMessage("✅ تمت إضافة العميل بنجاح وتم إرسال البريد الترحيبي.");
+      setStatusMessage(welcomeSent ? "✅ تمت إضافة العميل وإرسال البريد الترحيبي." : "✅ تمت إضافة العميل، لكن تعذر إرسال البريد. راجع إعدادات SMTP في Render.");
       setTimeout(() => setStatusMessage(""), 3000);
     } catch (err) {
       console.error("خطأ في إضافة العميل:", err);

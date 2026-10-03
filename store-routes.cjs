@@ -341,22 +341,37 @@ module.exports = function buildStoreRouter(deps) {
     });
     router.post(path, guard(create), async (req, res) => {
       try {
-        const d = await new Model(req.body).save();
+        const payload = path === '/customers'
+          ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), name: String(req.body?.name || '').trim() }
+          : req.body;
+        if (path === '/customers' && (!payload.name || !validEmail(payload.email))) return res.status(400).json({ error: 'اسم العميل والبريد الإلكتروني الصحيح مطلوبان.' });
+        if (path === '/customers' && await Model.exists({ email: payload.email })) return res.status(409).json({ error: 'هذا العميل موجود مسبقاً بهذا البريد الإلكتروني.' });
+        const d = await new Model(payload).save();
         if (path === '/customers' && User && d.email) {
           await User.findOneAndUpdate({ email: String(d.email).trim().toLowerCase() }, { $set: { storeBalance: Math.max(0, Number(d.storeBalance || 0)), loyaltyPoints: Math.max(0, Number(d.loyaltyPoints || 0)), loyaltyThreshold: Math.max(1, Number(d.loyaltyThreshold || 100)) } });
         }
         res.json(d);
+        if (path === '/customers') broadcastList('CUSTOMERS', Customer);
       }
       catch (e) { res.status(400).json({ error: e.message || 'بيانات غير صالحة' }); }
     });
     router.put(`${path}/:id`, guard(update), async (req, res) => {
       try {
-        const d = await Model.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        const before = path === '/customers' ? await Model.findById(req.params.id) : null;
+        const payload = path === '/customers' && req.body?.email !== undefined
+          ? { ...req.body, email: String(req.body.email || '').trim().toLowerCase() }
+          : req.body;
+        if (path === '/customers' && payload.email && await Model.exists({ email: payload.email, _id: { $ne: req.params.id } })) return res.status(409).json({ error: 'هذا البريد الإلكتروني مرتبط بعميل آخر.' });
+        const d = await Model.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
         if (!d) return res.status(404).json({ error: 'غير موجود' });
+        if (path === '/customers' && User && before?.email && String(before.email).trim().toLowerCase() !== String(d.email || '').trim().toLowerCase()) {
+          await User.updateOne({ email: String(before.email).trim().toLowerCase() }, { $set: { email: String(d.email).trim().toLowerCase() } });
+        }
         if (path === '/customers' && User && d.email) {
           await User.findOneAndUpdate({ email: String(d.email).trim().toLowerCase() }, { $set: { storeBalance: Math.max(0, Number(d.storeBalance || 0)), loyaltyPoints: Math.max(0, Number(d.loyaltyPoints || 0)), loyaltyThreshold: Math.max(1, Number(d.loyaltyThreshold || 100)) } });
         }
         res.json(d);
+        if (path === '/customers') broadcastList('CUSTOMERS', Customer);
       } catch (e) { res.status(400).json({ error: e.message || 'فشل التحديث' }); }
     });
     router.delete(`${path}/:id`, guard(remove), async (req, res) => {
@@ -374,6 +389,7 @@ module.exports = function buildStoreRouter(deps) {
         if (!d) return res.status(404).json({ error: 'غير موجود' });
         if (path === '/categories' && Product) await Product.updateMany({ category: d.name }, { $set: { category: 'غير مصنف' } });
         res.json({ success: true });
+        if (path === '/customers') broadcastList('CUSTOMERS', Customer);
       } catch (e) { res.status(500).json({ error: 'فشل الحذف' }); }
     });
   }
