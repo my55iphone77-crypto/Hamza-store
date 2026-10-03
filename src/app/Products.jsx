@@ -402,9 +402,6 @@ export default function Products() {
           <button onClick={() => setIsEmailModalOpen(true)} style={secondaryButtonStyle}>
             📨 إرسال تقرير إيميل
           </button>
-          <button onClick={() => { setIsAddModalOpen(true); setIsEditing(false); }} style={primaryButtonStyle}>
-            + إضافة منتج جديد
-          </button>
         </div>
       </div>
 

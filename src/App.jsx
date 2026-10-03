@@ -101,6 +101,12 @@ const GLASS_STYLE = `
     overflow: visible !important;
   }
   .hz-app-full-container > div { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
+  .hz-section-shell { width: 100%; max-width: 100%; min-width: 0; display: block; }
+  .hz-section-shell > * { width: 100%; max-width: 100%; min-width: 0; }
+  .hz-section-shell img, .hz-section-shell video, .hz-section-shell canvas { max-width: 100%; }
+  .hz-section-shell table { width: 100%; max-width: 100%; border-collapse: collapse; }
+  .hz-section-shell input, .hz-section-shell select, .hz-section-shell textarea { max-width: 100%; min-width: 0; }
+  .hz-section-shell [style*="display: flex"] { min-width: 0; }
   .hz-atmosphere, .hz-atmosphere * { box-sizing: border-box; }
   .hz-atmosphere { min-width: 0; overflow-x: clip; overscroll-behavior-x: none; }
   .hz-admin-main, .hz-admin-main > div { min-width: 0; max-width: 100%; }
@@ -360,7 +366,9 @@ function MainContent() {
             ) : (
               <div className="hz-glass-card hz-app-full-container">
                 <button onClick={() => setActiveApp(null)} className="hz-glass-btn" style={{ color: '#fff', padding: '6px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '15px' }}>← العودة للقائمة</button>
-                {currentApp && currentApp.component ? currentApp.component : <div>التطبيق غير موجود</div>}
+                <div className="hz-section-shell">
+                  {currentApp && currentApp.component ? currentApp.component : <div>التطبيق غير موجود</div>}
+                </div>
               </div>
             )}
           </div>
