@@ -56,6 +56,9 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   // 💳 طريقة الدفع المختارة (من paymentMethods.js)
   const [paymentMethod, setPaymentMethod] = useState('');
   const [redeemPoints, setRedeemPoints] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponSubmitting, setCouponSubmitting] = useState(false);
   const [storeCreditCode, setStoreCreditCode] = useState('');
   const [redeemingStoreCredit, setRedeemingStoreCredit] = useState(false);
 
@@ -123,15 +126,38 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
 
   const safeCart = Array.isArray(cart) ? cart : [];
   const totalPrice = safeCart.reduce((sum, item) => sum + (Number(item?.price) || 0) * (Number(item?.quantity) || 1), 0);
+  const finalTotal = Math.max(0, totalPrice - Number(appliedCoupon?.discount || 0));
   const totalItemsCount = safeCart.reduce((acc, item) => acc + (Number(item?.quantity) || 1), 0);
 
   useEffect(() => {
     const active = getActivePaymentMethods();
-    if (paymentMethod === 'store_balance' && Number(currentUser?.storeBalance || 0) >= Number(totalPrice || 0) && Number(totalPrice || 0) > 0) return;
+    if (paymentMethod === 'store_balance' && Number(currentUser?.storeBalance || 0) >= Number(finalTotal || 0) && Number(finalTotal || 0) > 0) return;
     if (active.length > 0 && !active.some(m => m.id === paymentMethod)) {
       setPaymentMethod(active[0].id);
     }
-  }, [paymentMethod, currentUser, totalPrice]);
+  }, [paymentMethod, currentUser, finalTotal]);
+
+  useEffect(() => {
+    setAppliedCoupon(null);
+  }, [totalPrice]);
+
+  const applyCoupon = useCallback(async () => {
+    const cleanCode = String(couponCode || '').trim().toUpperCase();
+    if (!cleanCode) return { success: false, error: 'أدخل كود الخصم.' };
+    if (totalPrice <= 0) return { success: false, error: 'السلة فارغة.' };
+    setCouponSubmitting(true);
+    try {
+      const response = await api.post('/coupons/validate', { code: cleanCode, subtotal: totalPrice });
+      setAppliedCoupon(response?.data || null);
+      setCouponCode(cleanCode);
+      return { success: true };
+    } catch (err) {
+      setAppliedCoupon(null);
+      return { success: false, error: err?.response?.data?.error || 'تعذر تطبيق كود الخصم.' };
+    } finally {
+      setCouponSubmitting(false);
+    }
+  }, [api, couponCode, totalPrice]);
 
   // 🆕 هل بالسلة منتج بيحتاج آيدي لاعب؟
   const requiresPlayerId = safeCart.some(item => item && item.deliveryType === 'id_topup');
@@ -191,6 +217,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
       const response = await api.post('/orders', {
         customerName: currentUser.name || currentUser.email || 'عميل',
         customerEmail: currentUser.email || 'غير متوفر',
+        customerAddress: currentUser.address || 'طلب رقمي من المتجر',
         items: safeCart.map(item => ({
           id: item.id || item._id,
           name: item.name || 'منتج',
@@ -198,15 +225,18 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
           quantity: item.quantity || 1,
           playerId: item.deliveryType === 'id_topup' ? String(item.playerId || '').trim() : undefined
         })),
-        totalAmount: totalPrice,
+        totalAmount: finalTotal,
         paymentMethod: paymentMethod || undefined,
-        redeemPoints
+        redeemPoints,
+        couponCode: appliedCoupon?.code || couponCode || undefined
       });
 
       if (isMounted.current) {
         if (response?.data?.account) setCurrentUser(prev => ({ ...(prev || {}), ...response.data.account }));
         setLastOrder(response?.data?.order || null); // 🆕 لعرض شاشة التأكيد
         setCart([]);
+        setCouponCode('');
+        setAppliedCoupon(null);
         setRedeemPoints(false);
         try { localStorage.removeItem('hamza_cart'); } catch (err) {}
         setCheckoutMode(false);
@@ -224,7 +254,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     } finally {
       if (isMounted.current) setSubmittingCheckout(false);
     }
-  }, [api, safeCart, currentUser, totalPrice, paymentMethod, redeemPoints, fetchProducts, searchTerm, setError, setShowLoginPage, setCurrentUser]);
+  }, [api, safeCart, currentUser, totalPrice, finalTotal, paymentMethod, redeemPoints, appliedCoupon, couponCode, fetchProducts, searchTerm, setError, setShowLoginPage, setCurrentUser]);
 
   const handleLogout = useCallback(() => {
     setCart([]);
@@ -259,12 +289,13 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   return {
     currentUser, isAdminUser, isStaffUser, userRoleInfo,
     cart, setCart, addToCart, removeFromCart, updateCartItemPlayerId, requiresPlayerId,
-    totalPrice, totalItemsCount,
+    totalPrice, finalTotal, totalItemsCount,
     showCartDropdown, setShowCartDropdown,
     checkoutMode, setCheckoutMode,
     submittingCheckout, lastOrder, setLastOrder,
     paymentMethod, setPaymentMethod,
     redeemPoints, setRedeemPoints,
+    couponCode, setCouponCode, appliedCoupon, setAppliedCoupon, couponSubmitting, applyCoupon,
     storeCreditCode, setStoreCreditCode, redeemingStoreCredit, redeemStoreCredit,
     showLoginPage, setShowLoginPage,
     handleInitiateCheckout, handleCheckout, handleLogout,

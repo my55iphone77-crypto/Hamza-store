@@ -164,6 +164,8 @@ const orderSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true },
   currency: { type: String, default: 'JOD' },
   paymentMethod: { type: String, default: '' },
+  couponCode: { type: String, default: '' },
+  couponDiscount: { type: Number, default: 0, min: 0 },
   walletAmount: { type: Number, default: 0 },
   loyaltyPointsEarned: { type: Number, default: 0 },
   loyaltyPointsRedeemed: { type: Number, default: 0 },

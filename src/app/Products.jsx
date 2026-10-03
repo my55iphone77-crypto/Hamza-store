@@ -441,6 +441,18 @@ export default function Products() {
 
       {/* شبكة المنتجات */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: "20px", marginTop: "20px", width: "100%", minWidth: 0, overflow: "visible" }}>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => { setIsAddModalOpen(true); setIsEditing(false); }}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsAddModalOpen(true); setIsEditing(false); } }}
+          style={addProductCardStyle}
+          aria-label="إضافة منتج جديد"
+        >
+          <span style={{ fontSize: "42px", lineHeight: 1 }}>＋</span>
+          <strong>إضافة منتج جديد</strong>
+          <span style={{ fontSize: "12px", color: "#94a3b8" }}>بطاقة أو كود أو بطاقة رصيد</span>
+        </div>
         {products.filter(prod => {
           const matchesSearch = !searchTerm || prod.name.toLowerCase().includes(searchTerm.toLowerCase()) || prod.category.toLowerCase().includes(searchTerm.toLowerCase());
           const matchesCat = selectedCategoryFilter === "الكل" || prod.category === selectedCategoryFilter;
@@ -742,6 +754,17 @@ const glassCardStyle = {
   cursor: "pointer",
   position: "relative",
   boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)"
+};
+
+const addProductCardStyle = {
+  ...glassCardStyle,
+  minHeight: "220px",
+  justifyContent: "center",
+  border: "1px dashed rgba(56, 189, 248, 0.65)",
+  background: "linear-gradient(145deg, rgba(14, 116, 144, 0.28), rgba(30, 41, 59, 0.5))",
+  color: "#7dd3fc",
+  cursor: "pointer",
+  transition: "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease"
 };
 
 const badgeStyle = (isPublished) => ({

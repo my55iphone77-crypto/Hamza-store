@@ -180,7 +180,14 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
     paymentMethod = '',
     setPaymentMethod = () => {},
     redeemPoints = false,
-    setRedeemPoints = () => {}
+    setRedeemPoints = () => {},
+    couponCode = '',
+    setCouponCode = () => {},
+    appliedCoupon = null,
+    setAppliedCoupon = () => {},
+    couponSubmitting = false,
+    applyCoupon = async () => ({ success: false, error: 'تعذر تطبيق الكوبون.' }),
+    finalTotal = totalPrice
   } = safeAuthCart;
   const activeMethods = getActivePaymentMethods();
 
@@ -238,6 +245,16 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
         })}
       </div>
 
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch', flexWrap: 'wrap', padding: '12px', borderRadius: '12px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
+        <input type="text" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="أدخل كود الخصم من قسم الكوبونات" disabled={Boolean(appliedCoupon) || couponSubmitting} style={{ flex: '1 1 220px', minWidth: 0, background: '#0b0f19', border: '1px solid rgba(56,189,248,0.35)', padding: '11px 14px', borderRadius: '10px', color: '#fff', fontSize: '13px', outline: 'none', ...(inputStyle || {}) }} />
+        {appliedCoupon ? (
+          <button type="button" onClick={() => { setCouponCode(''); setAppliedCoupon(null); }} style={{ background: '#7f1d1d', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>إزالة الكوبون</button>
+        ) : (
+          <button type="button" disabled={couponSubmitting} onClick={async () => { const result = await applyCoupon(); if (!result.success) alert(result.error); }} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '10px', cursor: couponSubmitting ? 'wait' : 'pointer', fontWeight: 'bold' }}>{couponSubmitting ? 'جاري التحقق...' : 'تطبيق الكود'}</button>
+        )}
+        {appliedCoupon && <span style={{ width: '100%', color: '#6ee7b7', fontSize: '12px' }}>✅ تم تطبيق خصم {Number(appliedCoupon.discount || 0).toFixed(2)} دينار</span>}
+      </div>
+
       {activeMethods.length > 0 && (
         <div>
           <div style={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '14px', marginBottom: '10px' }}>💳 اختر طريقة الدفع</div>
@@ -276,9 +293,9 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
         </div>
       )}
 
-      {Number(currentUser?.storeBalance || 0) >= Number(totalPrice || 0) && Number(totalPrice || 0) > 0 && (
+      {Number(currentUser?.storeBalance || 0) >= Number(finalTotal || 0) && Number(finalTotal || 0) > 0 && (
         <button type="button" onClick={() => setPaymentMethod(paymentMethod === 'store_balance' ? '' : 'store_balance')} style={{ padding: '12px', borderRadius: '12px', textAlign: 'right', color: '#f8fafc', cursor: 'pointer', background: paymentMethod === 'store_balance' ? 'rgba(250,204,21,0.18)' : 'rgba(11,15,25,0.75)', border: paymentMethod === 'store_balance' ? '2px solid #facc15' : '1px solid rgba(250,204,21,0.35)' }}>
-          🪙 الدفع من رصيد المتجر — {Number(totalPrice).toFixed(2)} دينار
+          🪙 الدفع من رصيد المتجر — {Number(finalTotal).toFixed(2)} دينار
         </button>
       )}
 
@@ -291,12 +308,12 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '15px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
         <span style={{ color: '#f8fafc' }}>الإجمالي</span>
-        <span style={{ color: '#facc15', fontSize: '18px' }}>{totalPrice} دينار</span>
+        <span style={{ color: '#facc15', fontSize: '18px' }}>{appliedCoupon && <s style={{ color: '#94a3b8', fontSize: '13px', marginLeft: '8px' }}>{Number(totalPrice).toFixed(2)}</s>}{Number(finalTotal).toFixed(2)} دينار</span>
       </div>
 
       <div style={{ display: 'flex', gap: '12px' }}>
         <button type="submit" disabled={submittingCheckout} className="hz-checkout-btn" style={{ flex: 1, background: submittingCheckout ? '#065f46' : 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', padding: '14px', borderRadius: '12px', cursor: submittingCheckout ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '15px', boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)' }}>
-          {submittingCheckout ? 'جاري تأكيد الطلب...' : (activeMethods.length > 0 ? `ادفع ${totalPrice} دينار واستلم أكوادك 🔓` : 'تأكيد الطلب والتسليم الرقمي 🛒')}
+          {submittingCheckout ? 'جاري تأكيد الطلب...' : (activeMethods.length > 0 ? `ادفع ${Number(finalTotal).toFixed(2)} دينار واستلم أكوادك 🔓` : 'تأكيد الطلب والتسليم الرقمي 🛒')}
         </button>
         <button type="button" onClick={() => setCheckoutMode(false)} className="hz-cancel-btn" style={{ background: 'linear-gradient(135deg, #4b5563, #374151)', color: '#fff', border: 'none', padding: '14px 22px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
           إلغاء

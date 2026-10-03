@@ -202,7 +202,7 @@ module.exports = function buildStoreRouter(deps) {
 
   router.post('/coupons', permissionGuard('manage_coupons'), async (req, res) => {
     try {
-      const newCoupon = new Coupon(req.body);
+      const newCoupon = new Coupon({ ...req.body, code: String(req.body?.code || '').trim().toUpperCase() });
       await newCoupon.save();
       res.json(newCoupon);
       broadcastList('COUPONS', Coupon);
@@ -216,6 +216,7 @@ module.exports = function buildStoreRouter(deps) {
       const allowed = ['code', 'discount', 'discountType', 'audience', 'expiry', 'maxUsage', 'minOrder', 'description', 'createdBy', 'usageCount', 'users'];
       const update = {};
       allowed.forEach((key) => { if (req.body?.[key] !== undefined) update[key] = req.body[key]; });
+      if (update.code !== undefined) update.code = String(update.code).trim().toUpperCase();
       const coupon = await Coupon.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
       if (!coupon) return res.status(404).json({ error: 'الكوبون غير موجود.' });
       res.json(coupon);
@@ -230,6 +231,23 @@ module.exports = function buildStoreRouter(deps) {
       res.json({ success: true });
       broadcastList('COUPONS', Coupon);
     } catch (e) { res.status(400).json({ error: 'فشل حذف الكوبون.' }); }
+  });
+
+  router.post('/coupons/validate', publicActionLimiter, async (req, res) => {
+    try {
+      const code = String(req.body?.code || '').trim().toUpperCase();
+      const subtotal = Math.max(0, Number(req.body?.subtotal) || 0);
+      if (!code) return res.status(400).json({ error: 'أدخل كود الخصم.' });
+      const coupon = await Coupon.findOne({ code });
+      if (!coupon) return res.status(404).json({ error: 'كود الخصم غير موجود.' });
+      if (coupon.expiry && new Date(coupon.expiry) <= new Date()) return res.status(400).json({ error: 'كود الخصم منتهي الصلاحية.' });
+      if (Number(coupon.maxUsage || 0) > 0 && Number(coupon.usageCount || 0) >= Number(coupon.maxUsage)) return res.status(400).json({ error: 'تم استنفاد استخدامات كود الخصم.' });
+      if (subtotal < Number(coupon.minOrder || 0)) return res.status(400).json({ error: `الحد الأدنى لهذا الكوبون هو ${Number(coupon.minOrder).toFixed(2)} دينار.` });
+      const discount = coupon.discountType === 'fixed'
+        ? Math.min(subtotal, Math.max(0, Number(coupon.discount) || 0))
+        : Math.min(subtotal, subtotal * Math.max(0, Math.min(100, Number(coupon.discount) || 0)) / 100);
+      res.json({ code, discount, total: Math.max(0, subtotal - discount), discountType: coupon.discountType, description: coupon.description || '' });
+    } catch (e) { res.status(500).json({ error: 'تعذر التحقق من كود الخصم.' }); }
   });
 
 
@@ -321,8 +339,15 @@ module.exports = function buildStoreRouter(deps) {
     });
     router.delete(`${path}/:id`, guard(remove), async (req, res) => {
       try {
+        let categoryName = req.params.id;
+        try { categoryName = decodeURIComponent(categoryName); } catch (_) { /* Express may have decoded it already. */ }
+        const categoryFilter = path === '/categories'
+          ? (mongoose.isValidObjectId(req.params.id)
+            ? { $or: [{ _id: req.params.id }, { name: categoryName }] }
+            : { name: categoryName })
+          : null;
         const d = path === '/categories'
-          ? await Model.findOneAndDelete({ $or: [{ _id: req.params.id }, { name: decodeURIComponent(req.params.id) }] })
+          ? await Model.findOneAndDelete(categoryFilter)
           : await Model.findByIdAndDelete(req.params.id);
         if (!d) return res.status(404).json({ error: 'غير موجود' });
         if (path === '/categories' && Product) await Product.updateMany({ category: d.name }, { $set: { category: 'غير مصنف' } });
@@ -402,7 +427,7 @@ module.exports = function buildStoreRouter(deps) {
   // إنشاء طلب من الزبون (عام). المبلغ يُحسب من أسعار قاعدة البيانات، ما نثق بسعر الواجهة.
   router.post('/orders', publicActionLimiter, async (req, res) => {
     try {
-      const { customerName, customerEmail, customerAddress, paymentMethod, redeemPoints } = req.body || {};
+      const { customerName, customerEmail, customerAddress, paymentMethod, redeemPoints, couponCode } = req.body || {};
       const authUser = await getUserFromAuthHeader(req.headers.authorization);
       const rawItems = Array.isArray(req.body && req.body.items) ? req.body.items : [];
       const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(customerEmail || '').trim());
@@ -444,6 +469,22 @@ module.exports = function buildStoreRouter(deps) {
           }
         }
         items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, deliveredCodes });
+      }
+      const subtotal = total;
+      let couponDiscount = 0;
+      let appliedCouponCode = '';
+      if (couponCode) {
+        const normalizedCode = String(couponCode).trim().toUpperCase();
+        const coupon = await Coupon.findOne({ code: normalizedCode });
+        if (!coupon) return res.status(400).json({ error: 'كود الخصم غير موجود.' });
+        if (coupon.expiry && new Date(coupon.expiry) <= new Date()) return res.status(400).json({ error: 'كود الخصم منتهي الصلاحية.' });
+        if (Number(coupon.maxUsage || 0) > 0 && Number(coupon.usageCount || 0) >= Number(coupon.maxUsage)) return res.status(400).json({ error: 'تم استنفاد استخدامات كود الخصم.' });
+        if (subtotal < Number(coupon.minOrder || 0)) return res.status(400).json({ error: `الحد الأدنى لهذا الكوبون هو ${Number(coupon.minOrder).toFixed(2)} دينار.` });
+        couponDiscount = coupon.discountType === 'fixed'
+          ? Math.min(subtotal, Math.max(0, Number(coupon.discount) || 0))
+          : Math.min(subtotal, subtotal * Math.max(0, Math.min(100, Number(coupon.discount) || 0)) / 100);
+        appliedCouponCode = normalizedCode;
+        total = Math.max(0, subtotal - couponDiscount);
       }
       let walletAmount = 0;
       if (paymentMethod === 'store_balance') {
@@ -500,11 +541,18 @@ module.exports = function buildStoreRouter(deps) {
         customerEmail: String(customerEmail).trim().toLowerCase(),
         customerAddress: String(customerAddress || 'طلب رقمي من المتجر').trim(),
         items, totalAmount: total, currency: 'JOD', status: 'جديد',
-        paymentMethod: String(paymentMethod || ''), walletAmount,
+        paymentMethod: String(paymentMethod || ''), couponCode: appliedCouponCode, couponDiscount, walletAmount,
         loyaltyPointsEarned: pointsEarned, loyaltyPointsRedeemed, loyaltyRewardItem
       }).save();
       if (creditCardsToIssue.length > 0 && StoreCreditCard) {
         await StoreCreditCard.insertMany(creditCardsToIssue.map(card => ({ ...card, orderId: String(order._id), customerEmail: String(customerEmail).trim().toLowerCase() })));
+      }
+      if (appliedCouponCode) {
+        const consumed = await Coupon.findOneAndUpdate(
+          { code: appliedCouponCode, expiry: { $gt: new Date() }, $or: [{ maxUsage: { $lte: 0 } }, { $expr: { $lt: ['$usageCount', '$maxUsage'] } }] },
+          { $inc: { usageCount: 1 } }, { new: true }
+        );
+        if (!consumed) console.error('coupon usage race detected for order', order._id, appliedCouponCode);
       }
       const itemRows = items.map((item) => `<tr><td style="padding:10px;border-bottom:1px solid #e2e8f0">${esc(item.name)}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center">${item.quantity}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:left">${Number(item.price || 0).toFixed(2)} JOD</td></tr>`).join('');
       const delivered = items.flatMap((item) => (item.deliveredCodes || []).map((code) => `<li><b>${esc(item.name)}:</b> <code style="background:#e0f2fe;padding:4px 8px;border-radius:6px">${esc(code)}</code></li>`)).join('');

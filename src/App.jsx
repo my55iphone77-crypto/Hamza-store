@@ -100,6 +100,18 @@ const GLASS_STYLE = `
     cursor: default !important;
     overflow: visible !important;
   }
+  .hz-atmosphere, .hz-atmosphere * { box-sizing: border-box; }
+  .hz-atmosphere { min-width: 0; overflow-x: clip; overscroll-behavior-x: none; }
+  .hz-admin-main, .hz-admin-main > div { min-width: 0; max-width: 100%; }
+  .hz-admin-main input, .hz-admin-main select, .hz-admin-main textarea, .hz-admin-main button { max-width: 100%; }
+  @media (max-width: 640px) {
+    .hz-admin-header { padding: 10px 12px !important; }
+    .hz-admin-header > div { width: 100%; justify-content: center; }
+    .hz-admin-main { padding: 10px 8px !important; overflow-x: clip; }
+    .hz-app-full-container { padding: 12px !important; border-radius: 16px; }
+    .hz-glass-card { padding: 14px; border-radius: 18px; }
+    .hz-glass-icon { width: 42px; height: 42px; font-size: 19px; }
+  }
 
   .hz-glass-icon {
     width: 48px; height: 48px; border-radius: 15px;
@@ -306,7 +318,7 @@ function MainContent() {
       <style>{GLASS_STYLE}</style>
 
       {!showStorefront && (
-        <header style={{ padding: '15px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
+        <header className="hz-admin-header" style={{ padding: '15px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button onClick={() => { setShowStorefront(true); setActiveApp(null); }} className="hz-glass-btn" style={{ color: '#fff', padding: '8px 14px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>🛍️ واجهة المتجر</button>
             {isManagerOrEmployee && (
@@ -316,7 +328,7 @@ function MainContent() {
         </header>
       )}
 
-      <main style={{ padding: showStorefront ? '0' : '20px 40px', width: '100%', boxSizing: 'border-box' }}>
+      <main className="hz-admin-main" style={{ padding: showStorefront ? '0' : '20px 40px', width: '100%', boxSizing: 'border-box' }}>
         {showStorefront || !isManagerOrEmployee ? (
           <Storefront inputStyle={inputStyle} onOpenDashboard={() => setShowStorefront(false)} />
         ) : (
