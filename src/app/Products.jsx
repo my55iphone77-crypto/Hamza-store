@@ -437,7 +437,7 @@ export default function Products() {
       </div>
 
       {/* شبكة المنتجات */}
-      <div className="hz-products-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "20px", marginTop: "20px", width: "100%", minWidth: 0, overflow: "visible" }}>
+      <div className="hz-products-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: "20px", marginTop: "20px", width: "100%", minWidth: 0, overflow: "visible" }}>
         <div
           role="button"
           tabIndex={0}
