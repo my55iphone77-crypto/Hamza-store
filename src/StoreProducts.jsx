@@ -112,9 +112,9 @@ export function ProductGrid({ loading = false, products = [], addToCart = () => 
       {safeProducts.length === 0 ? (
         <p style={{ color: '#9ca3af', gridColumn: '1 / -1', textAlign: 'center', padding: '30px' }}>لا توجد منتجات مسجلة في قاعدة البيانات حالياً.</p>
       ) : (
-        safeProducts.map(product => {
+        safeProducts.map((product, index) => {
           if (!product || typeof product !== 'object') return null;
-          const prodId = product.id || product._id || Math.random();
+          const prodId = product.id || product._id || `product-${index}`;
           const stockCount = typeof product.stock === 'number' ? product.stock : 0;
           const productPrice = product.price !== undefined ? product.price : 0;
 

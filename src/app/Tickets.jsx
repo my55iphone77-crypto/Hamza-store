@@ -413,11 +413,11 @@ function Tickets({
         {filteredTickets.length === 0 ? (
           <p style={{ color: '#9ca3af', textAlign: 'center', padding: '20px', gridColumn: '1 / -1' }}>لا توجد تذاكر مطابقة لخيارات البحث الحالية</p>
         ) : (
-          filteredTickets.map(ticket => {
+          filteredTickets.map((ticket, index) => {
             if (!ticket) return null;
             const ticketId = ticket.id || ticket.Y;
             return (
-              <div key={ticketId || Math.random()} style={ticketCardStyle}>
+              <div key={ticketId || `ticket-${index}`} style={ticketCardStyle}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px' }}>
                   <span style={{ fontSize: '12px', color: ticket.status === 'مفتوحة' ? '#f97316' : '#34d399', fontWeight: 'bold' }}>

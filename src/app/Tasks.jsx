@@ -410,11 +410,11 @@ function Tasks({
 
         {/* عرض مساحات التخزين */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '12px' }}>
-          {Array.isArray(storageSpaces) && storageSpaces.map((storage) => {
+          {Array.isArray(storageSpaces) && storageSpaces.map((storage, index) => {
             if (!storage) return null;
             const usagePercent = storage.capacityGB ? Math.round(((storage.usedGB || 0) / storage.capacityGB) * 100) : 0;
             return (
-              <div key={storage.id || Math.random()} style={{ background: 'rgba(11, 15, 25, 0.6)', backdropFilter: 'blur(8px)', padding: '14px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div key={storage.id || `storage-${index}`} style={{ background: 'rgba(11, 15, 25, 0.6)', backdropFilter: 'blur(8px)', padding: '14px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#f8fafc' }}>{storage.name}</span>
                   <span style={{ fontSize: '11px', background: 'rgba(30, 41, 59, 0.8)', color: '#38bdf8', padding: '2px 8px', borderRadius: '6px' }}>{storage.department}</span>
@@ -477,10 +477,10 @@ function Tasks({
         {filteredTasks.length === 0 ? (
           <p style={{ color: '#9ca3af', textAlign: 'center', padding: '20px', gridColumn: '1 / -1' }}>لا توجد مهام مطابقة لخيارات البحث والفلترة</p>
         ) : (
-          filteredTasks.map(task => {
+          filteredTasks.map((task, index) => {
             if (!task) return null;
             return (
-              <div key={task.id || Math.random()} style={{ background: 'rgba(17, 24, 39, 0.65)', backdropFilter: 'blur(10px)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: '0 8px 16px -4px rgba(0,0,0,0.3)' }}>
+              <div key={task.id || `task-${index}`} style={{ background: 'rgba(17, 24, 39, 0.65)', backdropFilter: 'blur(10px)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: '0 8px 16px -4px rgba(0,0,0,0.3)' }}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
                   <span style={{ fontSize: '12px', color: task.completed ? '#34d399' : '#f97316', fontWeight: 'bold' }}>
