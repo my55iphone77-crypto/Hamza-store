@@ -173,6 +173,31 @@ export function AppProvider({ children }) {
     return data;
   }, [API_BASE_URL, getAuthHeaders]);
 
+  const refreshCurrentUser = useCallback(async () => {
+    const currentToken = token || localStorage.getItem('hamza_token') || localStorage.getItem('token') || '';
+    if (!currentToken) return null;
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/me`, { headers: getAuthHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success || !data.user) return null;
+      setCurrentUser(data.user);
+      localStorage.setItem('hamza_user', JSON.stringify(data.user));
+      localStorage.setItem('user', JSON.stringify(data.user));
+      return data.user;
+    } catch (_) {
+      return null;
+    }
+  }, [API_BASE_URL, getAuthHeaders, token]);
+
+  useEffect(() => {
+    if (!token) return undefined;
+    refreshCurrentUser();
+    const timer = window.setInterval(refreshCurrentUser, 15000);
+    const onFocus = () => refreshCurrentUser();
+    window.addEventListener('focus', onFocus);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', onFocus); };
+  }, [token, refreshCurrentUser]);
+
   // 📧 إرسال إيميل حقيقي
   const handleForgotPasswordRequest = async (email) => {
     if (!email || typeof email !== 'string') {
@@ -521,7 +546,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      currentUser, setCurrentUser,
+      currentUser, setCurrentUser, refreshCurrentUser,
       token, setToken,
       employees, setEmployees, employeesById,
       attendance, setAttendance,

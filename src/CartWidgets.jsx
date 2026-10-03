@@ -96,9 +96,15 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
       </div>
 
       {currentUser && (
-        <div className="hz-header-balances" title="الرصيد والنقاط مخصصة للشراء داخل المتجر فقط">
-          <span className="hz-balance-pill">🪙 {Number(currentUser.storeBalance || 0).toFixed(2)} د.أ</span>
-          <span className="hz-loyalty-pill">⭐ {Number(currentUser.loyaltyPoints || 0)} نقطة</span>
+        <div className="hz-header-wallet" title="الرصيد والنقاط مخصصة للشراء داخل المتجر فقط">
+          <div className="hz-header-balances">
+            <span className="hz-balance-pill">🪙 {Number(currentUser.storeBalance || 0).toFixed(2)} د.أ</span>
+            <span className="hz-loyalty-pill">⭐ {Number(currentUser.loyaltyPoints || 0)} نقطة</span>
+          </div>
+          <form onSubmit={(e) => { e.preventDefault(); redeemStoreCredit(); }} className="hz-redeem-form">
+            <input value={storeCreditCode} onChange={(e) => setStoreCreditCode(e.target.value.toUpperCase())} placeholder="كود بطاقة الرصيد" maxLength={23} />
+            <button type="submit" disabled={redeemingStoreCredit || !storeCreditCode.trim()}>{redeemingStoreCredit ? '...' : 'استبدال'}</button>
+          </form>
         </div>
       )}
 
@@ -116,10 +122,6 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
           }}>
             الحالة: {safeUserRoleInfo.label || 'ضيف'}
           </span>
-          <form onSubmit={(e) => { e.preventDefault(); redeemStoreCredit(); }} style={{ display: 'flex', alignItems: 'center', gap: '5px' }} title="الرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط">
-            <input value={storeCreditCode} onChange={(e) => setStoreCreditCode(e.target.value.toUpperCase())} placeholder="كود بطاقة الرصيد" maxLength={23} style={{ width: '130px', background: 'rgba(11,15,25,0.7)', border: '1px solid rgba(250,204,21,0.35)', borderRadius: '8px', padding: '6px 8px', color: '#fff', fontSize: '11px' }} />
-            <button type="submit" disabled={redeemingStoreCredit || !storeCreditCode.trim()} style={{ background: '#a16207', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 8px', cursor: 'pointer', fontSize: '11px' }}>{redeemingStoreCredit ? '...' : 'استبدال'}</button>
-          </form>
           <button
             type="button"
             onClick={handleLogout}

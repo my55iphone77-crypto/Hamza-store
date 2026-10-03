@@ -84,10 +84,14 @@ const GLASS_STYLE = `
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.4), rgba(59, 130, 246, 0.25));
     border-color: rgba(96, 165, 250, 0.6); color: #fff; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
   }
+  .hz-header-wallet { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .hz-header-balances { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .hz-header-balances span { display: inline-flex; align-items: center; white-space: nowrap; padding: 5px 8px; border-radius: 9px; font-size: 11px; font-weight: 700; }
   .hz-balance-pill { color: #fde68a; background: rgba(250,204,21,0.12); border: 1px solid rgba(250,204,21,0.35); }
   .hz-loyalty-pill { color: #e9d5ff; background: rgba(168,85,247,0.14); border: 1px solid rgba(168,85,247,0.35); }
+  .hz-redeem-form { display: flex; align-items: center; gap: 5px; }
+  .hz-redeem-form input { width: 130px; background: rgba(11,15,25,0.7); border: 1px solid rgba(250,204,21,0.35); border-radius: 8px; padding: 6px 8px; color: #fff; font-size: 11px; }
+  .hz-redeem-form button { background: #a16207; color: #fff; border: none; border-radius: 8px; padding: 6px 8px; cursor: pointer; font-size: 11px; }
 
   .hz-glass-card {
     position: relative;
@@ -152,7 +156,8 @@ const GLASS_STYLE = `
     .hz-price-row { flex-wrap: wrap; gap: 8px !important; margin-top: 8px !important; padding-top: 10px !important; }
     .hz-price-row .hz-add-btn { width: 100%; padding: 8px 6px !important; font-size: 12px !important; }
     .hz-root input, .hz-root textarea, .hz-root select { font-size: 16px !important; }
-    .hz-header-balances { width: 100%; justify-content: center; order: 3; }
+    .hz-header-wallet { width: 100%; justify-content: center; order: 3; }
+    .hz-redeem-form input { width: 120px; }
   }
   /* تابلت / آيباد */
   @media (min-width: 560px) and (max-width: 1023px) { .hz-grid { grid-template-columns: repeat(3, 1fr); } }
