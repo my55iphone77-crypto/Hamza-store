@@ -97,8 +97,8 @@ module.exports = function buildAuthCoreRouter(deps) {
       const verifyLink = `${FRONTEND_URL}/verify-email?email=${encodeURIComponent(cleanEmail)}&token=${rawVerifyToken}`;
       sendStoreEmail(
         cleanEmail,
-        'تفعيل حسابك - متجر حمزة',
-        `<h3>مرحباً ${newUser.name}،</h3><p>اضغط الرابط التالي لتفعيل بريدك الإلكتروني:</p><p><a href="${verifyLink}">تفعيل الحساب الآن</a></p><p>هذا الرابط صالح لمدة 24 ساعة.</p>`
+        `🎉 أهلاً بك في ${APP_NAME || 'متجر حمزة'} - تفعيل الحساب`,
+        `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.8;color:#172033;max-width:640px;margin:auto;padding:28px;border-radius:20px;background:linear-gradient(135deg,#eef6ff,#ffffff);"><h2>مرحباً ${newUser.name}!</h2><p>تم إنشاء حسابك بنجاح. يسعدنا انضمامك إلى ${APP_NAME || 'متجر حمزة'}.</p><p><a href="${verifyLink}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;">تفعيل البريد الإلكتروني</a></p><p style="color:#64748b;font-size:13px;">رابط التفعيل صالح لمدة 24 ساعة. رصيد المتجر ونقاط الولاء للاستخدام داخل المتجر فقط وغير قابلين للسحب.</p></div>`
       );
 
       const token = issueSessionToken(newUser);

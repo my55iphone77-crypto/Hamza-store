@@ -10,8 +10,7 @@ export default function AuthModal({ isOpen, onClose, onSuccessfulCheckout }) {
     setToken,
     apiUrl,
     apiRequest,
-    getAuthHeaders,
-    setMails = () => {}
+    getAuthHeaders
   } = contextData;
 
   const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forgot'
@@ -26,17 +25,6 @@ export default function AuthModal({ isOpen, onClose, onSuccessfulCheckout }) {
 
   if (!isOpen) return null;
 
-  const getGlassEmailTemplate = (title, contentHtml) => `
-    <div style="font-family: 'Tajawal', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); padding: 40px; direction: rtl; color: #f8fafc;">
-      <div style="max-width: 600px; margin: 0 auto; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
-        <h2 style="color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-top: 0;">${title}</h2>
-        <div style="font-size: 15px; line-height: 1.8; color: #cbd5e1;">${contentHtml}</div>
-        <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; color: #64748b; text-align: center;">
-          بوابة المصادقة المركزية &bull; ${new Date().toLocaleDateString('ar-SA')}
-        </div>
-      </div>
-    </div>
-  `;
 
   const secureApiRequest = useCallback(async (endpoint, method = 'GET', body = null) => {
     if (typeof apiRequest === 'function') return apiRequest(endpoint, method, body);
@@ -49,31 +37,6 @@ export default function AuthModal({ isOpen, onClose, onSuccessfulCheckout }) {
     }
     return res.json().catch(() => ({}));
   }, [apiRequest, getAuthHeaders, apiUrl]);
-
-  const sendWelcomeNotifications = async (userObj) => {
-    try {
-      const welcomeSubject = "🎉 أهلاً بك في منصتنا المركزية";
-      const welcomeBody = `مرحباً ${userObj.name || 'بك'}، تم تسجيل دخولك بنجاح إلى النظام بصلاحية (${userObj.role || 'مستخدم'}). يسعدنا انضمامك إلينا!`;
-
-      const mailResponse = await secureApiRequest("/mails", "POST", {
-        sender: "نظام الأمان المركزي",
-        recipient: userObj.email || "my55iphon77@gmail.com",
-        subject: welcomeSubject,
-        body: welcomeBody,
-        read: false
-      }).catch(() => null);
-
-      const savedMail = mailResponse?.mail || mailResponse || { id: Date.now(), recipient: userObj.email, subject: welcomeSubject, body: welcomeBody };
-      if (typeof setMails === 'function') setMails(prev => [...(Array.isArray(prev) ? prev : []), savedMail]);
-
-      if (userObj.email) {
-        const styledHtml = getGlassEmailTemplate(welcomeSubject, `<p>${welcomeBody}</p>`);
-        await secureApiRequest("/sendExternalMail", "POST", { to: userObj.email, subject: welcomeSubject, body: styledHtml }).catch(() => {});
-      }
-    } catch (err) {
-      console.error("خطأ في إرسال إشعارات الترحيب:", err);
-    }
-  };
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -92,7 +55,6 @@ export default function AuthModal({ isOpen, onClose, onSuccessfulCheckout }) {
 
       if (typeof setCurrentUser === 'function') setCurrentUser(socialUser);
       if (typeof setToken === 'function') setToken(socialToken);
-      await sendWelcomeNotifications(socialUser);
       alert(`أهلاً بك! تم تسجيل الدخول بنجاح عبر حساب ${providerName}`);
       if (typeof onSuccessfulCheckout === 'function') onSuccessfulCheckout();
       if (typeof onClose === 'function') onClose();
@@ -114,7 +76,6 @@ export default function AuthModal({ isOpen, onClose, onSuccessfulCheckout }) {
       const adminUser = { name: 'حمزة (المدير العام)', email: 'my55iphon77@gmail.com', role: 'admin' };
       if (typeof setCurrentUser === 'function') setCurrentUser(adminUser);
       if (typeof setToken === 'function') setToken('admin-master-token-secure');
-      await sendWelcomeNotifications(adminUser);
       alert('أهلاً بك يا حمزة، تم تسجيل الدخول كمدير للمتجر وبصلاحيات كاملة!');
       if (typeof onClose === 'function') onClose();
       return;
@@ -126,8 +87,6 @@ export default function AuthModal({ isOpen, onClose, onSuccessfulCheckout }) {
       const loggedUser = data.user || data;
       if (typeof setCurrentUser === 'function') setCurrentUser(loggedUser);
       if (typeof setToken === 'function') setToken(data.token || 'auth-token-secure-default');
-      await sendWelcomeNotifications(loggedUser);
-
       if (loggedUser.role === 'admin' || loggedUser.role === 'manager') alert('أهلاً بك يا مدير المتجر!');
       else if (loggedUser.role === 'employee') alert('أهلاً بك يا موظف المتجر!');
       else alert('تم تسجيل الدخول بنجاح!');
@@ -158,7 +117,6 @@ export default function AuthModal({ isOpen, onClose, onSuccessfulCheckout }) {
       const newUser = data.user || data;
       if (typeof setCurrentUser === 'function') setCurrentUser(newUser);
       if (typeof setToken === 'function') setToken(data.token || 'auth-token-secure-default');
-      await sendWelcomeNotifications(newUser);
       alert('✅ تم إنشاء حسابك بنجاح! أهلاً بك في المنصة.');
       if (typeof onSuccessfulCheckout === 'function') onSuccessfulCheckout();
       if (typeof onClose === 'function') onClose();

@@ -247,20 +247,6 @@ function LoginPageOriginal({ onLoginSuccess, authCart }) {
       localStorage.setItem('hamza_user', JSON.stringify(userData));
       localStorage.setItem('user', JSON.stringify(userData));
 
-      if (isRegister) {
-        try {
-          const tokenHeader = authToken ? { Authorization: `Bearer ${authToken}` } : {};
-          await axios.post(`${API_BASE_URL}/auth/welcome-email`, {
-            email: trimmedEmail,
-            name: trimmedName || trimmedEmail
-          }, {
-            headers: tokenHeader
-          });
-        } catch (welcomeErr) {
-          console.warn("ملاحظة: تم إنشاء الحساب بنجاح لكن تعذر إرسال إيميل الترحيب:", welcomeErr);
-        }
-      }
-
       broadcastGlobalChange({ action: isRegister ? 'USER_REGISTERED' : 'USER_LOGGED_IN', user: userData });
 
       alert(isRegister ? '✨ أهلاً بك! تم إنشاء الحساب بنجاح' : '✨ أهلاً بك مجدداً! تم تسجيل الدخول بنجاح');

@@ -156,6 +156,7 @@ const productSchema = new mongoose.Schema({
 const Product = mongoose.model('Product', productSchema);
 
 const orderSchema = new mongoose.Schema({
+  orderNumber: { type: String, unique: true, index: true },
   customerName: { type: String, required: true },
   customerEmail: { type: String, required: true },
   customerAddress: { type: String, required: true },
@@ -707,6 +708,52 @@ app.use((err, req, res, next) => {
   }
   res.status(500).json({ error: 'Internal Server Error' });
 });
+
+// تقرير يومي مملوك للتطبيق: يعمل مرة واحدة في اليوم من نفس الخادم،
+// ويُرسل فقط بعد نجاح الإرسال حتى لا تضيع التقارير أو تتكرر عند إعادة التشغيل.
+const DAILY_REPORT_TIME = String(process.env.DAILY_REPORT_TIME || '23:55');
+const DAILY_REPORT_TZ = process.env.DAILY_REPORT_TZ || 'Asia/Amman';
+let lastDailyReportAttempt = '';
+const jordanDateParts = () => {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: DAILY_REPORT_TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
+  return Object.fromEntries(parts.filter((p) => p.type !== 'literal').map((p) => [p.type, p.value]));
+};
+const sendDailyReport = async () => {
+  try {
+    if (!Array.isArray(NOTIFY_EMAILS) || NOTIFY_EMAILS.length === 0) return;
+    const now = jordanDateParts();
+    const today = `${now.year}-${now.month}-${now.day}`;
+    if (`${now.hour}:${now.minute}` !== DAILY_REPORT_TIME || lastDailyReportAttempt === today) return;
+    lastDailyReportAttempt = today;
+    const start = new Date(`${today}T00:00:00+03:00`);
+    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    const [orders, transactions, hours, salaries] = await Promise.all([
+      Order.find({ date: { $gte: start, $lt: end } }).lean(),
+      Transaction.find({ date: { $gte: start, $lt: end } }).lean(),
+      WorkHour.find({ createdAt: { $gte: start, $lt: end } }).lean(),
+      Salary.find({ date: { $gte: start, $lt: end } }).lean()
+    ]);
+    const alreadySent = await AppState.findOne({ key: `daily_report_sent_${today}` }).lean();
+    if (alreadySent) return;
+    const revenue = orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+    const income = transactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const expenses = transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const hoursTotal = hours.reduce((sum, h) => {
+      const parse = (v) => { const m = String(v || '').match(/(\d{1,2}):(\d{2})/); return m ? Number(m[1]) + Number(m[2]) / 60 : 0; };
+      const value = Math.max(0, parse(h.end) - parse(h.start));
+      return sum + value;
+    }, 0);
+    const orderRows = orders.slice(0, 30).map((o) => `<tr><td>${String(o.orderNumber || o._id)}</td><td>${String(o.customerName || '')}</td><td>${Number(o.totalAmount || 0).toFixed(2)} JOD</td></tr>`).join('');
+    const reportHtml = `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:760px;margin:auto;color:#172033"><h1>التقرير اليومي — ${today}</h1><p>ملخص آلي شامل لمتجر حمزة.</p><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px"><p><b>عدد الطلبات:</b> ${orders.length}</p><p><b>إجمالي المبيعات:</b> ${revenue.toFixed(2)} JOD</p><p><b>إيرادات محاسبية:</b> ${income.toFixed(2)} JOD</p><p><b>المصروفات:</b> ${expenses.toFixed(2)} JOD</p><p><b>الصافي المحاسبي:</b> ${(income - expenses).toFixed(2)} JOD</p><p><b>ساعات العمل المسجلة:</b> ${hoursTotal.toFixed(2)} ساعة</p><p><b>سجلات الرواتب:</b> ${salaries.length}</p></div><h2>الطلبات</h2><table style="width:100%;border-collapse:collapse"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الإجمالي</th></tr></thead><tbody>${orderRows || '<tr><td colspan="3">لا توجد طلبات اليوم</td></tr>'}</tbody></table><p style="color:#64748b;font-size:12px">تم إنشاء هذا التقرير تلقائياً حسب المنطقة الزمنية ${DAILY_REPORT_TZ}.</p></div>`;
+    const results = await Promise.all(NOTIFY_EMAILS.map((email) => sendStoreEmail(email, `التقرير اليومي ${today} - متجر حمزة`, reportHtml)));
+    if (results.every(Boolean)) await AppState.create({ key: `daily_report_sent_${today}`, value: { sentAt: new Date(), recipients: NOTIFY_EMAILS } });
+  } catch (error) {
+    console.error('daily report error:', error);
+    lastDailyReportAttempt = '';
+  }
+};
+setInterval(sendDailyReport, 60 * 1000);
+sendDailyReport();
 
 const PORT = process.env.PORT || 4000;
 // استبدال app.listen بـ server.listen لتفعيل نظام Socket.IO
