@@ -5,7 +5,18 @@ import { useFullBleedStyle } from "./useWindowSize";
 const MAX_IMAGE_DIMENSION = 800;
 const IMAGE_JPEG_QUALITY = 0.8;
 const UNCATEGORIZED = "غير مصنف";
-
+const toDateTimeLocal = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+const toISOStringOrNull = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
 const DELIVERY_TYPES = [
   { value: "code", label: "🔑 كود جاهز (جوجل بلاي / ستيم / آيتونز...)" },
   { value: "id_topup", label: "🆔 تعبئة عن طريق آيدي (ببجي / فري فاير...)" },
@@ -218,7 +229,7 @@ export default function Products() {
       loyaltyPoints: Math.max(0, parseInt(loyaltyPoints, 10) || 0),
       price: parseFloat(price), discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
       image: image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300",
-      status, scheduledDate: scheduledDate || undefined, unpublishDate: unpublishDate || undefined,
+      status, scheduledDate: toISOStringOrNull(scheduledDate) || undefined, unpublishDate: toISOStringOrNull(unpublishDate) || undefined,
       lowStockThreshold: parseInt(lowStockThreshold) || 3,
       maxStockThreshold: parseInt(maxStockThreshold) || 50,
       codes: codesArray, stock: deliveryType === "id_topup" || deliveryType === "store_credit" ? parseInt(manualStock) || 0 : codesArray.length,
@@ -229,7 +240,7 @@ export default function Products() {
       setProducts((prev) => [newProduct, ...prev]);
       flashSaving("✅ تم حفظ وإضافة المنتج بنجاح");
       setIsAddModalOpen(false);
-      setName(""); setDescription(""); setPrice(""); setDiscountPrice(""); setImage(""); setNewCodeText(""); setManualStock(""); setLoyaltyPoints("0");
+      setName(""); setDescription(""); setPrice(""); setDiscountPrice(""); setImage(""); setNewCodeText(""); setManualStock(""); setLoyaltyPoints("0"); setScheduledDate(""); setUnpublishDate("");
     } catch (err) {
       alert(err.message);
     }
@@ -245,8 +256,8 @@ export default function Products() {
     setEditLoyaltyPoints(prod.loyaltyPoints ?? 0);
     setEditImage(prod.image || "");
     setEditStatus(prod.status || "منشور");
-    setEditScheduledDate(prod.scheduledDate ? String(prod.scheduledDate).slice(0, 16) : "");
-    setEditUnpublishDate(prod.unpublishDate ? String(prod.unpublishDate).slice(0, 16) : "");
+    setEditScheduledDate(toDateTimeLocal(prod.scheduledDate));
+    setEditUnpublishDate(toDateTimeLocal(prod.unpublishDate));
     setEditLowStockThreshold(prod.lowStockThreshold ?? 3);
     setEditMaxStockThreshold(prod.maxStockThreshold ?? 50);
     setEditManualStock(prod.stock ?? 0);
@@ -261,7 +272,7 @@ export default function Products() {
       price: parseFloat(editPrice), discountPrice: editDiscountPrice !== "" ? parseFloat(editDiscountPrice) : null,
       loyaltyPoints: Math.max(0, parseInt(editLoyaltyPoints, 10) || 0),
       image: editImage, status: editStatus,
-      scheduledDate: editScheduledDate || null, unpublishDate: editUnpublishDate || null,
+      scheduledDate: toISOStringOrNull(editScheduledDate), unpublishDate: toISOStringOrNull(editUnpublishDate),
       lowStockThreshold: parseInt(editLowStockThreshold) || 3,
       maxStockThreshold: parseInt(editMaxStockThreshold) || 50,
     };
@@ -501,7 +512,7 @@ export default function Products() {
       {/* نافذة إضافة منتج جديد */}
       {isAddModalOpen && (
         <div style={modalOverlayStyle} dir="rtl">
-          <div style={modalContentStyle}>
+          <div className="hz-product-modal" style={modalContentStyle}>
             <button onClick={() => setIsAddModalOpen(false)} style={closeBtnStyle}>✕</button>
             <h3 style={{ color: "#10b981", margin: "0 0 15px 0" }}>+ إضافة بطاقة أو منتج جديد</h3>
             <form className="hz-product-form" onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -518,7 +529,9 @@ export default function Products() {
                 <input type="number" step="0.01" placeholder="السعر *" value={price} onChange={(e) => setPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} required />
                 <input type="number" step="0.01" placeholder="سعر الخصم" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
               </div>
-              <input type="number" min="0" step="1" placeholder="نقاط الولاء عند شراء المنتج" value={loyaltyPoints} onChange={(e) => setLoyaltyPoints(e.target.value)} style={glassInputStyle} />
+              <label className="hz-field-label">🎁 نقاط الولاء التي يمنحها هذا المنتج
+                <input type="number" min="0" step="1" placeholder="مثال: 10 نقاط" value={loyaltyPoints} onChange={(e) => setLoyaltyPoints(e.target.value)} style={glassInputStyle} />
+              </label>
               {deliveryType === "store_credit" && <>
                 <input type="number" min="0.01" step="0.01" placeholder="قيمة الرصيد داخل البطاقة (دينار)" value={storeCreditAmount} onChange={(e) => setStoreCreditAmount(e.target.value)} style={glassInputStyle} />
                 <div style={{ color: "#facc15", fontSize: "12px" }}>هذه البطاقة تُسلّم كوداً للعميل، والرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط.</div>
@@ -537,6 +550,16 @@ export default function Products() {
                 <option value="منشور" style={{ background: "#1e293b" }}>🟢 منشور فوراً</option>
                 <option value="غير منشور" style={{ background: "#1e293b" }}>🔴 غير منشور</option>
               </select>
+              <div className="hz-schedule-box">
+                <strong>⏰ جدولة النشر التلقائي</strong>
+                <label>ينشر في هذا الوقت
+                  <input type="datetime-local" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} style={glassInputStyle} />
+                </label>
+                <label>يلغى النشر في هذا الوقت
+                  <input type="datetime-local" value={unpublishDate} onChange={(e) => setUnpublishDate(e.target.value)} style={glassInputStyle} />
+                </label>
+                <span>اترك الحقل فارغاً إذا لم ترد جدولة العملية.</span>
+              </div>
               <button type="submit" style={primaryButtonStyle}>حفظ وإضافة المنتج 🚀</button>
             </form>
           </div>
@@ -626,7 +649,7 @@ export default function Products() {
                 )}
               </>
             ) : (
-              <form onSubmit={handleSaveEdit} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <form className="hz-product-form" onSubmit={handleSaveEdit} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <h3 style={{ margin: "0 0 5px 0", color: "#38bdf8", fontSize: "16px", fontWeight: "bold" }}>تعديل تفاصيل المنتج</h3>
                 <input type="text" placeholder="اسم المنتج..." value={editName} onChange={(e) => setEditName(e.target.value)} style={glassInputStyle} required />
                 <textarea placeholder="وصف المنتج..." value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={2} style={glassInputStyle} />
@@ -637,7 +660,9 @@ export default function Products() {
                   <input type="number" step="0.01" placeholder="السعر..." value={editPrice} onChange={(e) => setEditPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} required />
                   <input type="number" step="0.01" placeholder="سعر الخصم..." value={editDiscountPrice} onChange={(e) => setEditDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
                 </div>
-                <input type="number" min="0" step="1" placeholder="نقاط الولاء عند شراء المنتج" value={editLoyaltyPoints} onChange={(e) => setEditLoyaltyPoints(e.target.value)} style={glassInputStyle} />
+                <label className="hz-field-label">🎁 نقاط الولاء التي يمنحها هذا المنتج
+                  <input type="number" min="0" step="1" placeholder="مثال: 10 نقاط" value={editLoyaltyPoints} onChange={(e) => setEditLoyaltyPoints(e.target.value)} style={glassInputStyle} />
+                </label>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <input type="file" accept="image/*" onChange={(e) => handleImageFileSelect(e, true)} style={{ color: "#94a3b8", fontSize: "12px" }} />
                   {isUploadingEditImage && <span style={{ color: "#38bdf8", fontSize: "11px" }}>⏳ جاري المعالجة...</span>}
@@ -650,6 +675,15 @@ export default function Products() {
                   <option value="منشور" style={{ background: "#1e293b" }}>🟢 منشور</option>
                   <option value="غير منشور" style={{ background: "#1e293b" }}>🔴 غير منشور</option>
                 </select>
+                <div className="hz-schedule-box">
+                  <strong>⏰ جدولة النشر التلقائي</strong>
+                  <label>ينشر في هذا الوقت
+                    <input type="datetime-local" value={editScheduledDate} onChange={(e) => setEditScheduledDate(e.target.value)} style={glassInputStyle} />
+                  </label>
+                  <label>يلغى النشر في هذا الوقت
+                    <input type="datetime-local" value={editUnpublishDate} onChange={(e) => setEditUnpublishDate(e.target.value)} style={glassInputStyle} />
+                  </label>
+                </div>
                 <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
                   <button type="submit" style={{ flex: 1, ...primaryButtonStyle }}>حفظ التعديلات ✅</button>
                   <button type="button" onClick={() => setIsEditing(false)} style={{ flex: 1, ...secondaryButtonStyle, background: "#334155" }}>إلغاء ✕</button>

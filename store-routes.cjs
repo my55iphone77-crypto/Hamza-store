@@ -19,6 +19,12 @@ module.exports = function buildStoreRouter(deps) {
   const broadcastList = async (type, Model, sort = { date: -1 }) => {
     try { broadcast(type, await Model.find().sort(sort)); } catch (e) { console.error('broadcastList error', e.message); }
   };
+  const normalizeProductSchedule = (input = {}) => {
+    const payload = { ...input };
+    const publishAt = payload.scheduledDate ? new Date(payload.scheduledDate) : null;
+    if (publishAt && !Number.isNaN(publishAt.getTime()) && publishAt > new Date()) payload.status = 'غير منشور';
+    return payload;
+  };
 
   // رفع الملفات (اختياري): npm i multer  +  app.use('/uploads', express.static('uploads'))
   let upload = { single: () => (req, res, next) => next() };
@@ -366,12 +372,12 @@ module.exports = function buildStoreRouter(deps) {
     } catch (e) { res.status(500).json({ error: 'خطأ في جلب المنتجات' }); }
   });
   router.post('/products', guard('staff'), async (req, res) => {
-    try { res.json(await new Product(req.body).save()); }
+    try { res.json(await new Product(normalizeProductSchedule(req.body)).save()); }
     catch (e) { res.status(400).json({ error: e.message || 'بيانات المنتج غير صالحة' }); }
   });
   router.put('/products/:id', guard('staff'), async (req, res) => {
     try {
-      const p = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+      const p = await Product.findByIdAndUpdate(req.params.id, normalizeProductSchedule(req.body), { new: true, runValidators: true });
       if (!p) return res.status(404).json({ error: 'المنتج غير موجود' });
       res.json(p);
     } catch (e) { res.status(400).json({ error: e.message || 'فشل تحديث المنتج' }); }

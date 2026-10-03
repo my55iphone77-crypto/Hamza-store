@@ -144,6 +144,7 @@ const productSchema = new mongoose.Schema({
   image: { type: String },
   status: { type: String, default: 'منشور' },
   scheduledDate: { type: Date },
+  unpublishDate: { type: Date },
   deliveryType: { type: String, enum: ['code', 'id_topup', 'subscription', 'store_credit'], default: 'code' },
   codes: [{ type: String }],
   stock: { type: Number, default: 0 },
@@ -756,6 +757,25 @@ const sendDailyReport = async () => {
 };
 setInterval(sendDailyReport, 60 * 1000);
 sendDailyReport();
+
+// جدولة نشر المنتجات وإلغاء نشرها تلقائياً حتى بعد إعادة تشغيل الخادم.
+const runProductScheduler = async () => {
+  try {
+    const now = new Date();
+    await Product.updateMany(
+      { status: 'غير منشور', scheduledDate: { $lte: now }, $or: [{ unpublishDate: { $exists: false } }, { unpublishDate: null }, { unpublishDate: { $gt: now } }] },
+      { $set: { status: 'منشور' } }
+    );
+    await Product.updateMany(
+      { status: 'منشور', unpublishDate: { $ne: null, $lte: now } },
+      { $set: { status: 'غير منشور' } }
+    );
+  } catch (error) {
+    console.error('product scheduler error:', error.message);
+  }
+};
+setInterval(runProductScheduler, 30 * 1000);
+runProductScheduler();
 
 const PORT = process.env.PORT || 4000;
 // استبدال app.listen بـ server.listen لتفعيل نظام Socket.IO
