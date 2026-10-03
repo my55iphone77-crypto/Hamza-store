@@ -28,6 +28,7 @@ import Settings from './app/Settings';
 import Tasks from './app/Tasks';
 import Tickets from './app/Tickets';
 import WorkHours from './app/WorkHours';
+import { APP_PERMISSION_MAP } from './permissions';
 
 // على localhost نستخدم السيرفر المحلي، وعلى Render الواجهة والـ API على نفس الرابط فنستخدم مسار نسبي
 const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
@@ -172,7 +173,8 @@ function MainContent() {
     setCurrentUser = () => {},
     setToken = () => {},
     setLoginError = () => {},
-    socket = null
+    socket = null,
+    hasPermission = () => false
   } = safeContext;
 
   // 🔑 OAuth Redirect Handler — يقرأ التوكن من الرابط بعد تسجيل الدخول الاجتماعي
@@ -280,14 +282,23 @@ function MainContent() {
   ], [currentUser, sessions, currentSessionId, chatHistories, aiInputText, inputStyle, accountingTransactions, products, employees, searchTerm, salaries, contacts, mails, employeeChat, salesLog, coupons, tickets, announcements, tasks, logs, performance, workHours, achievements, customers, customerService, documents, attendance, commissions]);
 
   const currentApp = useMemo(() => {
-    const safeList = Array.isArray(appsList) ? appsList : [];
+    const safeList = Array.isArray(appsList) ? appsList.filter(app => hasPermission(APP_PERMISSION_MAP[app.id])) : [];
     return safeList.find(app => app && app.id === activeApp);
-  }, [appsList, activeApp]);
+  }, [appsList, activeApp, hasPermission]);
+
+  const visibleAppsList = useMemo(() => {
+    const safeList = Array.isArray(appsList) ? appsList : [];
+    return safeList.filter(app => hasPermission(APP_PERMISSION_MAP[app.id]));
+  }, [appsList, hasPermission]);
+
+  useEffect(() => {
+    if (activeApp && !visibleAppsList.some(app => app.id === activeApp)) setActiveApp(null);
+  }, [activeApp, visibleAppsList]);
 
   const isManagerOrEmployee = useMemo(() => {
     if (!currentUser || typeof currentUser !== 'object') return false;
     const role = typeof currentUser.role === 'string' ? currentUser.role : '';
-    return ['owner', 'admin', 'employee'].includes(role) || currentUser.isOwner === true;
+    return ['owner', 'admin', 'manager', 'stock', 'sales', 'support', 'employee', 'staff'].includes(role) || currentUser.isOwner === true;
   }, [currentUser]);
 
   return (
@@ -312,7 +323,7 @@ function MainContent() {
           <div style={{ width: '100%' }}>
             {!activeApp ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '20px', width: '100%' }}>
-                {appsList.map((app, index) => {
+                {visibleAppsList.map((app, index) => {
                   if (!app) return null;
                   const glow = app.borderColor || '#38bdf8';
                   return (

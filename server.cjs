@@ -259,6 +259,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   role: { type: String, default: 'customer' },
+  permissions: { type: [String], default: undefined },
   isOwner: { type: Boolean, default: false },
   emailVerified: { type: Boolean, default: false },
   emailVerificationToken: { type: String },
@@ -280,6 +281,7 @@ const EmployeeSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['admin', 'manager', 'stock', 'sales', 'support'], default: 'stock' },
+  permissions: { type: [String], default: undefined },
   salary: { type: Number, default: 0 },
   phone: { type: String, default: 'غير متوفر' },
   age: { type: String, default: 'غير متوفر' },
@@ -449,6 +451,7 @@ function publicUser(user) {
     name: user.name,
     email: user.email,
     role: user.role,
+    permissions: Array.isArray(user.permissions) ? user.permissions : undefined,
     isOwner: user.isOwner || checkOwnerAccess(user.email),
     emailVerified: user.emailVerified,
     twoFactorEnabled: user.twoFactorEnabled
