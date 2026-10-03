@@ -787,7 +787,7 @@ const modalOverlayStyle = {
 const modalContentStyle = {
   background: "rgba(30, 41, 59, 0.88)", backdropFilter: "blur(20px)",
   border: "1px solid rgba(255, 255, 255, 0.15)", borderRadius: "20px",
-  padding: "clamp(16px, 4vw, 25px)", width: "100%", maxWidth: "480px", maxHeight: "calc(100dvh - 16px)",
+  padding: "clamp(16px, 4vw, 25px)", width: "100%", maxWidth: "min(100%, 960px)", maxHeight: "calc(100dvh - 16px)",
   overflowY: "auto", overflowX: "hidden", position: "relative", boxSizing: "border-box", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)"
 };
 

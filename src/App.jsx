@@ -100,6 +100,7 @@ const GLASS_STYLE = `
     cursor: default !important;
     overflow: visible !important;
   }
+  .hz-app-full-container > div { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
   .hz-atmosphere, .hz-atmosphere * { box-sizing: border-box; }
   .hz-atmosphere { min-width: 0; overflow-x: clip; overscroll-behavior-x: none; }
   .hz-admin-main, .hz-admin-main > div { min-width: 0; max-width: 100%; }
