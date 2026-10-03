@@ -596,7 +596,16 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
               ) : (
                 <div>
                   <p style={{ margin: '0 0 6px 0', color: '#34d399', fontWeight: 'bold' }}>✅ حالة الطلب: {orderStatusResult.status || 'مكتمل'}</p>
-                  <p style={{ margin: 0, color: '#cbd5e1' }}>المبلغ: {orderStatusResult.totalAmount || orderStatusResult.price} دينار</p>
+                  {orderStatusResult.orderNumber && <p style={{ margin: '0 0 6px 0', color: '#cbd5e1' }}>رقم الطلب: <strong>{orderStatusResult.orderNumber}</strong></p>}
+                  <p style={{ margin: 0, color: '#cbd5e1' }}>المبلغ: {orderStatusResult.totalAmount ?? orderStatusResult.price ?? 0} دينار</p>
+                  {Array.isArray(orderStatusResult.items) && orderStatusResult.items.some((item) => Array.isArray(item.deliveredCodes) && item.deliveredCodes.length > 0) && (
+                    <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <strong style={{ color: '#34d399' }}>🔐 الأكواد الخاصة بطلبك:</strong>
+                      {orderStatusResult.items.flatMap((item) => (Array.isArray(item.deliveredCodes) ? item.deliveredCodes.map((code, index) => (
+                        <code key={`${item.id || item.name}-${index}`} dir="ltr" style={{ display: 'block', background: '#020617', color: '#34d399', padding: '9px 10px', borderRadius: '8px', wordBreak: 'break-all', letterSpacing: '1px' }}>{code}</code>
+                      )) : []))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

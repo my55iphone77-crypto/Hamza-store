@@ -500,7 +500,7 @@ module.exports = function buildStoreRouter(deps) {
             creditCardsToIssue.push({ codeHash: creditCodeHash(code), amount });
           }
         }
-        items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, loyaltyOnly, loyaltyPrice, deliveredCodes });
+        items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, loyaltyOnly, loyaltyPrice, playerId: it.playerId ? String(it.playerId) : undefined, deliveredCodes });
       }
       const subtotal = total;
       let couponDiscount = 0;
@@ -611,11 +611,13 @@ module.exports = function buildStoreRouter(deps) {
   // تتبع الطلب بالرقم (عام، حقول محدودة بدون بيانات شخصية)
   router.get('/orders/:id', async (req, res) => {
     try {
-      if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: 'الطلب غير موجود' });
-      const o = await Order.findById(req.params.id);
+      const lookupValue = String(req.params.id || '').trim();
+      if (!lookupValue) return res.status(404).json({ error: 'الطلب غير موجود' });
+      const lookup = mongoose.isValidObjectId(lookupValue) ? { _id: lookupValue } : { orderNumber: lookupValue };
+      const o = await Order.findOne(lookup);
       if (!o) return res.status(404).json({ error: 'الطلب غير موجود' });
       const j = toObj(o);
-      res.json({ _id: j._id, id: j.id, status: j.status || 'جديد', items: j.items, totalAmount: j.totalAmount, date: j.date });
+      res.json({ _id: j._id, id: j.id, orderNumber: j.orderNumber, status: j.status || 'جديد', items: j.items, totalAmount: j.totalAmount, currency: j.currency || 'JOD', date: j.date });
     } catch (e) { res.status(500).json({ error: 'خطأ في جلب الطلب' }); }
   });
   router.get('/orders', guard('staff'), async (req, res) => {

@@ -162,7 +162,7 @@ const orderSchema = new mongoose.Schema({
   customerName: { type: String, required: true },
   customerEmail: { type: String, required: true },
   customerAddress: { type: String, required: true },
-  items: [{ id: String, name: String, price: Number, quantity: Number, loyaltyPoints: Number, loyaltyOnly: Boolean, loyaltyPrice: Number }],
+  items: [{ id: String, name: String, price: Number, quantity: Number, loyaltyPoints: Number, loyaltyOnly: Boolean, loyaltyPrice: Number, playerId: String, deliveredCodes: [String] }],
   totalAmount: { type: Number, required: true },
   currency: { type: String, default: 'JOD' },
   paymentMethod: { type: String, default: '' },
