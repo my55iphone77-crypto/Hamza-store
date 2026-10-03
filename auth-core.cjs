@@ -316,31 +316,5 @@ module.exports = function buildAuthCoreRouter(deps) {
     }
   });
 
-  
-  router.post('/welcome-email', async (req, res) => {
-    try {
-      const { email, name } = req.body;
-      if (!email || typeof email !== 'string') {
-        return res.status(400).json({ error: 'البريد الإلكتروني مطلوب' });
-      }
-
-      await sendStoreEmail(
-        email,
-        `🎉 مرحباً بك في ${APP_NAME || 'متجر حمزة'}`,
-        `<div dir="rtl" style="font-family:Tajawal,sans-serif;">
-          <h2>أهلاً ${name || 'بك'}! 👋</h2>
-          <p>تم إنشاء حسابك بنجاح في ${APP_NAME || 'متجر حمزة'}.</p>
-          <p>يمكنك الآن تصفح منتجاتنا وإتمام طلباتك بكل سهولة.</p>
-          <hr style="border-color:rgba(255,255,255,0.2);">
-          <p style="color:#94a3b8;font-size:12px;">إذا لم تقم أنت بإنشاء هذا الحساب، يرجى تجاهل هذه الرسالة.</p>
-        </div>`
-      );
-
-      res.json({ success: true, message: 'تم إرسال إيميل الترحيب' });
-    } catch (err) {
-      res.status(500).json({ error: 'تعذر إرسال إيميل الترحيب' });
-    }
-  });
-
 return router;
 };
