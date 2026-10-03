@@ -352,6 +352,8 @@ module.exports = function buildStoreRouter(deps) {
         if (Number(authUser.loyaltyPoints || 0) < threshold) return res.status(400).json({ error: `تحتاج ${threshold} نقطة للحصول على منتج مجاني.` });
         const reward = await Product.findOne({ stock: { $gt: 0 } }).sort({ price: 1 });
         if (!reward) return res.status(400).json({ error: 'لا يوجد منتج متاح للمكافأة حالياً.' });
+        const reservedReward = await Product.findOneAndUpdate({ _id: reward._id, stock: { $gt: 0 } }, { $inc: { stock: -1 } }, { new: true });
+        if (!reservedReward) return res.status(409).json({ error: 'انتهى مخزون المكافأة للتو، اختر المحاولة مرة أخرى.' });
         items.push({ id: String(reward._id), name: `${reward.name} (مكافأة ولاء)`, price: 0, quantity: 1 });
         loyaltyPointsRedeemed = threshold;
         loyaltyRewardItem = reward.name;
