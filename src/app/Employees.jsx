@@ -518,7 +518,7 @@ function Employees() {
             <h3 style={{ margin: '0 0 5px 0', color: '#10b981', fontSize: '18px', fontWeight: 'bold' }}>+ توظيف وإضافة موظف جديد</h3>
             <p style={{ margin: '0 0 15px 0', color: '#94a3b8', fontSize: '12px' }}>سيتم حفظ البيانات فوراً وبثها لكل أقسام النظام.</p>
 
-            <form onSubmit={handleAddEmployee} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <form className="hz-employee-form" onSubmit={handleAddEmployee} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <input type="text" placeholder="اسم الموظف... *" value={newName} onChange={(e) => setNewName(e.target.value)} style={glassInputStyle} />
               <input type="email" placeholder="البريد الإلكتروني... *" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={glassInputStyle} />
               <input type="text" placeholder="رقم الهاتف..." value={newPhone} onChange={(e) => setNewPhone(e.target.value)} style={glassInputStyle} />

@@ -111,6 +111,12 @@ const GLASS_STYLE = `
   .hz-section-shell [style*="display: flex"] { min-width: 0; }
   .hz-section-shell [style*="display: grid"] { min-width: 0; }
   .hz-section-shell h1, .hz-section-shell h2, .hz-section-shell h3, .hz-section-shell h4, .hz-section-shell p { overflow-wrap: anywhere; }
+  .hz-section-shell [style*="position: fixed"] { inset: 0 !important; width: 100vw !important; height: 100dvh !important; max-width: none !important; max-height: none !important; align-items: flex-start !important; padding: clamp(12px, 3vw, 32px) !important; overflow-y: auto !important; }
+  .hz-section-shell [style*="position: fixed"] > div { width: min(100%, 1100px) !important; max-width: min(100%, 1100px) !important; max-height: calc(100dvh - clamp(24px, 6vw, 64px)) !important; margin: auto !important; overflow-y: auto !important; }
+  .hz-product-form, .hz-employee-form { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px !important; }
+  .hz-product-form > button:last-child, .hz-employee-form > button:last-child { grid-column: 1 / -1; }
+  .hz-product-form > *, .hz-employee-form > * { min-width: 0; width: 100%; }
+  @media (max-width: 720px) { .hz-product-form, .hz-employee-form { grid-template-columns: minmax(0, 1fr); } .hz-product-form > button:last-child, .hz-employee-form > button:last-child { grid-column: auto; } }
   .hz-section-shell [style*="position: fixed"] > div[style*="maxWidth"], .hz-section-shell [style*="position: fixed"] > div[style*="max-width"] { width: min(100%, 1100px) !important; max-width: min(100%, 1100px) !important; max-height: calc(100dvh - clamp(24px, 6vw, 64px)) !important; margin: auto !important; }
   .hz-atmosphere, .hz-atmosphere * { box-sizing: border-box; }
   .hz-atmosphere { min-width: 0; overflow-x: clip; overscroll-behavior-x: none; }

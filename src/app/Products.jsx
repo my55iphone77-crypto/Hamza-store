@@ -504,7 +504,7 @@ export default function Products() {
           <div style={modalContentStyle}>
             <button onClick={() => setIsAddModalOpen(false)} style={closeBtnStyle}>✕</button>
             <h3 style={{ color: "#10b981", margin: "0 0 15px 0" }}>+ إضافة بطاقة أو منتج جديد</h3>
-            <form onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <form className="hz-product-form" onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <input type="text" placeholder="اسم المنتج *" value={name} onChange={(e) => setName(e.target.value)} style={glassInputStyle} required />
               <textarea placeholder="وصف المنتج..." value={description} onChange={(e) => setDescription(e.target.value)} rows={2} style={glassInputStyle} />
               <select value={deliveryType} onChange={(e) => setDeliveryType(e.target.value)} style={glassInputStyle}>
