@@ -29,8 +29,8 @@ const GLASS_STYLE = `
     backdrop-filter: blur(26px) saturate(200%);
     -webkit-backdrop-filter: blur(26px) saturate(200%);
     border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 24px;
-    padding: 22px;
+    border-radius: 18px;
+    padding: 16px;
     overflow: hidden;
     transition: transform 0.35s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.35s ease, border-color 0.3s ease;
     box-shadow: 0 12px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.3);
@@ -62,21 +62,21 @@ const GLASS_STYLE = `
     background: radial-gradient(130% 90% at 30% 10%, rgba(16,185,129,0.25), transparent 60%), linear-gradient(155deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01) 60%);
   }
   .hz-product-media.hz-no-image::after { background: none; }
-  .hz-product-body { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: space-between; min-height: 240px; }
+  .hz-product-body { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: space-between; min-height: 200px; }
   .hz-product-glasschip { background: rgba(15,20,30,0.45); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.18); }
 
   .hz-category-glass-bar {
     background: radial-gradient(130% 65% at 12% 0%, rgba(255,255,255,0.25), transparent 60%), rgba(15, 23, 42, 0.55);
     backdrop-filter: blur(24px) saturate(190%);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 20px; padding: 16px 20px;
+    border-radius: 16px; padding: 12px 16px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 25px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;
   }
   .hz-category-chip {
     background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.12); color: #cbd5e1;
-    padding: 8px 16px; border-radius: 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer;
     transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   .hz-category-chip:hover { background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); color: #f8fafc; transform: translateY(-2px); }
@@ -88,7 +88,7 @@ const GLASS_STYLE = `
   .hz-glass-card {
     position: relative;
     background: radial-gradient(130% 65% at 12% 0%, rgba(255,255,255,0.38), transparent 55%), linear-gradient(155deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 55%);
-    backdrop-filter: blur(26px) saturate(200%); border: 1px solid rgba(255,255,255,0.2); border-radius: 24px; padding: 22px;
+    backdrop-filter: blur(26px) saturate(200%); border: 1px solid rgba(255,255,255,0.2); border-radius: 18px; padding: 18px;
     box-shadow: 0 12px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.3);
   }
   .hz-glass-btn {
@@ -127,7 +127,7 @@ const GLASS_STYLE = `
   }
 
   /* ================= تجاوب الأبعاد مع كل الأجهزة ================= */
-  .hz-container { width: 100%; max-width: 1680px; min-width: 0; margin: 0 auto; }
+  .hz-container { width: 100%; max-width: 1440px; min-width: 0; margin: 0 auto; }
   .hz-grid {
     display: grid; width: 100%; box-sizing: border-box;
     grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
@@ -139,7 +139,7 @@ const GLASS_STYLE = `
     .hz-category-glass-bar { padding: 12px; border-radius: 16px; }
     /* بطاقات مضغوطة عشان تكفي عمودين جنب بعض بالموبايل */
     .hz-product-card { border-radius: 18px; }
-    .hz-product-body { padding: 12px !important; min-height: 210px; }
+    .hz-product-body { padding: 12px !important; min-height: 190px; }
     .hz-product-body h3 { font-size: 13px !important; line-height: 1.3; margin-bottom: 6px !important;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .hz-product-body p { font-size: 11px !important; margin-bottom: 8px !important;
@@ -156,8 +156,8 @@ const GLASS_STYLE = `
   /* كمبيوتر */
   @media (min-width: 1440px) and (max-width: 1919px) { .hz-grid { grid-template-columns: repeat(4, 1fr); } }
   /* شاشات كبيرة / تلفزيون / بلايستيشن */
-  @media (min-width: 1920px) { .hz-root { zoom: 1.3; } .hz-grid { grid-template-columns: repeat(5, 1fr); } }
-  @media (min-width: 2560px) { .hz-root { zoom: 1.7; } .hz-grid { grid-template-columns: repeat(6, 1fr); } }
+  @media (min-width: 1920px) { .hz-root { zoom: 1; } .hz-grid { grid-template-columns: repeat(5, 1fr); } }
+  @media (min-width: 2560px) { .hz-root { zoom: 1; } .hz-grid { grid-template-columns: repeat(6, 1fr); } }
   /* أزرار مريحة للمس */
   @media (pointer: coarse) { .hz-category-chip, .hz-add-btn, .hz-root button { min-height: 44px; } }
   /* تركيز واضح للكيبورد والريموت */
@@ -378,9 +378,9 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
     <div className="hz-atmosphere hz-root" style={{
       width: '100%',
       minHeight: '100dvh',
-      padding: 'clamp(14px, 4vw, 40px)',
-      paddingTop: 'max(clamp(14px, 4vw, 40px), env(safe-area-inset-top))',
-      paddingBottom: 'max(clamp(14px, 4vw, 40px), env(safe-area-inset-bottom))',
+      padding: 'clamp(12px, 2vw, 24px)',
+      paddingTop: 'max(clamp(12px, 2vw, 24px), env(safe-area-inset-top))',
+      paddingBottom: 'max(clamp(12px, 2vw, 24px), env(safe-area-inset-bottom))',
       boxSizing: 'border-box',
       color: '#f8fafc',
       fontFamily: 'Tajawal, sans-serif',
@@ -482,7 +482,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                     )}
                   </div>
 
-                  <div className="hz-product-body" style={{ padding: '22px' }}>
+                  <div className="hz-product-body" style={{ padding: '16px' }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <span className="hz-product-glasschip" style={{ fontSize: '11px', color: '#34d399', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
