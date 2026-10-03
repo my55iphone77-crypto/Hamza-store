@@ -126,6 +126,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
 
   const safeCart = Array.isArray(cart) ? cart : [];
   const totalPrice = safeCart.reduce((sum, item) => sum + (Number(item?.price) || 0) * (Number(item?.quantity) || 1), 0);
+  const loyaltyPointsCost = safeCart.reduce((sum, item) => sum + (item?.loyaltyOnly ? Number(item.loyaltyPrice || 0) * (Number(item.quantity) || 1) : 0), 0);
   const finalTotal = Math.max(0, totalPrice - Number(appliedCoupon?.discount || 0));
   const totalItemsCount = safeCart.reduce((acc, item) => acc + (Number(item?.quantity) || 1), 0);
 
@@ -188,6 +189,10 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     }
     if (!currentUser) {
       setShowLoginPage(true);
+      return;
+    }
+    if (loyaltyPointsCost > Number(currentUser.loyaltyPoints || 0)) {
+      if (typeof setError === 'function') setError(`لا يمكن إتمام الطلب: تحتاج ${loyaltyPointsCost} نقطة، والمتوفر لديك ${Number(currentUser.loyaltyPoints || 0)} نقطة.`);
       return;
     }
 
@@ -256,7 +261,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     } finally {
       if (isMounted.current) setSubmittingCheckout(false);
     }
-  }, [api, safeCart, currentUser, totalPrice, finalTotal, paymentMethod, redeemPoints, appliedCoupon, couponCode, fetchProducts, searchTerm, setError, setShowLoginPage, setCurrentUser]);
+  }, [api, safeCart, currentUser, loyaltyPointsCost, totalPrice, finalTotal, paymentMethod, redeemPoints, appliedCoupon, couponCode, fetchProducts, searchTerm, setError, setShowLoginPage, setCurrentUser]);
 
   const handleLogout = useCallback(() => {
     setCart([]);
@@ -291,7 +296,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   return {
     currentUser, isAdminUser, isStaffUser, userRoleInfo,
     cart, setCart, addToCart, removeFromCart, updateCartItemPlayerId, requiresPlayerId,
-    totalPrice, finalTotal, totalItemsCount,
+    totalPrice, finalTotal, loyaltyPointsCost, totalItemsCount,
     showCartDropdown, setShowCartDropdown,
     checkoutMode, setCheckoutMode,
     submittingCheckout, lastOrder, setLastOrder,

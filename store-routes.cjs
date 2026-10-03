@@ -600,7 +600,10 @@ module.exports = function buildStoreRouter(deps) {
         ...(Array.isArray(NOTIFY_EMAILS) ? NOTIFY_EMAILS : []).map((email) => sendStoreEmail(email, `بيع جديد ${order.orderNumber} - ${Number(total).toFixed(2)} JOD`, ownerHtml))
       ]);
       res.json({ order, account: authUser ? { storeBalance: Number(authUser.storeBalance || 0) - walletAmount, loyaltyPoints: Number(authUser.loyaltyPoints || 0) + pointsEarned - loyaltyPointsRedeemed, loyaltyThreshold: threshold } : undefined });
-    } catch (e) { res.status(400).json({ error: e.message || 'فشل إنشاء الطلب' }); }
+    } catch (e) {
+      console.error('[orders] failed to create order:', e && e.stack ? e.stack : e);
+      res.status(400).json({ error: e.message || 'فشل إنشاء الطلب' });
+    }
   });
   // تتبع الطلب بالرقم (عام، حقول محدودة بدون بيانات شخصية)
   router.get('/orders/:id', async (req, res) => {

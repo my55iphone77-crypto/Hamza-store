@@ -177,6 +177,7 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
     cart = [],
     updateCartItemPlayerId = () => {},
     totalPrice = 0,
+    loyaltyPointsCost = 0,
     submittingCheckout = false,
     handleCheckout = () => {},
     setCheckoutMode = () => {},
@@ -217,6 +218,9 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
         <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.3)', color: '#ddd6fe', fontSize: '12px' }}>
           نقاط الولاء: <strong>{Number(currentUser?.loyaltyPoints || 0)}</strong> / {Number(currentUser?.loyaltyThreshold || 100)}<br /><span style={{ color: '#94a3b8' }}>كل دينار مشتريات = نقطة — غير قابلة للسحب</span>
         </div>
+        {Number(loyaltyPointsCost) > 0 && <div style={{ padding: '10px 12px', borderRadius: '12px', background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.4)', color: '#e9d5ff', fontSize: '12px' }}>
+          تكلفة المنتجات بالنقاط: <strong>{Number(loyaltyPointsCost)} نقطة</strong>
+        </div>}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
