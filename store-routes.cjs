@@ -433,7 +433,7 @@ module.exports = function buildStoreRouter(deps) {
 
   // ============================= المنتجات =============================
   // الزوار يشوفوا المنتجات بدون الأكواد (codes هي مفاتيح البطاقات الفعلية!)
-  const CODE_STOCK_TYPES = new Set(['code', 'subscription', 'store_credit']);
+  const CODE_STOCK_TYPES = new Set(['code', 'subscription']);
   const normalizeCodes = (values) => [...new Set((Array.isArray(values) ? values : [values])
     .map((value) => String(value || '').trim())
     .filter(Boolean))];
@@ -493,6 +493,7 @@ module.exports = function buildStoreRouter(deps) {
     try {
       const product = await Product.findById(req.params.id);
       if (!product) return res.status(404).json({ error: 'المنتج غير موجود' });
+      if (String(product.deliveryType || '') === 'store_credit') return res.status(400).json({ error: 'بطاقات رصيد المتجر مفتوحة، والكود يولد تلقائياً عند الشراء.' });
       if (!CODE_STOCK_TYPES.has(String(product.deliveryType || ''))) return res.status(400).json({ error: 'هذا المنتج يعتمد على كمية يدوية وليس أكواداً.' });
       const incoming = normalizeCodes(req.body?.codes !== undefined ? req.body.codes : req.body?.code);
       if (incoming.length === 0) return res.status(400).json({ error: 'أدخل كوداً واحداً على الأقل.' });
@@ -529,6 +530,7 @@ module.exports = function buildStoreRouter(deps) {
     try {
       const product = await Product.findById(req.params.id);
       if (!product) return res.status(404).json({ error: 'المنتج غير موجود' });
+      if (String(product.deliveryType || '') === 'store_credit') return res.status(400).json({ error: 'بطاقات رصيد المتجر مفتوحة، والكود يولد تلقائياً عند الشراء.' });
       if (CODE_STOCK_TYPES.has(String(product.deliveryType || ''))) return res.status(400).json({ error: 'مخزون هذا المنتج ديناميكي ويُحسب من عدد الأكواد.' });
       const stock = Number.parseInt(req.body?.stock, 10);
       if (!Number.isInteger(stock) || stock < 0) return res.status(400).json({ error: 'كمية المخزون غير صالحة.' });
@@ -604,6 +606,7 @@ module.exports = function buildStoreRouter(deps) {
       let loyaltyPointsCost = 0;
       const items = [];
       const codeStockNeeds = [];
+      const creditCardsToIssue = [];
       for (const it of rawItems.slice(0, 50)) {
         const qty = Math.max(1, Math.min(100, Number(it.quantity) || 1));
         let name = it.name, price = Number(it.price) || 0, deliveryType = String(it.deliveryType || ''), storeCreditAmount = Number(it.storeCreditAmount || 0), itemPoints = Math.max(0, Number(it.loyaltyPoints || 0));
@@ -619,7 +622,7 @@ module.exports = function buildStoreRouter(deps) {
           itemPoints = Math.max(0, Number(prod.loyaltyPoints || 0));
           loyaltyPrice = Math.max(0, Number(prod.loyaltyPrice || 0));
           if (loyaltyOnly && loyaltyPrice <= 0) loyaltyOnly = false;
-          if (['code', 'subscription', 'store_credit'].includes(deliveryType) && (!Array.isArray(prod.codes) || prod.codes.length < qty)) {
+          if (['code', 'subscription'].includes(deliveryType) && (!Array.isArray(prod.codes) || prod.codes.length < qty)) {
             return res.status(409).json({ error: `لا يوجد عدد كافٍ من الأكواد للمنتج: ${prod.name}.` });
           }
         }
@@ -631,8 +634,16 @@ module.exports = function buildStoreRouter(deps) {
         total += price * qty;
         earnedPoints += itemPoints * qty;
         const deliveredCodes = [];
+        if (deliveryType === 'store_credit' || storeCreditAmount > 0) {
+          const amount = storeCreditAmount > 0 ? storeCreditAmount : price;
+          for (let i = 0; i < qty; i += 1) {
+            const code = newCreditCode();
+            deliveredCodes.push(code);
+            creditCardsToIssue.push({ codeHash: creditCodeHash(code), amount });
+          }
+        }
         items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, loyaltyOnly, loyaltyPrice, playerId: it.playerId ? String(it.playerId) : undefined, deliveredCodes });
-        if (it.id && mongoose.isValidObjectId(it.id) && ['code', 'subscription', 'store_credit'].includes(deliveryType)) {
+        if (it.id && mongoose.isValidObjectId(it.id) && ['code', 'subscription'].includes(deliveryType)) {
           codeStockNeeds.push({ productId: String(it.id), quantity: qty, itemIndex: items.length - 1, productName: name });
         }
       }
@@ -729,6 +740,9 @@ module.exports = function buildStoreRouter(deps) {
         } catch (salesError) {
           console.error('[orders] sales log failure:', salesError.message);
         }
+      }
+      if (creditCardsToIssue.length > 0 && StoreCreditCard) {
+        await StoreCreditCard.insertMany(creditCardsToIssue.map(card => ({ ...card, orderId: String(order._id), customerEmail: String(customerEmail).trim().toLowerCase() })));
       }
       if (appliedCouponCode) {
         const consumed = await Coupon.findOneAndUpdate(

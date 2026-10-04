@@ -221,7 +221,7 @@ export default function Products() {
       alert("الرجاء إدخال اسم المنتج والسعر الأساسي على الأقل!");
       return;
     }
-    const codesArray = deliveryType === "code" || deliveryType === "subscription" || deliveryType === "store_credit"
+    const codesArray = deliveryType === "code" || deliveryType === "subscription"
       ? newCodeText.split('\n').filter(c => c.trim() !== '') 
       : [];
 
@@ -384,7 +384,7 @@ export default function Products() {
     }
   };
 
-  const stockOf = (prod) => (prod.deliveryType === "id_topup" || prod.deliveryType === "store_credit" ? prod.stock || 0 : prod.codes?.length || 0);
+  const stockOf = (prod) => (prod.deliveryType === "store_credit" ? "مفتوح" : prod.deliveryType === "id_topup" ? (prod.stock || 0) : (prod.codes?.length || 0));
   const deliveryLabel = (type) => DELIVERY_TYPES.find((d) => d.value === type)?.label || type;
   const fmtJOD = (n) => `${n} د.أ`;
 
@@ -473,7 +473,7 @@ export default function Products() {
           return matchesSearch && matchesCat;
         }).map((prod) => {
           const currentStock = stockOf(prod);
-          const isLow = currentStock <= (prod.lowStockThreshold ?? 3);
+          const isLow = prod.deliveryType !== "store_credit" && Number(currentStock) <= (prod.lowStockThreshold ?? 3);
           const hasDiscount = prod.discountPrice && prod.discountPrice < prod.price;
           return (
             <div key={prod._id} onClick={() => { setSelectedProduct(prod); setIsEditing(false); setActiveTab("details"); }} style={glassCardStyle}>
@@ -490,7 +490,7 @@ export default function Products() {
                 ) : (
                   <span>السعر: <strong style={{ color: "#10b981" }}>{fmtJOD(prod.price)}</strong></span>
                 )}
-                <span>الكمية: <strong style={{ color: isLow ? "#f87171" : "#facc15" }}>{currentStock}</strong></span>
+                <span>{prod.deliveryType === "store_credit" ? "المخزون: " : "الكمية: "}<strong style={{ color: isLow ? "#f87171" : "#facc15" }}>{currentStock}</strong></span>
               </div>
             </div>
           );
@@ -550,13 +550,12 @@ export default function Products() {
                 {isUploadingImage && <span style={{ color: "#38bdf8", fontSize: "11px" }}>⏳ جاري معالجة وضغط الصورة...</span>}
               </div>
               {image && <img src={image} alt="معاينة" style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />}
-              {deliveryType === "id_topup" ? (
+              {deliveryType === "store_credit" ? (
+                <div style={{ color: "#facc15", fontSize: "12px", padding: "10px", background: "rgba(250,204,21,0.08)", borderRadius: "8px" }}>🪙 بطاقة رصيد المتجر مفتوحة: لا تحدد مخزوناً ولا تضف أكواداً. يتم توليد كود فريد تلقائياً عند كل شراء.</div>
+              ) : deliveryType === "id_topup" ? (
                 <input type="number" placeholder="الكمية المتوفرة يدوياً" value={manualStock} onChange={(e) => setManualStock(e.target.value)} style={glassInputStyle} />
               ) : (
-                <>
-                  <textarea placeholder={deliveryType === "store_credit" ? "أكواد بطاقات الرصيد (كل كود في سطر، بصيغة HZ-...)..." : "الأكواد أو الاشتراكات (كل كود في سطر)..."} value={newCodeText} onChange={(e) => setNewCodeText(e.target.value)} rows={3} style={{ ...glassInputStyle, fontFamily: "monospace" }} />
-                  {deliveryType === "store_credit" && <div style={{ color: "#facc15", fontSize: "12px" }}>المخزون ديناميكي: كل كود تضيفه = بطاقة واحدة متاحة للبيع، ولا تحتاج لتحديد عدد يدوي.</div>}
-                </>
+                <textarea placeholder="الأكواد أو الاشتراكات (كل كود في سطر)..." value={newCodeText} onChange={(e) => setNewCodeText(e.target.value)} rows={3} style={{ ...glassInputStyle, fontFamily: "monospace" }} />
               )}
               <select value={status} onChange={(e) => setStatus(e.target.value)} style={glassInputStyle}>
                 <option value="منشور" style={{ background: "#1e293b" }}>🟢 منشور فوراً</option>
@@ -619,6 +618,11 @@ export default function Products() {
                       <button onClick={() => handleDeleteProduct(selectedProduct._id, selectedProduct.name)} style={{ background: "#dc2626", color: "#fff", border: "none", padding: "10px 14px", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" }}>حذف 🗑️</button>
                     </div>
                   </>
+                ) : selectedProduct.deliveryType === "store_credit" ? (
+                  <div style={{ marginTop: "15px", padding: "18px", borderRadius: "12px", background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.35)", color: "#fde68a", textAlign: "center" }}>
+                    <strong style={{ display: "block", fontSize: "16px", marginBottom: "8px" }}>🪙 مخزون مفتوح</strong>
+                    <span style={{ fontSize: "12px" }}>الكود يولد تلقائياً عند كل عملية شراء، ولا تحتاج لإضافة مخزون أو أكواد يدوياً.</span>
+                  </div>
                 ) : selectedProduct.deliveryType === "id_topup" ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "15px" }}>
                     <div style={{ fontSize: "12px", color: "#94a3b8" }}>تعديل الكمية اليدوية المتوفرة للآيدي:</div>

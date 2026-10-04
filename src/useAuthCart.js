@@ -85,8 +85,9 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
 
   const addToCart = (product) => {
     if (!product || typeof product !== 'object') return;
+    const isOpenStoreCredit = product.deliveryType === 'store_credit';
     const stockCount = typeof product.stock === 'number' ? product.stock : 0;
-    if (stockCount <= 0) {
+    if (!isOpenStoreCredit && stockCount <= 0) {
       alert('⚠️ عذراً، هذا المنتج نفد من المخزون حالياً.');
       return;
     }
@@ -98,7 +99,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
       const existing = safePrevCart.find(item => item && (item.id === prodId || item._id === prodId) && Boolean(item.loyaltyOnly) === Boolean(product.loyaltyOnly));
       if (existing) {
         const currentQty = typeof existing.quantity === 'number' ? existing.quantity : 1;
-        if (currentQty >= stockCount) {
+        if (!isOpenStoreCredit && currentQty >= stockCount) {
           alert('⚠️ لقد وصلت للحد الأقصى المتوفر في المخزون لهذا المنتج.');
           return safePrevCart;
         }

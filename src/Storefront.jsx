@@ -477,6 +477,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         ) : (
           <div className="hz-grid">
             {filteredProducts.map((product) => {
+              const isOpenStoreCredit = product.deliveryType === 'store_credit';
               const stock = product.stock ?? product.quantity ?? 0;
               const originalPrice = Number(product.price ?? 0);
 
@@ -511,7 +512,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <span className="hz-product-glasschip" style={{ fontSize: '11px', color: '#34d399', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
-                          المخزون: {stock}
+                          المخزون: {isOpenStoreCredit ? 'مفتوح' : stock}
                         </span>
                         {hasDiscount && (
                           <span className="hz-product-glasschip" style={{ fontSize: '11px', color: '#f59e0b', padding: '4px 8px', borderRadius: '20px', fontWeight: 'bold' }}>
