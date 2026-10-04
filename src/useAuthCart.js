@@ -130,14 +130,15 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   const loyaltyPointsCost = safeCart.reduce((sum, item) => sum + (item?.loyaltyOnly ? Number(item.loyaltyPrice || 0) * (Number(item.quantity) || 1) : 0), 0);
   const finalTotal = Math.max(0, totalPrice - Number(appliedCoupon?.discount || 0));
   const totalItemsCount = safeCart.reduce((acc, item) => acc + (Number(item?.quantity) || 1), 0);
+  const isStoreBalancePayment = ['balance', 'store_balance'].includes(String(paymentMethod || '').trim().toLowerCase());
 
   useEffect(() => {
     const active = getActivePaymentMethods();
-    if (paymentMethod === 'store_balance' && Number(currentUser?.storeBalance || 0) >= Number(finalTotal || 0) && Number(finalTotal || 0) > 0) return;
+    if (isStoreBalancePayment && Number(currentUser?.storeBalance || 0) >= Number(finalTotal || 0) && Number(finalTotal || 0) > 0) return;
     if (active.length > 0 && !active.some(m => m.id === paymentMethod)) {
       setPaymentMethod(active[0].id);
     }
-  }, [paymentMethod, currentUser, finalTotal]);
+  }, [paymentMethod, currentUser, finalTotal, isStoreBalancePayment]);
 
   useEffect(() => {
     setAppliedCoupon(null);
@@ -196,7 +197,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
       if (typeof setError === 'function') setError(`لا يمكن إتمام الطلب: تحتاج ${loyaltyPointsCost} نقطة، والمتوفر لديك ${Number(currentUser.loyaltyPoints || 0)} نقطة.`);
       return;
     }
-    if (paymentMethod === 'store_balance' && Number(currentUser.storeBalance || 0) < Number(finalTotal || 0)) {
+    if (isStoreBalancePayment && Number(currentUser.storeBalance || 0) < Number(finalTotal || 0)) {
       if (typeof setError === 'function') setError(`رصيد المتجر غير كافٍ: المطلوب ${Number(finalTotal || 0).toFixed(2)} د.أ والمتوفر ${Number(currentUser.storeBalance || 0).toFixed(2)} د.أ.`);
       return;
     }
@@ -273,7 +274,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     } finally {
       if (isMounted.current) setSubmittingCheckout(false);
     }
-  }, [api, safeCart, currentUser, loyaltyPointsCost, totalPrice, finalTotal, paymentMethod, redeemPoints, appliedCoupon, couponCode, fetchProducts, searchTerm, setError, setShowLoginPage, setCurrentUser]);
+  }, [api, safeCart, currentUser, loyaltyPointsCost, totalPrice, finalTotal, paymentMethod, isStoreBalancePayment, redeemPoints, appliedCoupon, couponCode, fetchProducts, searchTerm, setError, setShowLoginPage, setCurrentUser]);
 
   const handleLogout = useCallback(() => {
     setCart([]);
