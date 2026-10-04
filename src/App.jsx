@@ -83,8 +83,8 @@ const GLASS_STYLE = `
     transition: opacity 0.3s ease, transform 0.3s ease;
     pointer-events: none;
   }
-  .hz-glass-card:hover {
-    transform: translateY(-10px) scale(1.015);
+	  .hz-glass-card:hover {
+	    transform: none;
     border-color: var(--glow);
     box-shadow: 0 30px 60px rgba(0,0,0,0.55), 0 0 45px color-mix(in srgb, var(--glow) 55%, transparent), inset 0 1px 0 rgba(255,255,255,0.4);
   }
