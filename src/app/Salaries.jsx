@@ -289,7 +289,9 @@ function Salaries({ mails, setMails }) {
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(s); } }}
               style={{ background: 'rgba(17, 24, 39, 0.7)', backdropFilter: 'blur(12px)', border: `1px solid ${isDismissed ? 'rgba(239, 68, 68, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`, borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)', gap: '10px' }}
-              onPointerUp={(e) => { if (e.target === e.currentTarget) handleCardClick(s); }}
+              onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+              onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+              onPointerCancel={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
             >
               <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#1f2937', border: '3px solid rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {displayImage ? (

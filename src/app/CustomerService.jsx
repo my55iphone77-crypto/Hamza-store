@@ -203,6 +203,7 @@ function CustomerService({
       priority: finalPriority,
       target: targetDestination,
       status: initialStatus,
+      reply: aiResponse,
       response: aiResponse,
       date: new Date().toISOString(),
       history: [{ action: 'تم الإنشاء', by: propCurrentUser?.name || 'النظام', date: new Date().toISOString() }]
@@ -522,7 +523,8 @@ function CustomerService({
               const isEscalated = r.status === STATUS.ESCALATED;
               const isCompleted = r.status === STATUS.DONE;
               const isRowUpdating = updatingId === requestId;
-              const currentCustomResponse = responseInputs[requestId] !== undefined ? responseInputs[requestId] : (r.response || '');
+              const requestReply = r.reply || r.response || '';
+              const currentCustomResponse = responseInputs[requestId] !== undefined ? responseInputs[requestId] : requestReply;
               const priorityColor = r.priority === 'critical' ? '#ef4444' : r.priority === 'high' ? '#f59e0b' : r.priority === 'low' ? '#10b981' : '#facc15';
 
               return (
@@ -547,9 +549,9 @@ function CustomerService({
                     <p style={{ margin: 0, color: '#f1f5f9', fontSize: '13px' }}>💬 <strong>المشكلة:</strong> {r.issue}</p>
                   </div>
 
-                  {r.response && (
+                  {requestReply && (
                     <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '10px', borderRadius: '8px', marginBottom: '10px', fontSize: '12px', color: '#38bdf8' }}>
-                      🤖 <strong>الرد:</strong> {r.response}
+                      🤖 <strong>الرد:</strong> {requestReply}
                     </div>
                   )}
 
@@ -590,7 +592,7 @@ function CustomerService({
               <div>👤 {trackedRequest.customerName} | 📍 {trackedRequest.location}</div>
               <div>🛠️ {trackedRequest.issue}</div>
               <div>⚠️ الحالة: <span style={{ color: '#facc15' }}>{trackedRequest.status}</span></div>
-              <div>💬 الرد: {trackedRequest.response || 'لم يتم الرد بعد'}</div>
+              <div>💬 الرد: {trackedRequest.reply || trackedRequest.response || 'لم يتم الرد بعد'}</div>
             </div>
           </div>
         ) : (

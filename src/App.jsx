@@ -93,6 +93,10 @@ const GLASS_STYLE = `
 	  }
   .hz-glass-card:hover::after { opacity: 0.9; transform: scale(1.3); }
 	  .hz-glass-card:active { transform: none; }
+	  .hz-glass-card button:active, .hz-glass-card [role="button"]:active {
+	    transform: translateY(1px) scale(0.98);
+	    filter: brightness(1.12);
+	  }
 	  .hz-atmosphere button, .hz-atmosphere [role="button"], .hz-atmosphere input, .hz-atmosphere select, .hz-atmosphere textarea {
 	    touch-action: manipulation;
 	    -webkit-tap-highlight-color: transparent;
