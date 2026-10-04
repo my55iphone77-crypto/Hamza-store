@@ -50,21 +50,25 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 
-// نقبل أسماء SMTP الرسمية والأسماء القديمة حتى لا تتوقف الرسائل بسبب اختلاف اسم المتغير في Render.
+// نستخدم Brevo API عبر HTTPS عند توفر المفتاح؛ فهذا يتجنب حجب منافذ SMTP في Render.
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
+const MAIL_PROVIDER = BREVO_API_KEY ? 'brevo-api' : 'smtp';
+
+// نقبل أسماء SMTP الرسمية والأسماء القديمة كخيار احتياطي.
 const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.BREVO_SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.BREVO_SMTP_PASS;
 const SMTP_FROM = process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.EMAIL_FROM || SMTP_USER;
 const SMTP_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp-relay.brevo.com';
-const SMTP_PORT = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587);
+const SMTP_PORT = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 2525);
 const SMTP_SECURE = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || SMTP_PORT === 465;
-const smtpStatus = { configured: false, verified: false, lastError: '' };
+const smtpStatus = { configured: false, verified: false, provider: MAIL_PROVIDER, lastError: '' };
 
 const missingEnvironment = [
   ['JWT_SECRET', JWT_SECRET],
   ['FRONTEND_URL', FRONTEND_URL],
   ['OWNER_EMAIL', OWNER_EMAIL],
-  ['SMTP_USER', SMTP_USER],
-  ['SMTP_PASS', SMTP_PASS],
+  ...(BREVO_API_KEY ? [['SMTP_FROM', SMTP_FROM]] : []),
+  ...(BREVO_API_KEY ? [] : [['SMTP_USER', SMTP_USER], ['SMTP_PASS', SMTP_PASS]]),
 ].filter(([, value]) => !value).map(([name]) => name);
 
 if (missingEnvironment.length > 0) {
@@ -72,9 +76,11 @@ if (missingEnvironment.length > 0) {
   process.exit(1);
 }
 smtpStatus.configured = true;
-console.log(`SMTP config loaded: host=${SMTP_HOST}, port=${SMTP_PORT}, secure=${SMTP_SECURE}, user=${String(SMTP_USER).slice(0, 3)}***, from=${SMTP_FROM}`);
+console.log(BREVO_API_KEY
+  ? `Mail config loaded: provider=brevo-api, from=${SMTP_FROM}`
+  : `Mail config loaded: provider=smtp, host=${SMTP_HOST}, port=${SMTP_PORT}, secure=${SMTP_SECURE}, user=${String(SMTP_USER).slice(0, 3)}***, from=${SMTP_FROM}`);
 
-const transporter = nodemailer.createTransport({
+const transporter = BREVO_API_KEY ? null : nodemailer.createTransport({
   host: SMTP_HOST,
   port: SMTP_PORT,
   secure: SMTP_SECURE,
@@ -88,9 +94,40 @@ const transporter = nodemailer.createTransport({
   tls: { minVersion: 'TLSv1.2' }
 });
 
-transporter.verify()
-  .then(() => { smtpStatus.verified = true; console.log(`SMTP ready: ${SMTP_HOST}:${SMTP_PORT}`); })
-  .catch((error) => { smtpStatus.lastError = error.message || String(error); console.error('SMTP verification failed:', smtpStatus.lastError); });
+if (transporter) {
+  transporter.verify()
+    .then(() => { smtpStatus.verified = true; console.log(`SMTP ready: ${SMTP_HOST}:${SMTP_PORT}`); })
+    .catch((error) => { smtpStatus.lastError = error.message || String(error); console.error('SMTP verification failed:', smtpStatus.lastError); });
+} else {
+  smtpStatus.verified = true;
+  console.log('Brevo API mail provider ready over HTTPS');
+}
+
+async function sendBrevoEmail(toEmail, subject, html, text) {
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    signal: AbortSignal.timeout(10000),
+    headers: {
+      accept: 'application/json',
+      'api-key': BREVO_API_KEY,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      sender: { email: SMTP_FROM, name: APP_NAME },
+      to: [{ email: String(toEmail).trim() }],
+      replyTo: { email: SMTP_FROM, name: APP_NAME },
+      subject: String(subject || 'رسالة من متجر حمزة').slice(0, 200),
+      htmlContent: html,
+      textContent: text
+    })
+  });
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(`Brevo API ${response.status}: ${details.slice(0, 300)}`);
+  }
+  return response.json();
+}
 
 async function sendStoreEmail(toEmail, subject, htmlContent) {
   if (!toEmail || !String(toEmail).includes('@')) {
@@ -99,22 +136,25 @@ async function sendStoreEmail(toEmail, subject, htmlContent) {
   }
   const html = String(htmlContent || '');
   const text = html.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  const maxAttempts = MAIL_PROVIDER === 'brevo-api' ? 2 : 1;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      const info = await transporter.sendMail({
-        from: `"متجر حمزة" <${SMTP_FROM}>`,
-        to: String(toEmail).trim(),
-        replyTo: SMTP_FROM,
-        subject: String(subject || 'رسالة من متجر حمزة').slice(0, 200),
-        html,
-        text
-      });
-      console.log(`email sent (attempt ${attempt}):`, info.messageId);
+      const info = BREVO_API_KEY
+        ? await sendBrevoEmail(toEmail, subject, html, text)
+        : await transporter.sendMail({
+            from: `"متجر حمزة" <${SMTP_FROM}>`,
+            to: String(toEmail).trim(),
+            replyTo: SMTP_FROM,
+            subject: String(subject || 'رسالة من متجر حمزة').slice(0, 200),
+            html,
+            text
+          });
+      console.log(`email sent via ${MAIL_PROVIDER} (attempt ${attempt}):`, info.messageId || info.messageId);
       return true;
     } catch (error) {
       console.error(`email error (attempt ${attempt}):`, error.message || error);
       smtpStatus.lastError = error.message || String(error);
-      if (attempt < 3) await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+      if (attempt < maxAttempts) await new Promise(resolve => setTimeout(resolve, attempt * 1000));
     }
   }
   return false;
