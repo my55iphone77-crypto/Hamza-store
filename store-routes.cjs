@@ -348,7 +348,22 @@ module.exports = function buildStoreRouter(deps) {
     const { list = 'staff', create = 'staff', update = 'staff', remove = 'staff', sort = { createdAt: -1 } } = o;
     const routeGuard = (level) => ['public', 'staff', 'manager', 'owner'].includes(level) ? guard(level) : permissionGuard(level);
     router.get(path, routeGuard(list), async (req, res) => {
-      try { res.json(await Model.find().sort(sort)); }
+      try {
+        const rows = await Model.find().sort(sort);
+        if (path === '/announcements') {
+          const seen = new Map();
+          const unique = rows.filter((row) => {
+            const key = `${String(row.title || '').trim()}|${String(row.message || '').trim()}|${String(row.audience || 'employees')}`;
+            const timestamp = new Date(row.createdAt || row.date || 0).getTime();
+            const previous = seen.get(key);
+            if (previous !== undefined && Math.abs(previous - timestamp) <= 60 * 1000) return false;
+            seen.set(key, timestamp);
+            return true;
+          });
+          return res.json(unique);
+        }
+        res.json(rows);
+      }
       catch (e) { res.status(500).json({ error: 'خطأ في جلب البيانات' }); }
     });
     router.post(path, routeGuard(create), async (req, res) => {
@@ -356,6 +371,16 @@ module.exports = function buildStoreRouter(deps) {
         const payload = path === '/customers'
           ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), name: String(req.body?.name || '').trim() }
           : req.body;
+        // حماية idempotency للإعلانات: إعادة إرسال نفس الطلب خلال ثوانٍ لا تنشئ إعلاناً ثانياً.
+        if (path === '/announcements' && payload?.title && payload?.message) {
+          const recentDuplicate = await Model.findOne({
+            title: String(payload.title).trim(),
+            message: String(payload.message).trim(),
+            audience: payload.audience || 'employees',
+            createdAt: { $gte: new Date(Date.now() - 30 * 1000) }
+          }).sort({ createdAt: -1 });
+          if (recentDuplicate) return res.json(recentDuplicate);
+        }
         if (path === '/customers' && (!payload.name || !validEmail(payload.email))) return res.status(400).json({ error: 'اسم العميل والبريد الإلكتروني الصحيح مطلوبان.' });
         if (path === '/customers' && await Model.exists({ email: payload.email })) return res.status(409).json({ error: 'هذا العميل موجود مسبقاً بهذا البريد الإلكتروني.' });
         const d = await new Model(payload).save();

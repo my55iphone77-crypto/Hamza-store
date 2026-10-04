@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useApp } from "./AppContext";
 import { useFullBleedStyle } from "./useWindowSize";
 
@@ -21,6 +21,7 @@ function Announcements({ inputStyle = {} }) {
   const [audience, setAudience] = useState('employees');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
+  const publishingRef = useRef(false);
 
   const safeAnnouncements = Array.isArray(announcements) ? announcements : [];
   const safeEmployees = Array.isArray(employees) ? employees : [];
@@ -97,6 +98,7 @@ function Announcements({ inputStyle = {} }) {
 
   const handleAddAnnouncement = async (e) => {
     e.preventDefault();
+    if (publishingRef.current || isSubmitting) return;
     if (!newTitle.trim() || !newMessage.trim()) {
       setStatusMessage('⚠️ يرجى تعبئة عنوان ومحتوى الإعلان.');
       return;
@@ -106,6 +108,7 @@ function Announcements({ inputStyle = {} }) {
       return;
     }
 
+    publishingRef.current = true;
     setIsSubmitting(true);
     setStatusMessage('جاري نشر الإعلان...');
 
@@ -120,7 +123,12 @@ function Announcements({ inputStyle = {} }) {
       const response = await secureApiRequest('/announcements', 'POST', newAnn);
       const savedAnnouncement = response.announcement || response || { id: Date.now(), ...newAnn };
       if (typeof setAnnouncements === 'function') {
-        setAnnouncements(prev => [...(Array.isArray(prev) ? prev : []), savedAnnouncement]);
+        setAnnouncements(prev => {
+          const current = Array.isArray(prev) ? prev : [];
+          const savedId = String(savedAnnouncement._id || savedAnnouncement.id || '');
+          if (savedId && current.some(item => String(item?._id || item?.id || '') === savedId)) return current;
+          return [...current, savedAnnouncement];
+        });
       }
 
       const tasks = [];
@@ -153,6 +161,7 @@ function Announcements({ inputStyle = {} }) {
       console.error("خطأ:", err?.message || err);
       setStatusMessage('❌ فشل في نشر الإعلان.');
     } finally {
+      publishingRef.current = false;
       setIsSubmitting(false);
     }
   };
