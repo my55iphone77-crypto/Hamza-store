@@ -12,7 +12,7 @@ function Salaries({ mails, setMails }) {
     updateEmployee,
   } = useApp() || {};
   const dismissals = [];
-  const salaryId = (s) => String(s?._id || s?.id || '');
+  const salaryId = (s) => String(s?._id || s?.id || s?.employeeId || '');
   const normalizeSalary = (s) => {
     const base = Number(s?.base ?? s?.amount ?? s?.salary ?? 0);
     const deduction = Number(s?.deduction || 0);
@@ -129,7 +129,12 @@ function Salaries({ mails, setMails }) {
     // 2. تحديث الموظف المركزي عبر API؛ لا نعدّل نسخة محلية منفصلة.
     const employeeId = selectedSalary.employeeId || selectedSalary.id;
     if (typeof updateEmployee === 'function' && employeeId) {
-      await updateEmployee(employeeId, { name: currentEmpName, salary: baseVal });
+      try {
+        await updateEmployee(employeeId, { name: currentEmpName, salary: baseVal });
+      } catch (err) {
+        console.error('تعذر تحديث سجل الموظف بعد حفظ الراتب:', err);
+        alert('تم حفظ الراتب، لكن تعذر تحديث بطاقة الموظف. أعد تحميل القسم للمزامنة.');
+      }
     }
 
     logEventAndEmail(`⚙️ تم تحديث بيانات الموظف (${currentEmpName}) ومرتبة الصافي ($${netVal}) بالتزامن مع كافة الأقسام.`, empEmail);
@@ -280,6 +285,9 @@ function Salaries({ mails, setMails }) {
             <div
               key={salaryId(s)}
               onClick={() => handleCardClick(s)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(s); } }}
               style={{ background: 'rgba(17, 24, 39, 0.7)', backdropFilter: 'blur(12px)', border: `1px solid ${isDismissed ? 'rgba(239, 68, 68, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`, borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)', gap: '10px' }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.5)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = isDismissed ? 'rgba(239, 68, 68, 0.6)' : 'rgba(255, 255, 255, 0.08)'; }}

@@ -86,8 +86,11 @@ const GLASS_STYLE = `
 	  .hz-glass-card:hover {
 	    transform: none;
     border-color: var(--glow);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.55), 0 0 45px color-mix(in srgb, var(--glow) 55%, transparent), inset 0 1px 0 rgba(255,255,255,0.4);
-  }
+	    box-shadow: 0 30px 60px rgba(0,0,0,0.55), 0 0 45px color-mix(in srgb, var(--glow) 55%, transparent), inset 0 1px 0 rgba(255,255,255,0.4);
+	  }
+	  @media (hover: hover) and (pointer: fine) {
+	    .hz-glass-card:not(.hz-app-full-container):hover { transform: translateY(-5px) scale(1.01); }
+	  }
   .hz-glass-card:hover::after { opacity: 0.9; transform: scale(1.3); }
 	  .hz-glass-card:active { transform: none; }
 	  .hz-atmosphere button, .hz-atmosphere [role="button"], .hz-atmosphere input, .hz-atmosphere select, .hz-atmosphere textarea {
