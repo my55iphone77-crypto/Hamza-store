@@ -89,7 +89,17 @@ const GLASS_STYLE = `
     box-shadow: 0 30px 60px rgba(0,0,0,0.55), 0 0 45px color-mix(in srgb, var(--glow) 55%, transparent), inset 0 1px 0 rgba(255,255,255,0.4);
   }
   .hz-glass-card:hover::after { opacity: 0.9; transform: scale(1.3); }
-  .hz-glass-card:active { transform: translateY(-5px) scale(0.98); }
+	  .hz-glass-card:active { transform: translateY(-5px) scale(0.98); }
+	  .hz-atmosphere button, .hz-atmosphere [role="button"], .hz-atmosphere input, .hz-atmosphere select, .hz-atmosphere textarea {
+	    touch-action: manipulation;
+	    -webkit-tap-highlight-color: transparent;
+	  }
+	  .hz-atmosphere button, .hz-atmosphere [role="button"] { min-height: 44px; }
+	  .hz-glass-card { touch-action: manipulation; }
+	  @media (hover: none), (pointer: coarse) {
+	    .hz-glass-card:hover { transform: none; border-color: rgba(255,255,255,0.2); box-shadow: 0 12px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.3); }
+	    .hz-glass-card:active { transform: scale(0.99); }
+	  }
 
   .hz-app-full-container {
     width: 100% !important;
