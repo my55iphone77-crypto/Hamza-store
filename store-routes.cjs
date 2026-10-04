@@ -110,7 +110,10 @@ module.exports = function buildStoreRouter(deps) {
   router.put('/salaries/:id', permissionGuard('manage_salaries', 'manager'), async (req, res) => {
     try {
       const body = req.body || {};
-      const base = Number(body.base ?? body.amount ?? 0);
+      const existingSalary = await Salary.findById(req.params.id).lean();
+      if (!existingSalary) return res.status(404).json({ error: 'سجل الراتب غير موجود.' });
+      const hasBaseUpdate = body.base !== undefined || body.amount !== undefined;
+      const base = hasBaseUpdate ? Number(body.base ?? body.amount ?? 0) : Number(existingSalary.base ?? existingSalary.amount ?? 0);
       const deduction = Math.max(0, Number(body.deduction || 0));
       const bonus = Math.max(0, Number(body.bonus || 0));
       const update = {
@@ -124,7 +127,15 @@ module.exports = function buildStoreRouter(deps) {
         ...(body.lastPaidMonth !== undefined ? { lastPaidMonth: String(body.lastPaidMonth) } : {})
       };
       const salary = await Salary.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
-      if (!salary) return res.status(404).json({ error: 'سجل الراتب غير موجود.' });
+      if (hasBaseUpdate && salary.employeeId) {
+        await Employee.findByIdAndUpdate(salary.employeeId, { $set: { salary: base } });
+        await Salary.updateMany(
+          { employeeId: String(salary.employeeId), month: monthStr(), status: { $nin: ['مدفوع', 'paid'] } },
+          { $set: { amount: base, base } }
+        );
+        await broadcastList('EMPLOYEES', Employee, { createdAt: -1 });
+        await broadcastList('SALARIES', Salary);
+      }
       broadcast('SALARIES', salary);
       res.json(salary);
     } catch (e) { res.status(400).json({ error: e.message || 'فشل تحديث الراتب.' }); }
@@ -834,9 +845,10 @@ module.exports = function buildStoreRouter(deps) {
       }
       if (emp.name !== old.name) await safe('رواتب-اسم', () => Salary.updateMany({ employeeId: id }, { $set: { employeeName: emp.name } }));
       if (Number(emp.salary) !== Number(old.salary)) {
-        // نعدل الراتب المعلّق للشهر الحالي فقط، ما نلمس الرواتب المدفوعة
+        // نعدل راتب الشهر الحالي غير المدفوع، بما فيه السجل المستحق.
         await safe('رواتب-مبلغ', () => Salary.updateMany(
-          { employeeId: id, month: monthStr(), status: 'قيد الانتظار' }, { $set: { amount: Number(emp.salary) || 0 } }));
+          { employeeId: id, month: monthStr(), status: { $nin: ['مدفوع', 'paid'] } },
+          { $set: { amount: Number(emp.salary) || 0, base: Number(emp.salary) || 0 } }));
       }
       if (User && (emp.email !== old.email || emp.role !== old.role || emp.name !== old.name || newHash || Array.isArray(b.permissions))) {
         await safe('حساب دخول', async () => {
@@ -849,6 +861,8 @@ module.exports = function buildStoreRouter(deps) {
           }
         });
       }
+      await broadcastList('EMPLOYEES', Employee, { createdAt: -1 });
+      if (Number(emp.salary) !== Number(old.salary) || emp.name !== old.name) await broadcastList('SALARIES', Salary);
       res.json({ employee: cleanEmp(emp) });
     } catch (e) {
       if (e && e.code === 11000) return res.status(409).json({ error: 'هذا الإيميل مسجل لموظف آخر.' });

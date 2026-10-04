@@ -21,6 +21,7 @@ function CustomerService({
   currentUser: propCurrentUser = { name: 'موظف حالي', role: 'موظف' },
 }) {
   const context = useApp() || {};
+  const fullBleedStyle = useFullBleedStyle();
   const {
     apiRequest,
     customers: contextCustomers = [],
