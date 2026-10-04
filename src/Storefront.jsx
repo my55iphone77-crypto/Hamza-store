@@ -424,6 +424,10 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
       </div>
 
+      <div style={{ width: '100%', marginBottom: '20px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(240, 192, 96, 0.35)', boxShadow: '0 18px 50px rgba(0, 0, 0, 0.35)', background: '#080b10' }}>
+        <img src="/hero-banner.png" alt="Hamza Store - ألعاب وتقنية بلمسة فاخرة" style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 'clamp(220px, 42vw, 520px)', objectFit: 'cover', objectPosition: 'center' }} />
+      </div>
+
       <CheckoutForm authCart={authCart} inputStyle={inputStyle} />
       <OrderConfirmation authCart={authCart} />
 
