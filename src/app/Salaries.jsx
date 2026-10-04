@@ -289,8 +289,7 @@ function Salaries({ mails, setMails }) {
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(s); } }}
               style={{ background: 'rgba(17, 24, 39, 0.7)', backdropFilter: 'blur(12px)', border: `1px solid ${isDismissed ? 'rgba(239, 68, 68, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`, borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)', gap: '10px' }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.5)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = isDismissed ? 'rgba(239, 68, 68, 0.6)' : 'rgba(255, 255, 255, 0.08)'; }}
+              onPointerUp={(e) => { if (e.target === e.currentTarget) handleCardClick(s); }}
             >
               <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#1f2937', border: '3px solid rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {displayImage ? (
@@ -315,7 +314,7 @@ function Salaries({ mails, setMails }) {
 
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); handleCardClick(s); }}
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleCardClick(s); }}
                 style={{ width: '100%', background: '#2563eb', color: '#fff', border: 'none', padding: '6px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', marginTop: '4px' }}
               >
                 تعديل ومراجعة شاملة ✏️
@@ -327,7 +326,7 @@ function Salaries({ mails, setMails }) {
 
       {/* نافذة التعديل والربط الذكي الشامل */}
       {showEditModal && selectedSalary && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', boxSizing: 'border-box', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px', boxSizing: 'border-box', overflowY: 'auto' }}>
           <div
             style={{ background: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '24px', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', padding: '30px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)', position: 'relative', color: '#fff', display: 'flex', flexDirection: 'column', gap: '20px' }}
             onClick={(e) => e.stopPropagation()}

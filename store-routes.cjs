@@ -699,15 +699,28 @@ module.exports = function buildStoreRouter(deps) {
   });
 
   // ============================= شكاوى / رسائل العملاء (requests) =============================
-  router.post('/requests', publicActionLimiter, async (req, res) => {
+  const saveSupportRequest = async (req, res) => {
     try {
       const { customerName, customerEmail, phone, location, issue } = req.body || {};
       if (!customerName || !issue) return res.status(400).json({ error: 'الاسم ونص المشكلة مطلوبان.' });
       if (String(customerName).length > 120 || String(issue).length > 3000 || String(phone || '').length > 40 || String(location || '').length > 200) {
         return res.status(400).json({ error: 'بيانات الشكوى تتجاوز الحد المسموح.' });
       }
-      res.json(await new Support({ customerName, customerEmail, phone, location, issue }).save());
+      const saved = await new Support({ customerName, customerEmail, phone, location, issue }).save();
+      res.json(saved);
     } catch (e) { res.status(400).json({ error: 'فشل إرسال الشكوى' }); }
+  };
+  // توافق مع واجهة المتجر القديمة التي كانت تستخدم /support.
+  router.post('/support', publicActionLimiter, saveSupportRequest);
+  router.get('/support/customer', publicActionLimiter, async (req, res) => {
+    try {
+      const email = String(req.query.email || '').trim().toLowerCase();
+      if (!email) return res.json([]);
+      res.json(await Support.find({ customerEmail: email }).sort({ date: -1, createdAt: -1 }).limit(100));
+    } catch (e) { res.status(500).json({ error: 'تعذر جلب شكاوى العميل' }); }
+  });
+  router.post('/requests', publicActionLimiter, async (req, res) => {
+    return saveSupportRequest(req, res);
   });
   router.get('/requests/:id', async (req, res) => {
     try {
