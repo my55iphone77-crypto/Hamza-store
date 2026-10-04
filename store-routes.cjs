@@ -433,6 +433,27 @@ module.exports = function buildStoreRouter(deps) {
 
   // ============================= المنتجات =============================
   // الزوار يشوفوا المنتجات بدون الأكواد (codes هي مفاتيح البطاقات الفعلية!)
+  const CODE_STOCK_TYPES = new Set(['code', 'subscription', 'store_credit']);
+  const normalizeCodes = (values) => [...new Set((Array.isArray(values) ? values : [values])
+    .map((value) => String(value || '').trim())
+    .filter(Boolean))];
+  const syncCodeStock = (product) => {
+    if (product && CODE_STOCK_TYPES.has(String(product.deliveryType || ''))) {
+      product.stock = Array.isArray(product.codes) ? product.codes.length : 0;
+    }
+    return product;
+  };
+  const seedStoreCreditCards = async (product, codes) => {
+    if (String(product?.deliveryType || '') !== 'store_credit' || !StoreCreditCard) return;
+    const amount = Number(product.storeCreditAmount || product.price || 0);
+    if (!(amount > 0)) throw new Error('قيمة بطاقة الرصيد يجب أن تكون أكبر من صفر.');
+    for (const code of codes) {
+      if (!/^HZ-[A-F0-9]{20}$/.test(code)) throw new Error(`كود بطاقة الرصيد غير صالح: ${code}. يجب أن يبدأ بـ HZ- ويتكون من 20 رمزاً.`);
+      const exists = await StoreCreditCard.findOne({ codeHash: creditCodeHash(code) }).select('_id');
+      if (exists) throw new Error(`كود بطاقة الرصيد مضاف مسبقاً: ${code}.`);
+      await StoreCreditCard.create({ codeHash: creditCodeHash(code), amount, status: 'issued' });
+    }
+  };
   router.get('/products', async (req, res) => {
     try {
       const user = await getUserFromAuthHeader(req.headers.authorization);
@@ -441,15 +462,81 @@ module.exports = function buildStoreRouter(deps) {
     } catch (e) { res.status(500).json({ error: 'خطأ في جلب المنتجات' }); }
   });
   router.post('/products', guard('staff'), async (req, res) => {
-    try { res.json(await new Product(normalizeProductSchedule(req.body)).save()); }
+    try {
+      const payload = normalizeProductSchedule(req.body);
+      if (CODE_STOCK_TYPES.has(String(payload.deliveryType || ''))) {
+        payload.codes = normalizeCodes(payload.codes);
+        payload.stock = payload.codes.length;
+      }
+      const product = await new Product(payload).save();
+      await seedStoreCreditCards(product, product.codes || []);
+      res.json(product);
+    }
     catch (e) { res.status(400).json({ error: e.message || 'بيانات المنتج غير صالحة' }); }
   });
   router.put('/products/:id', guard('staff'), async (req, res) => {
     try {
-      const p = await Product.findByIdAndUpdate(req.params.id, normalizeProductSchedule(req.body), { new: true, runValidators: true });
+      const existing = await Product.findById(req.params.id);
+      if (!existing) return res.status(404).json({ error: 'المنتج غير موجود' });
+      const payload = normalizeProductSchedule(req.body);
+      const deliveryType = String(payload.deliveryType || existing.deliveryType || '');
+      if (CODE_STOCK_TYPES.has(deliveryType)) {
+        payload.codes = Array.isArray(payload.codes) ? normalizeCodes(payload.codes) : (existing.codes || []);
+        payload.stock = payload.codes.length;
+      }
+      const p = await Product.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
       if (!p) return res.status(404).json({ error: 'المنتج غير موجود' });
       res.json(p);
     } catch (e) { res.status(400).json({ error: e.message || 'فشل تحديث المنتج' }); }
+  });
+  router.post('/products/:id/codes', guard('staff'), async (req, res) => {
+    try {
+      const product = await Product.findById(req.params.id);
+      if (!product) return res.status(404).json({ error: 'المنتج غير موجود' });
+      if (!CODE_STOCK_TYPES.has(String(product.deliveryType || ''))) return res.status(400).json({ error: 'هذا المنتج يعتمد على كمية يدوية وليس أكواداً.' });
+      const incoming = normalizeCodes(req.body?.codes !== undefined ? req.body.codes : req.body?.code);
+      if (incoming.length === 0) return res.status(400).json({ error: 'أدخل كوداً واحداً على الأقل.' });
+      const existingCodes = new Set(normalizeCodes(product.codes));
+      const added = incoming.filter((code) => !existingCodes.has(code));
+      if (added.length === 0) return res.status(400).json({ error: 'كل الأكواد المدخلة موجودة مسبقاً.' });
+      await seedStoreCreditCards(product, added);
+      product.codes = [...existingCodes, ...added];
+      syncCodeStock(product);
+      await product.save();
+      broadcast('PRODUCTS', await Product.find().sort({ createdAt: -1 }));
+      res.json(product);
+    } catch (e) { res.status(400).json({ error: e.message || 'فشل إضافة الأكواد' }); }
+  });
+  router.delete('/products/:id/codes', guard('staff'), async (req, res) => {
+    try {
+      const product = await Product.findById(req.params.id);
+      if (!product) return res.status(404).json({ error: 'المنتج غير موجود' });
+      const code = String(req.body?.code || '').trim();
+      if (!code) return res.status(400).json({ error: 'الكود مطلوب.' });
+      if (String(product.deliveryType || '') === 'store_credit' && StoreCreditCard) {
+        const card = await StoreCreditCard.findOne({ codeHash: creditCodeHash(code) });
+        if (card?.status === 'redeemed') return res.status(409).json({ error: 'لا يمكن حذف بطاقة تم استخدامها.' });
+        if (card) await StoreCreditCard.deleteOne({ _id: card._id });
+      }
+      product.codes = normalizeCodes(product.codes).filter((value) => value !== code);
+      syncCodeStock(product);
+      await product.save();
+      broadcast('PRODUCTS', await Product.find().sort({ createdAt: -1 }));
+      res.json(product);
+    } catch (e) { res.status(400).json({ error: e.message || 'فشل حذف الكود' }); }
+  });
+  router.patch('/products/:id/stock', guard('staff'), async (req, res) => {
+    try {
+      const product = await Product.findById(req.params.id);
+      if (!product) return res.status(404).json({ error: 'المنتج غير موجود' });
+      if (CODE_STOCK_TYPES.has(String(product.deliveryType || ''))) return res.status(400).json({ error: 'مخزون هذا المنتج ديناميكي ويُحسب من عدد الأكواد.' });
+      const stock = Number.parseInt(req.body?.stock, 10);
+      if (!Number.isInteger(stock) || stock < 0) return res.status(400).json({ error: 'كمية المخزون غير صالحة.' });
+      product.stock = stock;
+      await product.save();
+      broadcast('PRODUCTS', await Product.find().sort({ createdAt: -1 }));
+      res.json(product);
+    } catch (e) { res.status(400).json({ error: e.message || 'فشل تحديث المخزون' }); }
   });
   router.patch('/products/:id/status', guard('staff'), async (req, res) => {
     try {
@@ -516,8 +603,6 @@ module.exports = function buildStoreRouter(deps) {
       let earnedPoints = 0;
       let loyaltyPointsCost = 0;
       const items = [];
-      const creditCardsToIssue = [];
-      const creditStockNeeds = [];
       const codeStockNeeds = [];
       for (const it of rawItems.slice(0, 50)) {
         const qty = Math.max(1, Math.min(100, Number(it.quantity) || 1));
@@ -534,10 +619,7 @@ module.exports = function buildStoreRouter(deps) {
           itemPoints = Math.max(0, Number(prod.loyaltyPoints || 0));
           loyaltyPrice = Math.max(0, Number(prod.loyaltyPrice || 0));
           if (loyaltyOnly && loyaltyPrice <= 0) loyaltyOnly = false;
-          if (deliveryType === 'store_credit' || storeCreditAmount > 0) {
-            creditStockNeeds.push({ productId: prod._id, quantity: qty, productName: prod.name });
-          }
-          if ((deliveryType === 'code' || deliveryType === 'subscription') && (!Array.isArray(prod.codes) || prod.codes.length < qty)) {
+          if (['code', 'subscription', 'store_credit'].includes(deliveryType) && (!Array.isArray(prod.codes) || prod.codes.length < qty)) {
             return res.status(409).json({ error: `لا يوجد عدد كافٍ من الأكواد للمنتج: ${prod.name}.` });
           }
         }
@@ -549,16 +631,8 @@ module.exports = function buildStoreRouter(deps) {
         total += price * qty;
         earnedPoints += itemPoints * qty;
         const deliveredCodes = [];
-        if (deliveryType === 'store_credit' || storeCreditAmount > 0) {
-          const amount = storeCreditAmount > 0 ? storeCreditAmount : price;
-          for (let i = 0; i < qty; i += 1) {
-            const code = newCreditCode();
-            deliveredCodes.push(code);
-            creditCardsToIssue.push({ codeHash: creditCodeHash(code), amount });
-          }
-        }
         items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, loyaltyOnly, loyaltyPrice, playerId: it.playerId ? String(it.playerId) : undefined, deliveredCodes });
-        if (it.id && mongoose.isValidObjectId(it.id) && (deliveryType === 'code' || deliveryType === 'subscription')) {
+        if (it.id && mongoose.isValidObjectId(it.id) && ['code', 'subscription', 'store_credit'].includes(deliveryType)) {
           codeStockNeeds.push({ productId: String(it.id), quantity: qty, itemIndex: items.length - 1, productName: name });
         }
       }
@@ -632,20 +706,6 @@ module.exports = function buildStoreRouter(deps) {
           { upsert: true, new: true }
         );
       }
-      // حجز مخزون بطاقات الرصيد بشكل ذري حتى لا تُباع وحدات أكثر من المتاح.
-      const reservedCreditStock = [];
-      for (const need of creditStockNeeds) {
-        const reserved = await Product.findOneAndUpdate(
-          { _id: need.productId, stock: { $gte: need.quantity } },
-          { $inc: { stock: -need.quantity } },
-          { new: true }
-        );
-        if (!reserved) {
-          for (const previous of reservedCreditStock) await Product.updateOne({ _id: previous.productId }, { $inc: { stock: previous.quantity } });
-          return res.status(409).json({ error: `لا يوجد مخزون كافٍ من بطاقة الرصيد: ${need.productName}.` });
-        }
-        reservedCreditStock.push(need);
-      }
       const order = await new Order({
         orderNumber: newOrderNumber(),
         customerName: String(customerName).trim(),
@@ -669,9 +729,6 @@ module.exports = function buildStoreRouter(deps) {
         } catch (salesError) {
           console.error('[orders] sales log failure:', salesError.message);
         }
-      }
-      if (creditCardsToIssue.length > 0 && StoreCreditCard) {
-        await StoreCreditCard.insertMany(creditCardsToIssue.map(card => ({ ...card, orderId: String(order._id), customerEmail: String(customerEmail).trim().toLowerCase() })));
       }
       if (appliedCouponCode) {
         const consumed = await Coupon.findOneAndUpdate(

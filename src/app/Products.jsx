@@ -221,7 +221,7 @@ export default function Products() {
       alert("الرجاء إدخال اسم المنتج والسعر الأساسي على الأقل!");
       return;
     }
-    const codesArray = deliveryType === "code" || deliveryType === "subscription" 
+    const codesArray = deliveryType === "code" || deliveryType === "subscription" || deliveryType === "store_credit"
       ? newCodeText.split('\n').filter(c => c.trim() !== '') 
       : [];
 
@@ -235,7 +235,7 @@ export default function Products() {
       status, scheduledDate: toISOStringOrNull(scheduledDate) || undefined, unpublishDate: toISOStringOrNull(unpublishDate) || undefined,
       lowStockThreshold: parseInt(lowStockThreshold) || 3,
       maxStockThreshold: parseInt(maxStockThreshold) || 50,
-      codes: codesArray, stock: deliveryType === "id_topup" || deliveryType === "store_credit" ? parseInt(manualStock) || 0 : codesArray.length,
+      codes: codesArray, stock: deliveryType === "id_topup" ? parseInt(manualStock) || 0 : codesArray.length,
     };
 
     try {
@@ -323,7 +323,8 @@ export default function Products() {
     e.preventDefault();
     if (!newCodeText.trim()) return;
     try {
-      const updated = await apiFetch(`/products/${selectedProduct._id}/codes`, { method: "POST", body: JSON.stringify({ code: newCodeText.trim() }) });
+      const codes = newCodeText.split('\n').map((code) => code.trim()).filter(Boolean);
+      const updated = await apiFetch(`/products/${selectedProduct._id}/codes`, { method: "POST", body: JSON.stringify({ codes }) });
       setProducts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
       setSelectedProduct(updated);
       setNewCodeText("");
@@ -549,10 +550,13 @@ export default function Products() {
                 {isUploadingImage && <span style={{ color: "#38bdf8", fontSize: "11px" }}>⏳ جاري معالجة وضغط الصورة...</span>}
               </div>
               {image && <img src={image} alt="معاينة" style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />}
-              {deliveryType === "id_topup" || deliveryType === "store_credit" ? (
+              {deliveryType === "id_topup" ? (
                 <input type="number" placeholder="الكمية المتوفرة يدوياً" value={manualStock} onChange={(e) => setManualStock(e.target.value)} style={glassInputStyle} />
               ) : (
-                <textarea placeholder="الأكواد أو الاشتراكات (كل كود في سطر)..." value={newCodeText} onChange={(e) => setNewCodeText(e.target.value)} rows={3} style={{ ...glassInputStyle, fontFamily: "monospace" }} />
+                <>
+                  <textarea placeholder={deliveryType === "store_credit" ? "أكواد بطاقات الرصيد (كل كود في سطر، بصيغة HZ-...)..." : "الأكواد أو الاشتراكات (كل كود في سطر)..."} value={newCodeText} onChange={(e) => setNewCodeText(e.target.value)} rows={3} style={{ ...glassInputStyle, fontFamily: "monospace" }} />
+                  {deliveryType === "store_credit" && <div style={{ color: "#facc15", fontSize: "12px" }}>المخزون ديناميكي: كل كود تضيفه = بطاقة واحدة متاحة للبيع، ولا تحتاج لتحديد عدد يدوي.</div>}
+                </>
               )}
               <select value={status} onChange={(e) => setStatus(e.target.value)} style={glassInputStyle}>
                 <option value="منشور" style={{ background: "#1e293b" }}>🟢 منشور فوراً</option>
@@ -592,7 +596,7 @@ export default function Products() {
                 <div style={{ display: "flex", gap: "10px", background: "rgba(15,23,42,0.6)", padding: "6px", borderRadius: "10px", marginTop: "12px" }}>
                   <button onClick={() => setActiveTab("details")} style={tabButtonStyle(activeTab === "details", "#facc15")}>📋 التفاصيل</button>
                   <button onClick={() => setActiveTab("stock")} style={tabButtonStyle(activeTab === "stock", "#38bdf8")}>
-                    {selectedProduct.deliveryType === "id_topup" ? "📦 الكمية" : "🔑 الأكواد"} ({stockOf(selectedProduct)})
+                    {selectedProduct.deliveryType === "id_topup" ? "📦 الكمية" : selectedProduct.deliveryType === "store_credit" ? "🪙 بطاقات الرصيد" : "🔑 الأكواد"} ({stockOf(selectedProduct)})
                   </button>
                 </div>
 
@@ -633,12 +637,12 @@ export default function Products() {
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "15px" }}>
                     <form onSubmit={handleAddCode} style={{ display: "flex", gap: "8px" }}>
-                      <input
-                        type="text"
-                        placeholder="أضف كود جديد..."
+                      <textarea
+                        rows={2}
+                        placeholder={selectedProduct.deliveryType === "store_credit" ? "أضف كود بطاقة رصيد..." : "أضف كود جديد..."}
                         value={newCodeText}
                         onChange={(e) => setNewCodeText(e.target.value)}
-                        style={{ flex: 1, ...glassInputStyle }}
+                        style={{ flex: 1, ...glassInputStyle, fontFamily: "monospace", resize: "vertical" }}
                       />
                       <button type="submit" style={secondaryButtonStyle}>+ إضافة</button>
                     </form>
