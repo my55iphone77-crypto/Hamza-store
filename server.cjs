@@ -50,11 +50,12 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASS = process.env.SMTP_PASS;
-const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
-const SMTP_HOST = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
-const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+// نقبل أسماء SMTP الرسمية والأسماء القديمة حتى لا تتوقف الرسائل بسبب اختلاف اسم المتغير في Render.
+const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.BREVO_SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.BREVO_SMTP_PASS;
+const SMTP_FROM = process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.EMAIL_FROM || SMTP_USER;
+const SMTP_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp-relay.brevo.com';
+const SMTP_PORT = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587);
 const SMTP_SECURE = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || SMTP_PORT === 465;
 
 const missingEnvironment = [
@@ -75,6 +76,9 @@ const transporter = nodemailer.createTransport({
   port: SMTP_PORT,
   secure: SMTP_SECURE,
   auth: { user: SMTP_USER, pass: SMTP_PASS },
+  pool: true,
+  maxConnections: 3,
+  maxMessages: 100,
   connectionTimeout: 8000,
   greetingTimeout: 8000,
   socketTimeout: 10000,
@@ -86,23 +90,30 @@ transporter.verify()
   .catch((error) => console.error('SMTP verification failed:', error.message));
 
 async function sendStoreEmail(toEmail, subject, htmlContent) {
-  try {
-    if (!toEmail || !String(toEmail).includes('@')) {
-      console.error('email skipped: invalid recipient');
-      return false;
-    }
-    const info = await transporter.sendMail({
-      from: `"متجر حمزة" <${SMTP_FROM}>`,
-      to: toEmail,
-      subject,
-      html: htmlContent
-    });
-    console.log('email sent:', info.messageId);
-    return true;
-  } catch (error) {
-    console.error('email error:', error);
+  if (!toEmail || !String(toEmail).includes('@')) {
+    console.error('email skipped: invalid recipient');
     return false;
   }
+  const html = String(htmlContent || '');
+  const text = html.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const info = await transporter.sendMail({
+        from: `"متجر حمزة" <${SMTP_FROM}>`,
+        to: String(toEmail).trim(),
+        replyTo: SMTP_FROM,
+        subject: String(subject || 'رسالة من متجر حمزة').slice(0, 200),
+        html,
+        text
+      });
+      console.log(`email sent (attempt ${attempt}):`, info.messageId);
+      return true;
+    } catch (error) {
+      console.error(`email error (attempt ${attempt}):`, error.message || error);
+      if (attempt < 3) await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+    }
+  }
+  return false;
 }
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
