@@ -5,7 +5,7 @@ import { useApp } from './app/AppContext';
 import LoginPage from './app/LoginPage';
 import { useProducts, ProductSearchBar, ProductGrid } from './StoreProducts';
 import SupportSection from './SupportSection';
-import { useAuthCart, HeaderControls, CheckoutForm, OrderConfirmation } from './AuthCartCheckout';
+import { useAuthCart, HeaderControls, CheckoutForm, OrderConfirmation, ResetPasswordPage } from './AuthCartCheckout';
 
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const API_BASE_URL = isLocal ? 'http://localhost:4000/api' : '/api';
@@ -309,6 +309,17 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       setTrackerLoading(false);
     }
   };
+
+  const resetParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const resetEmail = resetParams?.get('email') || '';
+  const resetToken = resetParams?.get('token') || '';
+  if (typeof window !== 'undefined' && window.location.pathname === '/reset-password' && resetEmail && resetToken) {
+    return (
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0b0f19', padding: '20px', boxSizing: 'border-box' }} dir="rtl">
+        <ResetPasswordPage authCart={authCart} email={resetEmail} token={resetToken} />
+      </div>
+    );
+  }
 
   if (authCart && authCart.showLoginPage) {
     return (

@@ -179,11 +179,12 @@ module.exports = function buildAuthCoreRouter(deps) {
 
         const resetLink = `${FRONTEND_URL}/reset-password?email=${encodeURIComponent(cleanEmail)}&token=${rawToken}`;
 
-        await sendStoreEmail(
+        const emailSent = await sendStoreEmail(
           cleanEmail,
           'إعادة تعيين كلمة المرور - متجر حمزة',
           `<h3>مرحباً ${user.name || ''}،</h3><p><a href="${resetLink}">اضغط هنا لتعيين كلمة مرور جديدة</a></p><p>هذا الرابط صالح لمدة ساعة واحدة فقط.</p>`
         );
+        if (!emailSent) return res.status(502).json({ error: 'تعذر إرسال البريد حالياً. يرجى التحقق من إعدادات SMTP أو المحاولة لاحقاً.' });
       }
 
       res.json({ success: true, message: 'إذا كان هذا البريد مسجلاً لدينا، تم إرسال رابط إعادة التعيين.' });
