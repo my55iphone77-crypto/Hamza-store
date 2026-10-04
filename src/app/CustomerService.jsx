@@ -259,9 +259,10 @@ function CustomerService({
     setUpdatingId(id);
     setErrorMsg('');
     try {
-      let updatedData = { status: newStatus, response: responseText };
+      // الخادم يحفظ الرد في حقل reply ويستقبل التحديث عبر PUT.
+      let updatedData = { status: newStatus, reply: responseText };
       if (apiRequest) {
-        const data = await apiRequest(`/requests/${id}`, 'PATCH', updatedData);
+        const data = await apiRequest(`/requests/${id}`, 'PUT', updatedData);
         updatedData = data || updatedData;
       }
 

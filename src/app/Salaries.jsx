@@ -59,7 +59,7 @@ function Salaries({ mails, setMails }) {
     }
 
     // 2. فحص قسم (إيميلات وأرقام الموظفين): دمج البيانات المحدثة للاتصال
-    const empContact = Array.isArray(contacts) ? contacts.find(c => c.employeeId === s.id || c.name === s.name) : {};
+    const empContact = (Array.isArray(contacts) ? contacts.find(c => c && (c.employeeId === s.id || c.name === s.name)) : null) || {};
     const finalEmail = empContact.email || s.email || '';
     const finalPhone = empContact.phone || s.phone || '';
 
