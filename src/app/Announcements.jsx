@@ -101,7 +101,7 @@ function Announcements({ inputStyle = {} }) {
       setStatusMessage('⚠️ يرجى تعبئة عنوان ومحتوى الإعلان.');
       return;
     }
-    if (typeof hasPermission === 'function' && !hasPermission('send_marketing')) {
+    if (typeof hasPermission === 'function' && !hasPermission('manage_announcements')) {
       setStatusMessage('⛔ لا تملك الصلاحية لنشر الإعلانات.');
       return;
     }

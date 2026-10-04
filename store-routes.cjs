@@ -346,11 +346,12 @@ module.exports = function buildStoreRouter(deps) {
   // مصنع CRUD عام لباقي الأقسام
   function crud(path, Model, o = {}) {
     const { list = 'staff', create = 'staff', update = 'staff', remove = 'staff', sort = { createdAt: -1 } } = o;
-    router.get(path, guard(list), async (req, res) => {
+    const routeGuard = (level) => ['public', 'staff', 'manager', 'owner'].includes(level) ? guard(level) : permissionGuard(level);
+    router.get(path, routeGuard(list), async (req, res) => {
       try { res.json(await Model.find().sort(sort)); }
       catch (e) { res.status(500).json({ error: 'خطأ في جلب البيانات' }); }
     });
-    router.post(path, guard(create), async (req, res) => {
+    router.post(path, routeGuard(create), async (req, res) => {
       try {
         const payload = path === '/customers'
           ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), name: String(req.body?.name || '').trim() }
@@ -366,7 +367,7 @@ module.exports = function buildStoreRouter(deps) {
       }
       catch (e) { res.status(400).json({ error: e.message || 'بيانات غير صالحة' }); }
     });
-    router.put(`${path}/:id`, guard(update), async (req, res) => {
+    router.put(`${path}/:id`, routeGuard(update), async (req, res) => {
       try {
         const before = path === '/customers' ? await Model.findById(req.params.id) : null;
         const payload = path === '/customers' && req.body?.email !== undefined
@@ -385,7 +386,7 @@ module.exports = function buildStoreRouter(deps) {
         if (path === '/customers') broadcastList('CUSTOMERS', Customer);
       } catch (e) { res.status(400).json({ error: e.message || 'فشل التحديث' }); }
     });
-    router.delete(`${path}/:id`, guard(remove), async (req, res) => {
+    router.delete(`${path}/:id`, routeGuard(remove), async (req, res) => {
       try {
         let categoryName = req.params.id;
         try { categoryName = decodeURIComponent(categoryName); } catch (_) { /* Express may have decoded it already. */ }
@@ -1025,7 +1026,7 @@ module.exports = function buildStoreRouter(deps) {
   crud('/tickets', Ticket);
   crud('/sales', Sale, { remove: 'manager' });
   crud('/accounting/transactions', Transaction, { sort: { date: -1 }, remove: 'manager' });
-  crud('/announcements', Announcement, { remove: 'manager' });
+  crud('/announcements', Announcement, { list: 'manage_announcements', create: 'manage_announcements', update: 'manage_announcements', remove: 'manager' });
   crud('/achievements', Achievement, { remove: 'manager' });
   crud('/mails', Mail, { sort: { date: -1 } });
 
