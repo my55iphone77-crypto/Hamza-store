@@ -734,7 +734,7 @@ const glassContainerStyle = {
   overflow: "visible",
   color: "#fff",
   fontFamily: "Tajawal, sans-serif",
-  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.75)"
+  boxShadow: "0 25px 50px -12px rgba(2, 6, 23, 0.65), 0 0 30px rgba(14, 165, 233, 0.08)"
 };
 
 const glassSubContainerStyle = {
@@ -805,7 +805,7 @@ const glassCardStyle = {
   gap: "10px",
   cursor: "pointer",
   position: "relative",
-  boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)"
+  boxShadow: "0 8px 32px 0 rgba(2, 6, 23, 0.4)"
 };
 
 const addProductCardStyle = {
@@ -832,25 +832,25 @@ const discountBadgeStyle = {
 
 const modalOverlayStyle = {
   position: "fixed", inset: 0, width: "100vw", height: "100dvh", minHeight: "100%",
-  background: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(10px)",
+  background: "rgba(2, 6, 23, 0.86)", backdropFilter: "blur(12px)",
   display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 1100, padding: "clamp(12px, 3vw, 32px)", boxSizing: "border-box", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch"
 };
 
 const modalContentStyle = {
-  background: "rgba(30, 41, 59, 0.88)", backdropFilter: "blur(20px)",
-  border: "1px solid rgba(255, 255, 255, 0.15)", borderRadius: "20px",
+  background: "linear-gradient(145deg, rgba(23, 37, 84, 0.97), rgba(15, 23, 42, 0.97))", backdropFilter: "blur(20px)",
+  border: "1px solid rgba(56, 189, 248, 0.32)", borderRadius: "22px",
   padding: "clamp(18px, 3vw, 32px)", width: "min(100%, 1100px)", maxWidth: "1100px", maxHeight: "calc(100dvh - clamp(24px, 6vw, 64px))",
-  overflowY: "auto", overflowX: "hidden", position: "relative", boxSizing: "border-box", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)", margin: "auto"
+  overflowY: "auto", overflowX: "hidden", position: "relative", boxSizing: "border-box", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", boxShadow: "0 25px 50px -12px rgba(2, 6, 23, 0.72), 0 0 40px rgba(14, 165, 233, 0.12)", margin: "auto"
 };
 
 const closeBtnStyle = {
-  position: "absolute", top: "15px", left: "15px", background: "rgba(255,255,255,0.1)",
-  color: "#fff", border: "none", width: "30px", height: "30px", borderRadius: "50%", cursor: "pointer", fontWeight: "bold"
+  position: "absolute", top: "15px", left: "15px", background: "rgba(56,189,248,0.16)",
+  color: "#bae6fd", border: "1px solid rgba(56,189,248,0.35)", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontWeight: "bold"
 };
 
 const filterChipStyle = (BusActive) => ({
   background: BusActive ? "linear-gradient(135deg, #facc15 0%, #eab308 100%)" : "rgba(15, 23, 42, 0.6)",
-  color: BusActive ? "#000" : "#94a3b8", border: "1px solid rgba(255, 255, 255, 0.1)",
+  color: BusActive ? "#0f172a" : "#94a3b8", border: "1px solid rgba(255, 255, 255, 0.1)",
   padding: "6px 14px", borderRadius: "20px", cursor: "pointer", fontSize: "12px", fontWeight: "bold", display: "flex", alignItems: "center"
 });
 

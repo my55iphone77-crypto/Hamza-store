@@ -147,7 +147,7 @@ const GLASS_STYLE = `
   .hz-product-form, .hz-employee-form { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px !important; }
   .hz-product-form > button:last-child, .hz-employee-form > button:last-child { grid-column: 1 / -1; }
   .hz-product-form > *, .hz-employee-form > * { min-width: 0; width: 100%; }
-  .hz-section-shell [style*="position: fixed"] > div.hz-product-modal { width: min(100%, 480px) !important; max-width: 480px !important; padding: 14px !important; }
+  .hz-section-shell [style*="position: fixed"] > div.hz-product-modal { width: min(100%, 920px) !important; max-width: 920px !important; padding: 24px !important; }
   @media (max-width: 720px) { .hz-section-shell [style*="position: fixed"] > div.hz-product-modal { width: 100% !important; max-width: 100% !important; } }
   @media (max-width: 720px) { .hz-product-form, .hz-employee-form { grid-template-columns: minmax(0, 1fr); } .hz-product-form > button:last-child, .hz-employee-form > button:last-child { grid-column: auto; } }
   .hz-section-shell [style*="position: fixed"] > div[style*="maxWidth"], .hz-section-shell [style*="position: fixed"] > div[style*="max-width"] { width: min(100%, 1100px) !important; max-width: min(100%, 1100px) !important; max-height: calc(100dvh - clamp(24px, 6vw, 64px)) !important; margin: auto !important; }
@@ -302,7 +302,7 @@ function MainContent() {
     };
   }, [socket, setProducts, setSalesLog, setEmployees, safeContext]);
 
-  const inputStyle = useMemo(() => ({ background: '#0b0f19', color: '#fff', border: '1px solid #334155', padding: '10px 14px', borderRadius: '10px' }), []);
+  const inputStyle = useMemo(() => ({ background: 'rgba(15, 23, 42, 0.82)', color: '#fff', border: '1px solid #334155', padding: '10px 14px', borderRadius: '10px' }), []);
 
   const [sessions, setSessions] = useState([{ id: '1', name: 'الجلسة العامة للتحليل والإدارة' }]);
   const [currentSessionId, setCurrentSessionId] = useState('1');
