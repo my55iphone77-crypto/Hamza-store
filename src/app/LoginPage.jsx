@@ -18,15 +18,15 @@ function detectDevice(width) {
   if (width < 1024) return 'tablet';
   if (width < 1440) return 'laptop';
   if (width < 1920) return 'desktop';
-  return 'tv';
+  return 'desktop';
 }
 
 const DEVICE_CONFIG = {
-  mobile:  { scale: 0.95, cardMax: '100%',  cardPad: '28px 20px', outerPad: '12px' },
-  tablet:  { scale: 1.1,  cardMax: '520px', cardPad: '40px 36px', outerPad: '24px' },
-  laptop:  { scale: 1,    cardMax: '440px', cardPad: '40px 35px', outerPad: '20px' },
-  desktop: { scale: 1.15, cardMax: '500px', cardPad: '46px 40px', outerPad: '28px' },
-  tv:      { scale: 1.7,  cardMax: '760px', cardPad: '64px 56px', outerPad: '40px' },
+  mobile:  { scale: 0.95, cardMax: '100%',  cardPad: '24px 18px', outerPad: '12px' },
+  tablet:  { scale: 1,     cardMax: '440px', cardPad: '28px 24px', outerPad: '16px' },
+  laptop:  { scale: 1,     cardMax: '420px', cardPad: '28px 26px', outerPad: '16px' },
+  desktop: { scale: 1,     cardMax: '460px', cardPad: '32px 28px', outerPad: '20px' },
+  tv:      { scale: 1.15,  cardMax: '540px', cardPad: '40px 34px', outerPad: '28px' },
 };
 
 function useViewport() {
