@@ -10,6 +10,11 @@ import { useAuthCart, HeaderControls, CheckoutForm, OrderConfirmation, ResetPass
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const API_BASE_URL = isLocal ? 'http://localhost:4000/api' : '/api';
 const SOCKET_URL = isLocal ? 'http://localhost:4000' : window.location.origin;
+const isPublishedProduct = (product = {}) => {
+  const status = String(product.status || '').trim().toLowerCase();
+  if (status) return ['منشور', 'published', 'active'].includes(status);
+  return product.isPublished !== false && product.published !== false;
+};
 
 const GLASS_STYLE = `
   /* ✅ إصلاح السكرول: overflow-x:hidden على html و body معاً كان يحوّل body لحاوية سكرول ثانية */
@@ -264,13 +269,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
     const set = new Set(['all']);
     if (Array.isArray(products)) {
       products.forEach(p => {
-        const statusVal = String(p.status || '').toLowerCase();
-        const isPub = p.isPublished === true || p.published === true || p.isPublished === undefined && p.published === undefined;
-        const isNotDraftOrUnpublished = statusVal !== 'unpublished' && statusVal !== 'draft' && statusVal !== 'inactive';
-
-        const isPublished = (isPub || statusVal === 'active' || statusVal === 'published') && isNotDraftOrUnpublished;
-
-        if (isPublished && p.category) {
+        if (isPublishedProduct(p) && p.category) {
           const cleanCat = String(p.category).trim();
           if (cleanCat) set.add(cleanCat);
         }
@@ -282,13 +281,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
   const filteredProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
     return products.filter(p => {
-      const statusVal = String(p.status || '').toLowerCase();
-      const isPub = p.isPublished === true || p.published === true || p.isPublished === undefined && p.published === undefined;
-      const isNotDraftOrUnpublished = statusVal !== 'unpublished' && statusVal !== 'draft' && statusVal !== 'inactive';
-
-      const isPublished = (isPub || statusVal === 'active' || statusVal === 'published') && isNotDraftOrUnpublished;
-
-      if (!isPublished) return false;
+      if (!isPublishedProduct(p)) return false;
       if (selectedCategory === 'all') return true;
 
       return String(p.category || '').trim() === String(selectedCategory).trim();

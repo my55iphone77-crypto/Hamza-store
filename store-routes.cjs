@@ -458,7 +458,11 @@ module.exports = function buildStoreRouter(deps) {
     try {
       const user = await getUserFromAuthHeader(req.headers.authorization);
       const products = await Product.find().sort({ createdAt: -1 });
-      res.json(products.map((p) => { const o = toObj(p); if (!isStaff(user)) delete o.codes; return o; }));
+      const visibleProducts = isStaff(user) ? products : products.filter((p) => {
+        const status = String(p.status || '').trim().toLowerCase();
+        return status ? ['منشور', 'published', 'active'].includes(status) : p.isPublished !== false && p.published !== false;
+      });
+      res.json(visibleProducts.map((p) => { const o = toObj(p); if (!isStaff(user)) delete o.codes; return o; }));
     } catch (e) { res.status(500).json({ error: 'خطأ في جلب المنتجات' }); }
   });
   router.post('/products', guard('staff'), async (req, res) => {
