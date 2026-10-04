@@ -47,7 +47,8 @@ const APP_NAME = process.env.APP_NAME || 'متجر حمزة';
 const BRAND_LOGO_URL = process.env.BRAND_LOGO_URL || `${FRONTEND_URL || ''}/logo.png`;
 
 app.use(helmet());
-app.use(express.json({ limit: '1mb' }));
+// صور المنتجات تُرسل مضغوطة داخل JSON بصيغة base64؛ نحتاج حداً أكبر من 1MB حتى لا يفشل نشر بطاقة مع صورة.
+app.use(express.json({ limit: '8mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 
