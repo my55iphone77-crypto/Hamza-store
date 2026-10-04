@@ -57,6 +57,7 @@ const SMTP_FROM = process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.
 const SMTP_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp-relay.brevo.com';
 const SMTP_PORT = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587);
 const SMTP_SECURE = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || SMTP_PORT === 465;
+const smtpStatus = { configured: false, verified: false, lastError: '' };
 
 const missingEnvironment = [
   ['JWT_SECRET', JWT_SECRET],
@@ -70,6 +71,8 @@ if (missingEnvironment.length > 0) {
   console.error(`Missing required environment variables: ${missingEnvironment.join(', ')}`);
   process.exit(1);
 }
+smtpStatus.configured = true;
+console.log(`SMTP config loaded: host=${SMTP_HOST}, port=${SMTP_PORT}, secure=${SMTP_SECURE}, user=${String(SMTP_USER).slice(0, 3)}***, from=${SMTP_FROM}`);
 
 const transporter = nodemailer.createTransport({
   host: SMTP_HOST,
@@ -86,8 +89,8 @@ const transporter = nodemailer.createTransport({
 });
 
 transporter.verify()
-  .then(() => console.log(`SMTP ready: ${SMTP_HOST}:${SMTP_PORT}`))
-  .catch((error) => console.error('SMTP verification failed:', error.message));
+  .then(() => { smtpStatus.verified = true; console.log(`SMTP ready: ${SMTP_HOST}:${SMTP_PORT}`); })
+  .catch((error) => { smtpStatus.lastError = error.message || String(error); console.error('SMTP verification failed:', smtpStatus.lastError); });
 
 async function sendStoreEmail(toEmail, subject, htmlContent) {
   if (!toEmail || !String(toEmail).includes('@')) {
@@ -110,11 +113,16 @@ async function sendStoreEmail(toEmail, subject, htmlContent) {
       return true;
     } catch (error) {
       console.error(`email error (attempt ${attempt}):`, error.message || error);
+      smtpStatus.lastError = error.message || String(error);
       if (attempt < 3) await new Promise(resolve => setTimeout(resolve, attempt * 1000));
     }
   }
   return false;
 }
+
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, smtp: { configured: smtpStatus.configured, verified: smtpStatus.verified, lastError: smtpStatus.lastError || null } });
+});
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
