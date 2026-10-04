@@ -373,6 +373,7 @@ function MainContent() {
 
       {!showStorefront && (
         <header className="hz-admin-header" style={{ padding: '15px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
+          <img src="/logo.png" alt="Hamza Store" style={{ width: '140px', height: 'auto', maxHeight: '56px', objectFit: 'contain', display: 'block' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button onClick={() => { setShowStorefront(true); setActiveApp(null); }} className="hz-glass-btn" style={{ color: '#fff', padding: '8px 14px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>🛍️ واجهة المتجر</button>
             {isManagerOrEmployee && (

@@ -44,6 +44,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL;
 const OWNER_EMAIL = (process.env.OWNER_EMAIL || '').trim();
 
 const APP_NAME = process.env.APP_NAME || 'متجر حمزة';
+const BRAND_LOGO_URL = process.env.BRAND_LOGO_URL || `${FRONTEND_URL || ''}/logo.png`;
 
 app.use(helmet());
 app.use(express.json({ limit: '1mb' }));
@@ -134,7 +135,9 @@ async function sendStoreEmail(toEmail, subject, htmlContent) {
     console.error('email skipped: invalid recipient');
     return false;
   }
-  const html = String(htmlContent || '');
+  const originalHtml = String(htmlContent || '');
+  const brandHeader = `<div style="max-width:720px;margin:0 auto 18px;padding:18px 22px;text-align:center;background:#080808;border-radius:16px;border:1px solid #b58b3d;"><img src="${BRAND_LOGO_URL}" alt="Hamza Store" style="display:block;width:190px;max-width:80%;height:auto;margin:0 auto 8px;object-fit:contain;"><div style="font-family:Arial,sans-serif;color:#f3d48a;font-size:12px;letter-spacing:2px;">HAMZA STORE</div></div>`;
+  const html = `${brandHeader}${originalHtml}`;
   const text = html.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const maxAttempts = MAIL_PROVIDER === 'brevo-api' ? 2 : 1;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
