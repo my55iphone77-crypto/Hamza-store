@@ -265,8 +265,9 @@ app.get('/api/instagram/media-file', async (req, res) => {
     const parsedUrl = new URL(mediaUrl);
     const allowedHost = parsedUrl.hostname === 'graph.instagram.com' || parsedUrl.hostname.endsWith('.cdninstagram.com') || parsedUrl.hostname.endsWith('.fbcdn.net') || parsedUrl.hostname === 'fbsbx.com' || parsedUrl.hostname.endsWith('.fbsbx.com');
     if (!allowedHost) return res.status(400).send('Invalid Instagram media URL');
-    parsedUrl.searchParams.set('access_token', token);
-    const mediaResponse = await fetch(parsedUrl, { headers: { Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*;q=0.8,*/*;q=0.5' } });
+    // روابط صور Meta/CDN تكون موقعة مسبقاً؛ إضافة access_token إليها تكسر التوقيع.
+    if (parsedUrl.hostname === 'graph.instagram.com') parsedUrl.searchParams.set('access_token', token);
+    const mediaResponse = await fetch(parsedUrl, { headers: { Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*;q=0.8,*/*;q=0.5', 'User-Agent': 'Hamza-Store Instagram Media Proxy' } });
     if (!mediaResponse.ok) return res.status(mediaResponse.status).end();
     res.setHeader('Cache-Control', 'private, max-age=300');
     res.setHeader('Content-Type', mediaResponse.headers.get('content-type') || 'application/octet-stream');
