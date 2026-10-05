@@ -10,16 +10,14 @@ import Analytics from './app/Analytics';
 import Announcements from './app/Announcements';
 import Attendance from './app/Attendance';
 import Commissions from './app/Commissions';
-import Contacts from './app/Contacts';
 import Coupons from './app/Coupons';
 import Customers from './app/Customers';
 import CustomerService from './app/CustomerService';
 import Documents from './app/Documents';
 import EmailCenter from './app/EmailCenter';
-import EmployeeChat from './app/EmployeeChat';
 import Employees from './app/Employees';
 import Logs from './app/Logs';
-import ManagerMonitor from './app/ManagerMonitor';
+import Orders from './app/Orders';
 import Performance from './app/Performance';
 import Products from './app/Products';
 import Salaries from './app/Salaries';
@@ -34,6 +32,16 @@ import { APP_PERMISSION_MAP } from './permissions';
 const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
   ? 'http://localhost:4000/api'
   : '/api';
+
+const APP_GROUPS = {
+  Products: 'المتجر والكتالوج', Coupons: 'المتجر والكتالوج', Customers: 'العملاء والدعم',
+  CustomerService: 'العملاء والدعم', Tickets: 'العملاء والدعم', Announcements: 'العملاء والدعم', EmailCenter: 'العملاء والدعم',
+  SalesLog: 'الطلبات والمال', Orders: 'الطلبات والمال', Accounting: 'الطلبات والمال', Analytics: 'الطلبات والمال',
+  Employees: 'الفريق والعمليات', Salaries: 'الفريق والعمليات', Attendance: 'الفريق والعمليات', WorkHours: 'الفريق والعمليات',
+  Tasks: 'الفريق والعمليات', Performance: 'الفريق والعمليات', Achievements: 'الفريق والعمليات', Commissions: 'الفريق والعمليات',
+  Documents: 'الفريق والعمليات',
+  Settings: 'النظام', Logs: 'النظام', AiBot: 'النظام'
+};
 
 const GLASS_STYLE = `
   .hz-atmosphere {
@@ -204,6 +212,40 @@ const GLASS_STYLE = `
     border-color: rgba(255,255,255,0.4);
     box-shadow: 0 10px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
   }
+  .hz-dashboard-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 26px; }
+  .hz-dashboard-summary > div { display: flex; flex-direction: column; gap: 5px; padding: 16px 18px; border: 1px solid rgba(56,189,248,0.2); border-radius: 18px; background: linear-gradient(145deg, rgba(15,23,42,0.8), rgba(30,41,59,0.38)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); }
+  .hz-dashboard-summary strong { color: #f8fafc; font-size: 22px; }
+  .hz-dashboard-summary span { color: #94a3b8; font-size: 12px; }
+  .hz-app-group { margin-bottom: 30px; }
+  .hz-app-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; padding: 0 4px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .hz-app-group-heading h2 { margin: 0; color: #bae6fd; font-size: 18px; }
+  .hz-app-group-heading span { color: #64748b; font-size: 12px; }
+  @media (max-width: 640px) { .hz-dashboard-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hz-dashboard-summary > div { padding: 12px; } }
+  .hz-orders-panel { padding: 4px; color: #e2e8f0; }
+  .hz-orders-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .hz-orders-header h2 { margin: 0 0 6px; color: #67e8f9; font-size: 24px; }
+  .hz-orders-header p { color: #94a3b8; font-size: 13px; }
+  .hz-orders-refresh { color: #fff; padding: 10px 14px; border-radius: 12px; cursor: pointer; }
+  .hz-orders-alert { margin-bottom: 16px; padding: 12px 14px; border: 1px solid rgba(248,113,113,0.55); border-radius: 12px; color: #fecaca; background: rgba(127,29,29,0.25); }
+  .hz-orders-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .hz-orders-stats > div { display: flex; flex-direction: column; gap: 4px; padding: 15px; border: 1px solid rgba(56,189,248,0.18); border-radius: 16px; background: rgba(15,23,42,0.55); }
+  .hz-orders-stats span { color: #94a3b8; font-size: 12px; }
+  .hz-orders-stats strong { color: #f8fafc; font-size: 21px; }
+  .hz-orders-filters { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 10px; margin-bottom: 18px; }
+  .hz-orders-filters input, .hz-orders-filters select, .hz-order-status select { min-height: 44px; padding: 10px 12px; color: #fff; border: 1px solid #334155; border-radius: 10px; background: rgba(15,23,42,0.85); }
+  .hz-orders-list { display: grid; gap: 12px; }
+  .hz-order-card { display: grid; grid-template-columns: minmax(170px, 1.1fr) minmax(160px, 1fr) 120px 160px; align-items: center; gap: 14px; padding: 16px; border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; background: linear-gradient(145deg, rgba(30,41,59,0.65), rgba(15,23,42,0.55)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.1); }
+  .hz-order-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .hz-order-main strong { color: #f8fafc; }
+  .hz-order-main span, .hz-order-items span { color: #94a3b8; font-size: 12px; overflow-wrap: anywhere; }
+  .hz-order-number { color: #67e8f9; font-weight: 800; }
+  .hz-order-items { display: flex; flex-wrap: wrap; gap: 5px; }
+  .hz-order-items span { padding: 5px 7px; border-radius: 8px; background: rgba(2,132,199,0.14); }
+  .hz-order-total { color: #86efac; font-size: 16px; font-weight: 800; white-space: nowrap; }
+  .hz-order-status { display: flex; flex-direction: column; gap: 5px; color: #94a3b8; font-size: 11px; }
+  .hz-orders-empty { padding: 45px 20px; color: #94a3b8; text-align: center; border: 1px dashed rgba(148,163,184,0.35); border-radius: 16px; }
+  @media (max-width: 800px) { .hz-order-card { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hz-order-main { grid-column: 1 / -1; } }
+  @media (max-width: 560px) { .hz-orders-filters { grid-template-columns: 1fr; } .hz-order-card { grid-template-columns: 1fr; } }
 `;
 
 function MainContent() {
@@ -228,13 +270,11 @@ function MainContent() {
     customerService = [], setCustomerService = () => {},
     tickets = [], setTickets = () => {},
     mails = [], setMails = () => {},
-    employeeChat = [], setEmployeeChat = () => {},
     announcements = [], setAnnouncements = () => {},
     tasks = [], setTasks = () => {},
     documents = [], setDocuments = () => {},
     logs = [], setLogs = () => {},
     commissions = [], setCommissions = () => {},
-    contacts = [], setContacts = () => {},
     currentUser = null,
     setCurrentUser = () => {},
     setToken = () => {},
@@ -242,6 +282,7 @@ function MainContent() {
     socket = null,
     hasPermission = () => false
   } = safeContext;
+  const refreshAllData = safeContext.refreshAllData;
 
   // 🔑 OAuth Redirect Handler — يقرأ التوكن من الرابط بعد تسجيل الدخول الاجتماعي
   useEffect(() => {
@@ -289,8 +330,8 @@ function MainContent() {
       } else if (event.type === 'EMPLOYEES' && Array.isArray(event.payload)) {
         setEmployees(event.payload);
       } else if (event.type === 'REFRESH_ALL') {
-        if (typeof safeContext.refreshAllData === 'function') {
-          safeContext.refreshAllData();
+        if (typeof refreshAllData === 'function') {
+          refreshAllData();
         }
       }
     };
@@ -300,7 +341,7 @@ function MainContent() {
     return () => {
       socket.off('UPDATE_DATA', handleUpdateData);
     };
-  }, [socket, setProducts, setSalesLog, setEmployees, safeContext]);
+  }, [socket, setProducts, setSalesLog, setEmployees, refreshAllData]);
 
   const inputStyle = useMemo(() => ({ background: 'rgba(15, 23, 42, 0.82)', color: '#fff', border: '1px solid #334155', padding: '10px 14px', borderRadius: '10px' }), []);
 
@@ -324,12 +365,10 @@ function MainContent() {
     { id: 'Products', name: 'إدارة المنتجات والمخزون', icon: '📦', borderColor: '#10b981', component: <Products products={products} setProducts={setProducts} inputStyle={inputStyle} currentUser={currentUser} /> },
     { id: 'Employees', name: 'إدارة الموظفين (HR)', icon: '👥', borderColor: '#8b5cf6', component: <Employees employees={employees} setEmployees={setEmployees} searchTerm={searchTerm} setSearchTerm={setSearchTerm} /> },
     { id: 'Salaries', name: 'الرواتب والمكافآت', icon: '💵', borderColor: '#f59e0b', component: <Salaries salaries={salaries} setSalaries={setSalaries} inputStyle={inputStyle} currentUser={currentUser} /> },
-    { id: 'Contacts', name: 'إيميلات وأرقام الموظفين', icon: '📇', borderColor: '#06b6d4', component: <Contacts contacts={contacts} setContacts={setContacts} /> },
     { id: 'EmailCenter', name: 'مركز البريد (Gmail)', icon: '✉️', borderColor: '#3b82f6', component: <EmailCenter emails={mails} setEmails={setMails} messages={mails} inputStyle={inputStyle} /> },
-    { id: 'EmployeeChat', name: 'دردشة الموظفين الداخلية', icon: '💬', borderColor: '#ec4899', component: <EmployeeChat messages={employeeChat} setMessages={setEmployeeChat} currentUser={currentUser} /> },
     { id: 'Accounting', name: 'المحاسبة والأرباح', icon: '💰', borderColor: '#10b981', component: <Accounting transactions={accountingTransactions} setTransactions={setAccountingTransactions} mails={mails} setMails={setMails} currentUser={currentUser} inputStyle={inputStyle} /> },
+    { id: 'Orders', name: 'مركز الطلبات', icon: '🛒', borderColor: '#22d3ee', component: <Orders /> },
     { id: 'SalesLog', name: 'سجل المبيعات والطلبات', icon: '📊', borderColor: '#6366f1', component: <SalesLog transactions={salesLog} sales={salesLog} /> },
-    { id: 'ManagerMonitor', name: 'قسم فصل الموظفين', icon: '⚠️', borderColor: '#ef4444', component: <ManagerMonitor employees={employees} setEmployees={setEmployees} /> },
     { id: 'Coupons', name: 'كوبونات الخصم', icon: '🎟️', borderColor: '#f43f5e', component: <Coupons coupons={coupons} setCoupons={setCoupons} inputStyle={inputStyle} /> },
     { id: 'Tickets', name: 'تذاكر الدعم الفني', icon: '🎫', borderColor: '#14b8a6', component: <Tickets tickets={tickets} setTickets={setTickets} /> },
     { id: 'Announcements', name: 'إعلانات المتجر', icon: '📢', borderColor: '#f97316', component: <Announcements announcements={announcements} setAnnouncements={setAnnouncements} /> },
@@ -345,7 +384,7 @@ function MainContent() {
     { id: 'Documents', name: 'المستندات والأوراق', icon: '📁', borderColor: '#6366f1', component: <Documents documents={documents} setDocuments={setDocuments} /> },
     { id: 'Attendance', name: 'الحضور والانصراف', icon: '📅', borderColor: '#10b981', component: <Attendance attendance={attendance} setAttendance={setAttendance} /> },
     { id: 'Commissions', name: 'العمولات والمبيعات', icon: '💎', borderColor: '#ec4899', component: <Commissions commissions={commissions} setCommissions={setCommissions} /> },
-  ], [currentUser, sessions, currentSessionId, chatHistories, aiInputText, inputStyle, accountingTransactions, products, employees, searchTerm, salaries, contacts, mails, employeeChat, salesLog, coupons, tickets, announcements, tasks, logs, performance, workHours, achievements, customers, customerService, documents, attendance, commissions]);
+  ], [currentUser, sessions, currentSessionId, chatHistories, aiInputText, inputStyle, accountingTransactions, setAccountingTransactions, products, setProducts, employees, setEmployees, searchTerm, salaries, setSalaries, mails, setMails, salesLog, coupons, setCoupons, tickets, setTickets, announcements, setAnnouncements, tasks, setTasks, logs, setLogs, performance, setPerformance, workHours, setWorkHours, achievements, setAchievements, customers, setCustomers, customerService, setCustomerService, documents, setDocuments, attendance, setAttendance, commissions, setCommissions]);
 
   const visibleAppsList = useMemo(() => {
     const safeList = Array.isArray(appsList) ? appsList : [];
@@ -357,6 +396,12 @@ function MainContent() {
     () => visibleAppsList.find(app => app && app.id === effectiveActiveApp),
     [visibleAppsList, effectiveActiveApp]
   );
+  const groupedApps = useMemo(() => visibleAppsList.reduce((groups, app) => {
+    const groupName = APP_GROUPS[app.id] || 'النظام';
+    if (!groups[groupName]) groups[groupName] = [];
+    groups[groupName].push(app);
+    return groups;
+  }, {}), [visibleAppsList]);
 
   const isManagerOrEmployee = useMemo(() => {
     if (!currentUser || typeof currentUser !== 'object') return false;
@@ -386,24 +431,30 @@ function MainContent() {
         ) : (
           <div style={{ width: '100%' }}>
             {!effectiveActiveApp ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '20px', width: '100%' }}>
-                {visibleAppsList.map((app, index) => {
-                  if (!app) return null;
-                  const glow = app.borderColor || '#38bdf8';
-                  return (
-                    <div
-                      key={app.id || index}
-                      onClick={() => setActiveApp(app.id)}
-                      className="hz-glass-card"
-                      style={{ '--glow': glow, textAlign: 'center' }}
-                    >
-                      <div className="hz-glass-icon" style={{ margin: '0 auto 12px auto' }}>
-                        {app.icon || '📌'}
-                      </div>
-                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#f1f5f9' }}>{index + 1}. {app.name || 'تطبيق'}</div>
+              <div>
+                <div className="hz-dashboard-summary">
+                  <div><strong>مركز التشغيل</strong><span>الأقسام العاملة: {visibleAppsList.length}</span></div>
+                  <div><strong>{products.length}</strong><span>منتج في الكتالوج</span></div>
+                  <div><strong>{salesLog.length}</strong><span>عملية/طلب</span></div>
+                  <div><strong>{tasks.filter(task => task && !task.completed).length}</strong><span>مهمة مفتوحة</span></div>
+                </div>
+                {Object.entries(groupedApps).map(([groupName, groupApps]) => (
+                  <section key={groupName} className="hz-app-group">
+                    <div className="hz-app-group-heading"><h2>{groupName}</h2><span>{groupApps.length} أقسام</span></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '20px', width: '100%' }}>
+                      {groupApps.map((app, index) => {
+                        if (!app) return null;
+                        const glow = app.borderColor || '#38bdf8';
+                        return (
+                          <div key={app.id || index} onClick={() => setActiveApp(app.id)} className="hz-glass-card" style={{ '--glow': glow, textAlign: 'center' }}>
+                            <div className="hz-glass-icon" style={{ margin: '0 auto 12px auto' }}>{app.icon || '📌'}</div>
+                            <div style={{ fontSize: '13px', fontWeight: '700', color: '#f1f5f9' }}>{app.name || 'تطبيق'}</div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </section>
+                ))}
               </div>
             ) : (
               <div className="hz-glass-card hz-app-full-container">

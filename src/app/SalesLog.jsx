@@ -24,7 +24,7 @@ function SalesLog({ inputStyle = {} } = {}) {
   const sales = Array.isArray(externalSales) && externalSales.length > 0 ? externalSales : [];
   const setSales = externalSetSales || (() => {});
   const logs = Array.isArray(externalLogs) ? externalLogs : [];
-  const setLogs = externalSetSales || (() => {});
+  const setLogs = externalSetLogs || (() => {});
 
   const [customerName, setCustomerName] = useState('');
   const [product, setProduct] = useState('');
@@ -270,7 +270,7 @@ function SalesLog({ inputStyle = {} } = {}) {
 
     setEmailSending(true);
     try {
-      await fetch(`${activeApiUrl}/send-document-email`, {
+      const emailResponse = await fetch(`${activeApiUrl}/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -281,7 +281,12 @@ function SalesLog({ inputStyle = {} } = {}) {
           subject: 'تقرير سجل المبيعات والعمليات الشامل',
           message: `إجمالي المبيعات العامة: $${totalSales}. عدد العمليات المسجلة: ${safeSales.length}`
         })
-      }).catch(() => ({ ok: true }));
+      });
+      if (!emailResponse.ok) {
+        let details = null;
+        try { details = await emailResponse.json(); } catch (e) { /* response may be empty */ }
+        throw new Error(details?.error || 'فشل إرسال التقرير من الخادم.');
+      }
 
       setSuccessMsg(`تم إرسال تقرير المبيعات بنجاح إلى: ${recipientEmail}`);
       if (typeof addLog === 'function') {

@@ -1,14 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useApp } from './AppContext';
 
 function Tasks({ 
   inputStyle = {}, 
   mails = [], 
   setMails = () => {},
   currentUser = null,
-  apiBaseUrl = 'https://api.yourdomain.com/v1',
+  apiBaseUrl = '/api',
   globalEventBus = null // ناقل الحالة العالمي للتزامن الفوري بين الأقسام
 }) {
-  const [tasks, setTasks] = useState([]);
+  const app = useApp() || {};
+  const contextTasks = Array.isArray(app.tasks) ? app.tasks : null;
+  const [localTasks, setLocalTasks] = useState([]);
+  const tasks = contextTasks || localTasks;
+  const setTasks = typeof app.setTasks === 'function' ? app.setTasks : setLocalTasks;
+  const activeApiBaseUrl = app.apiUrl || apiBaseUrl;
+  const authHeaders = typeof app.getAuthHeaders === 'function' ? app.getAuthHeaders : () => ({});
+  const activeUser = currentUser || app.currentUser || null;
+  const showStorageSection = false;
+  const getTaskId = (task) => task?._id || task?.id;
   const [storageSpaces, setStorageSpaces] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -39,11 +49,11 @@ function Tasks({
   // دالة موحدة لجلب التوكن من localStorage أو من كائن currentUser بأمان تام
   const getAuthToken = () => {
     try {
-      const tokenFromUser = currentUser && typeof currentUser === 'object' ? currentUser.token : '';
+      const tokenFromUser = activeUser && typeof activeUser === 'object' ? activeUser.token : '';
       const tokenFromStorage = (typeof window !== 'undefined' && localStorage.getItem('token')) || (typeof window !== 'undefined' && localStorage.getItem('authToken')) || '';
       const finalToken = tokenFromUser || tokenFromStorage;
       return typeof finalToken === 'string' ? finalToken.trim() : '';
-    } catch (e) {
+    } catch {
       return '';
     }
   };
@@ -58,9 +68,9 @@ function Tasks({
         ...(options.headers || {})
       };
 
-      const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+      const response = await fetch(`${activeApiBaseUrl}${endpoint}`, {
         ...options,
-        headers
+        headers: { ...authHeaders(), ...headers }
       });
 
       return response;
@@ -74,8 +84,8 @@ function Tasks({
   const dispatchRealMailAndLog = (logText, subject = 'تحديث نظام المهام والخوادم') => {
     const timestamp = new Date().toLocaleTimeString('ar-SA');
     const fullLogObject = {
-      id: Date.now(),
-      sender: currentUser?.name || 'مدير النظام الآلي',
+      id: `task-log-${timestamp}-${logText.slice(0, 24)}`,
+      sender: activeUser?.name || 'مدير النظام الآلي',
       subject: subject,
       message: logText,
       time: timestamp,
@@ -96,10 +106,7 @@ function Tasks({
   const fetchDataFromApi = async () => {
     try {
       setLoading(true);
-      const [tasksRes, storageRes] = await Promise.all([
-        apiFetch('/tasks').catch(() => null),
-        apiFetch('/storage').catch(() => null)
-      ]);
+      const tasksRes = await apiFetch('/tasks').catch(() => null);
 
       if (tasksRes && tasksRes.ok) {
         const tasksData = await tasksRes.json();
@@ -108,12 +115,6 @@ function Tasks({
         }
       }
 
-      if (storageRes && storageRes.ok) {
-        const storageData = await storageRes.json();
-        if (Array.isArray(storageData)) {
-          setStorageSpaces(storageData);
-        }
-      }
     } catch (error) {
       console.error('فشل الاتصال بالخادم لجلب البيانات:', error);
     } finally {
@@ -123,6 +124,7 @@ function Tasks({
 
   // 🔄 ربط المزامنة اللحظية مع Global State Bus بعد تعريف دالة الجلب
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDataFromApi();
     if (globalEventBus && typeof globalEventBus.subscribe === 'function') {
       const unsubscribe = globalEventBus.subscribe('GLOBAL_SYNC_EVENT', (eventData) => {
@@ -130,7 +132,8 @@ function Tasks({
       });
       return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
     }
-  }, [globalEventBus]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalEventBus, activeApiBaseUrl]);
 
   // 💽 إضافة مساحة تخزين جديدة عبر الـ API
   const addStorageSpace = async (e) => {
@@ -238,7 +241,7 @@ function Tasks({
 
   // ✅ تغيير حالة المهمة (إكمال / إلغاء) عبر الـ API
   const toggleTask = async (id) => {
-    const target = tasks.find(t => t.id === id);
+    const target = tasks.find(t => getTaskId(t) === id);
     const newStatus = !target?.completed;
 
     try {
@@ -248,7 +251,7 @@ function Tasks({
       });
 
       if (response && response.ok) {
-        setTasks((prev) => prev.map(t => t.id === id ? { ...t, completed: newStatus } : t));
+        setTasks((prev) => prev.map(t => getTaskId(t) === id ? { ...t, completed: newStatus } : t));
         const logText = `${newStatus ? '✅ تم إكمال المهمة بنجاح' : '⏳ تم إعادة فتح المهمة'}: (${target?.title || id})`;
         dispatchRealMailAndLog(logText, 'تحديث حالة مهمة');
       } else {
@@ -261,18 +264,18 @@ function Tasks({
 
   // ❌ حذف مهمة عبر الـ API
   const deleteTask = async (id) => {
-    const target = tasks.find(t => t.id === id);
+    const target = tasks.find(t => getTaskId(t) === id);
     try {
       const response = await apiFetch(`/tasks/${id}`, {
         method: 'DELETE'
       });
 
       if (response && response.ok) {
-        setTasks((prev) => prev.filter(t => t.id !== id));
+        setTasks((prev) => prev.filter(t => getTaskId(t) !== id));
         const logText = `🗑️ تم حذف المهمة: (${target?.title || 'غير معروف'}) نهائياً من قاعدة البيانات.`;
         dispatchRealMailAndLog(logText, 'حذف مهمة رسمية');
 
-        if (editingTask && editingTask.id === id) {
+        if (editingTask && getTaskId(editingTask) === id) {
           setEditingTask(null);
         }
       } else {
@@ -305,14 +308,14 @@ function Tasks({
     };
 
     try {
-      const response = await apiFetch(`/tasks/${editingTask.id}`, {
+      const response = await apiFetch(`/tasks/${getTaskId(editingTask)}`, {
         method: 'PUT',
         body: JSON.stringify(updatedPayload)
       });
 
       if (response && response.ok) {
         setTasks((prev) => prev.map(t => {
-          if (t.id === editingTask.id) {
+          if (getTaskId(t) === getTaskId(editingTask)) {
             return { ...t, ...updatedPayload };
           }
           return t;
@@ -369,7 +372,7 @@ function Tasks({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '15px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
           <h2 style={{ margin: '0 0 5px 0', color: '#f97316', fontSize: '22px', fontWeight: 'bold', textShadow: '0 2px 10px rgba(249, 115, 22, 0.3)' }}>
-            📝 إدارة المهام ومساحات التخزين (Global Sync & Glass)
+            📝 إدارة المهام التشغيلية (Global Sync & Glass)
           </h2>
           <p style={{ margin: '0', color: '#94a3b8', fontSize: '13px' }}>
             {loading ? 'جاري المزامنة اللحظية مع الخادم السحابي...' : 'متصل بالكامل مع نظام State Bus وخوادم MongoDB السحابية.'}
@@ -381,7 +384,8 @@ function Tasks({
         </div>
       </div>
 
-      {/* قسم إدارة مساحات التخزين */}
+      {showStorageSection && <div aria-hidden="true">
+      {/* قسم التخزين مؤجل حتى يتوفر له مسار خادم حقيقي */}
       <div style={{ background: 'rgba(17, 24, 39, 0.65)', backdropFilter: 'blur(12px)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.06),', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <h4 style={{ margin: '0', color: '#38bdf8', fontSize: '16px' }}>💽 إدارة ومراقبة مساحات التخزين والسيرفرات</h4>
 
@@ -428,6 +432,7 @@ function Tasks({
           })}
         </div>
       </div>
+      </div>}
 
       {/* نموذج إضافة مهمة جديدة */}
       <form onSubmit={addTask} style={{ background: 'rgba(17, 24, 39, 0.65)', backdropFilter: 'blur(12px)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.06)', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '15px' }}>

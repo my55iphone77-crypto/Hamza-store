@@ -45,7 +45,7 @@ export const ROLE_DEFAULT_PERMISSIONS = {
 export const APP_PERMISSION_MAP = {
   AiBot: 'view_analytics', Products: 'manage_products', Employees: 'manage_employees',
   Salaries: 'manage_salaries', Contacts: 'manage_employees', EmailCenter: 'send_email',
-  EmployeeChat: 'view_dashboard', Accounting: 'manage_accounting', SalesLog: 'manage_orders',
+  EmployeeChat: 'view_dashboard', Accounting: 'manage_accounting', SalesLog: 'manage_orders', Orders: 'manage_orders',
   ManagerMonitor: 'manage_employees', Coupons: 'manage_coupons', Tickets: 'manage_tickets',
   Announcements: 'manage_announcements', Tasks: 'manage_tasks', Logs: 'view_logs',
   Settings: 'manage_settings', Analytics: 'view_analytics', Performance: 'manage_performance',

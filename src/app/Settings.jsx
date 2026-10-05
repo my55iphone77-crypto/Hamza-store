@@ -23,6 +23,7 @@ function Settings({ inputStyle = {} } = {}) {
   const setSettings = externalSetSettings || (() => {});
   const branches = Array.isArray(externalBranches) ? externalBranches : [];
   const setBranches = externalSetBranches || (() => {});
+  const showBranches = false;
 
   // حالات الإعدادات المحلية
   const [language, setLanguage] = useState(settings.language || 'ar');
@@ -407,7 +408,7 @@ function Settings({ inputStyle = {} } = {}) {
       </div>
 
       {/* قسم إدارة الفروع والتحكم الإداري الشامل */}
-      {currentRoleCheck === 'manager' && (
+      {showBranches && currentRoleCheck === 'manager' && (
         <div style={{ ...glassCardStyle, display: 'flex', flexDirection: 'column', gap: '22px' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>

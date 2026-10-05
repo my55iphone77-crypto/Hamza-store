@@ -8,7 +8,7 @@ function Tickets({
   currentUser = { role: 'manager', name: 'حمد' },
   mails = [], 
   setMails = () => {},
-  apiBaseUrl = 'https://api.yourdomain.com/v1' 
+  apiBaseUrl = '/api'
 }) {
   // محاولة جلب الأدوات من الـ Global Context إن وجدت لضمان التوافق التام
   const appContext = useApp ? useApp() : {};
