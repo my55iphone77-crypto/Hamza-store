@@ -53,12 +53,12 @@ export default function SocialCards({ cards = [] }) {
         {activeCards.slice(0, 2).map((card, index) => {
           const meta = PLATFORM_META[card.platform] || PLATFORM_META.instagram;
           const url = getSocialUrl(card);
-          const actionUrl = card.platform === 'instagram' && !url ? '/api/instagram/oauth/start' : (url || '#');
+          const actionUrl = url || '#';
           return (
-            <a key={`${card.platform}-${card.account}-${index}`} className="hz-social-card" href={actionUrl} target={url ? '_blank' : undefined} rel={url ? 'noreferrer' : undefined} onClick={(event) => { if (!url && card.platform !== 'instagram') event.preventDefault(); }} style={{ '--social-color': meta.color }}>
+            <a key={`${card.platform}-${card.account}-${index}`} className="hz-social-card" href={actionUrl} target={url ? '_blank' : undefined} rel={url ? 'noreferrer' : undefined} onClick={(event) => { if (!url) event.preventDefault(); }} style={{ '--social-color': meta.color }}>
               <span className="hz-social-icon">{meta.icon}</span>
-              <span className="hz-social-copy"><strong>{card.title || `حسابنا على ${meta.label}`}</strong><small>{instagramProfile && card.platform === 'instagram' ? `متصل مباشرة • @${instagramProfile.username}` : (card.account ? `${meta.label} • ${card.account}` : `${meta.label} • اختر المنصة وسجّل الدخول`)}</small>{card.platform === 'instagram' && !instagramProfile && <span className="hz-social-login">تسجيل الدخول الرسمي</span>}</span>
-              <span className="hz-social-arrow">{card.platform === 'instagram' && !instagramProfile ? '🔐' : '↗'}</span>
+              <span className="hz-social-copy"><strong>{card.title || `حسابنا على ${meta.label}`}</strong><small>{instagramProfile && card.platform === 'instagram' ? `متصل مباشرة • @${instagramProfile.username}` : (card.account ? `${meta.label} • ${card.account}` : `${meta.label} • حساب المتجر الثابت`)}</small></span>
+              <span className="hz-social-arrow">{url ? '↗' : '◎'}</span>
             </a>
           );
         })}

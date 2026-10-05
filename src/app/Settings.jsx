@@ -51,6 +51,7 @@ function Settings({ inputStyle = {} } = {}) {
   const [hideHero, setHideHero] = useState(Boolean(settings.hideHero));
   const [footerText, setFooterText] = useState(settings.footerText || 'جميع الحقوق محفوظة');
   const [socialCards, setSocialCards] = useState(() => Array.isArray(settings.socialCards) && settings.socialCards.length ? settings.socialCards.slice(0, 2) : DEFAULT_SOCIAL_CARDS);
+  const [instagramConnection, setInstagramConnection] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
@@ -74,6 +75,17 @@ function Settings({ inputStyle = {} } = {}) {
     if (!res.ok) throw new Error((data && data.error) || `فشل الطلب (${res.status})`);
     return data;
   }
+  useEffect(() => {
+    fetch(`${activeApiUrl}/instagram/status`).then((response) => response.ok ? response.json() : null).then((data) => setInstagramConnection(data)).catch(() => {});
+  }, [activeApiUrl]);
+  const connectInstagram = async () => {
+    try {
+      const data = await apiFetch('/instagram/oauth/start', { headers: { Accept: 'application/json' } });
+      if (data?.url) window.location.href = data.url;
+    } catch (error) {
+      setErrorMsg(error.message || 'تعذر بدء ربط Instagram');
+    }
+  };
 
   // 📥 جلب الإعدادات والفروع من الخادم عند التحميل
   useEffect(() => {
@@ -382,6 +394,10 @@ function Settings({ inputStyle = {} } = {}) {
       <div style={{ ...glassCardStyle, marginTop: '20px' }}>
         <h4 style={{ margin: '0 0 6px 0', color: '#a78bfa', fontSize: '16px' }}>🌐 بطاقات حسابات المتجر</h4>
         <p style={{ margin: '0 0 14px', color: '#94a3b8', fontSize: '12px' }}>اختر المنصة واكتب اسم الحساب. ستظهر بطاقتان تحت خدمة العملاء وتفتحان الحساب مباشرة عند الضغط.</p>
+        {currentUser?.isOwner && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '14px', padding: '12px 14px', borderRadius: '12px', background: 'rgba(236,72,153,0.08)', border: '1px solid rgba(236,72,153,0.25)' }}>
+          <span style={{ color: '#fbcfe8', fontSize: '12px' }}>{instagramConnection?.connected ? `Instagram ثابت للمتجر: @${instagramConnection.profile?.username || 'متصل'}` : 'لم يتم ربط Instagram الثابت للمتجر بعد.'}</span>
+          <button type="button" onClick={connectInstagram} style={{ background: 'linear-gradient(135deg,#ec4899,#8b5cf6)', color: '#fff', border: 0, borderRadius: '10px', padding: '9px 13px', cursor: 'pointer', fontWeight: 800, fontSize: '11px' }}>{instagramConnection?.connected ? 'تغيير الحساب (المالك فقط)' : 'ربط حساب Instagram'}</button>
+        </div>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
           {socialCards.map((card, index) => (
             <div key={index} style={{ padding: '14px', border: '1px solid rgba(167,139,250,0.24)', borderRadius: '16px', background: 'rgba(30,41,59,0.35)' }}>

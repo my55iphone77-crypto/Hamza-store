@@ -177,12 +177,24 @@ const instagramTokenFromRequest = (req) => {
   const header = String(req.headers.cookie || '').split(';').map(v => v.trim()).find(v => v.startsWith('ig_access_token='));
   return header ? decodeURIComponent(header.slice('ig_access_token='.length)) : '';
 };
+const instagramStoredToken = async (req) => {
+  if (process.env.INSTAGRAM_ACCESS_TOKEN) return String(process.env.INSTAGRAM_ACCESS_TOKEN).trim();
+  const connection = await AppState.findOne({ key: 'instagram_business_connection' }).lean();
+  return connection?.value?.accessToken || '';
+};
+const requireInstagramOwner = async (req, res, next) => {
+  const user = await getUserFromAuthHeader(req.headers.authorization);
+  if (!user) return res.status(401).json({ error: 'يرجى تسجيل الدخول بحساب المالك أولاً.' });
+  if (!user.isOwner || !checkOwnerAccess(user.email)) return res.status(403).json({ error: 'ربط Instagram مخصص لمالك المتجر فقط.' });
+  req.user = user;
+  next();
+};
 const instagramProxyUrl = (url) => url ? `/api/instagram/media-file?url=${encodeURIComponent(url)}` : '';
 
-app.get('/api/instagram/oauth/start', (req, res) => {
+app.get('/api/instagram/oauth/start', requireInstagramOwner, (req, res) => {
   if (!INSTAGRAM_APP_ID || !INSTAGRAM_APP_SECRET) return res.status(503).send('Instagram OAuth غير مفعّل بعد على الخادم.');
   const state = crypto.randomBytes(24).toString('hex');
-  instagramOAuthStates.set(state, Date.now());
+  instagramOAuthStates.set(state, { createdAt: Date.now(), ownerId: String(req.user._id) });
   const authorizeUrl = new URL('https://www.instagram.com/oauth/authorize');
   authorizeUrl.searchParams.set('client_id', INSTAGRAM_APP_ID);
   authorizeUrl.searchParams.set('redirect_uri', INSTAGRAM_REDIRECT_URI);
@@ -190,6 +202,7 @@ app.get('/api/instagram/oauth/start', (req, res) => {
   authorizeUrl.searchParams.set('scope', 'instagram_business_basic');
   authorizeUrl.searchParams.set('state', state);
   res.setHeader('Set-Cookie', `ig_oauth_state=${state}; Max-Age=600; Path=/; HttpOnly; Secure; SameSite=Lax`);
+  if (String(req.headers.accept || '').includes('application/json')) return res.json({ url: authorizeUrl.toString() });
   res.redirect(authorizeUrl.toString());
 });
 
@@ -197,7 +210,8 @@ app.get('/api/instagram/oauth/callback', async (req, res) => {
   const { code, state, error } = req.query;
   const returnUrl = `${FRONTEND_URL}/?instagram=${error ? 'cancelled' : 'connected'}`;
   if (error) return res.status(400).send(`<h2>Instagram login cancelled</h2><p>${String(req.query.error_description || error)}</p><p>Close this page and try again.</p>`);
-  if (!code || !state || !instagramOAuthStates.has(String(state))) return res.status(400).send('<h2>Instagram login could not be verified</h2><p>The OAuth state was missing or expired. Start the connection again from the store.</p>');
+  if (!code || !state || !instagramOAuthStates.has(String(state))) return res.status(400).send('<h2>Instagram login could not be verified</h2><p>The OAuth state was missing or expired. Start the connection again from the owner dashboard.</p>');
+  const stateData = instagramOAuthStates.get(String(state));
   instagramOAuthStates.delete(String(state));
   try {
     const form = new URLSearchParams({ client_id: INSTAGRAM_APP_ID, client_secret: INSTAGRAM_APP_SECRET, grant_type: 'authorization_code', redirect_uri: INSTAGRAM_REDIRECT_URI, code: String(code) });
@@ -213,7 +227,11 @@ app.get('/api/instagram/oauth/callback', async (req, res) => {
     const longLivedResponse = await fetch(longLivedUrl);
     const longLivedData = longLivedResponse.ok ? await longLivedResponse.json() : tokenData;
     const maxAge = Number(longLivedData.expires_in || 60 * 24 * 60 * 60);
-    res.setHeader('Set-Cookie', `ig_access_token=${encodeURIComponent(longLivedData.access_token)}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`);
+    await AppState.findOneAndUpdate(
+      { key: 'instagram_business_connection' },
+      { key: 'instagram_business_connection', value: { accessToken: longLivedData.access_token, connectedAt: new Date(), ownerId: stateData?.ownerId || '' } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
     return res.status(200).send('<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>تم ربط Instagram</title><body style="font-family:Arial;background:#07111f;color:#f8fafc;display:grid;place-items:center;min-height:100vh;margin:0"><main style="max-width:560px;padding:32px;border:1px solid #334155;border-radius:20px;background:#111c32;text-align:center"><h2 style="color:#34d399">تم ربط حساب Instagram بنجاح</h2><p>تم حفظ التصريح بأمان على الخادم. اضغط الزر للعودة إلى المتجر.</p><a href="' + returnUrl + '" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none">العودة إلى المتجر</a></main></body></html>');
   } catch (oauthError) {
     console.error('Instagram OAuth callback failed:', oauthError.message || oauthError);
@@ -222,7 +240,7 @@ app.get('/api/instagram/oauth/callback', async (req, res) => {
 });
 
 app.get('/api/instagram/status', async (req, res) => {
-  const token = instagramTokenFromRequest(req);
+  const token = await instagramStoredToken(req);
   if (!token) return res.json({ connected: false });
   try {
     const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,name,biography,profile_picture_url,followers_count,follows_count,media_count&access_token=${encodeURIComponent(token)}`);
@@ -236,7 +254,7 @@ app.get('/api/instagram/status', async (req, res) => {
 });
 
 app.get('/api/instagram/media', async (req, res) => {
-  const token = instagramTokenFromRequest(req);
+  const token = await instagramStoredToken(req);
   if (!token) return res.status(401).json({ connected: false, media: [] });
   try {
     const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,name,biography,profile_picture_url,followers_count,follows_count,media_count&access_token=${encodeURIComponent(token)}`);
@@ -258,7 +276,7 @@ app.get('/api/instagram/media', async (req, res) => {
 });
 
 app.get('/api/instagram/media-file', async (req, res) => {
-  const token = instagramTokenFromRequest(req);
+  const token = await instagramStoredToken(req);
   const mediaUrl = String(req.query.url || '');
   if (!token || !mediaUrl) return res.status(401).end();
   try {
