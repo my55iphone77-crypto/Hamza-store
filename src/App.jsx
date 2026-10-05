@@ -55,6 +55,8 @@ const GLASS_STYLE = `
     min-height: 100dvh;
     width: 100%;
     box-sizing: border-box;
+    border-radius: 28px;
+    overflow-x: clip;
   }
 
   .hz-glass-card {
@@ -119,7 +121,7 @@ const GLASS_STYLE = `
 
   .hz-app-full-container {
     width: 100% !important;
-    min-height: calc(100dvh - 120px);
+    min-height: 0;
     margin: 0 !important;
     border-radius: 20px;
     box-sizing: border-box;
@@ -141,7 +143,7 @@ const GLASS_STYLE = `
   .hz-products-grid { width: 100% !important; max-width: none !important; min-width: 0 !important; align-items: stretch; }
   .hz-products-grid > * { min-width: 0; max-width: none; }
   .hz-admin-main { width: 100% !important; padding: 12px 18px !important; }
-  .hz-products-section { min-height: calc(100dvh - 150px); }
+  .hz-products-section { min-height: 0; }
   .hz-section-shell .hz-product-modal { width: min(100%, 560px) !important; max-width: 560px !important; padding: 18px !important; }
   .hz-product-modal h3 { font-size: 16px !important; margin-bottom: 10px !important; }
   .hz-product-modal input, .hz-product-modal select, .hz-product-modal textarea { padding: 8px 10px !important; font-size: 12px !important; }
