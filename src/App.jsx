@@ -127,6 +127,10 @@ const GLASS_STYLE = `
     box-sizing: border-box;
     cursor: default !important;
     overflow: visible !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
   }
   .hz-app-full-container > div { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
   .hz-section-shell { width: 100%; max-width: 100%; min-width: 0; display: block; }
@@ -471,7 +475,7 @@ function MainContent() {
                 ))}
               </div>
             ) : (
-              <div className="hz-glass-card hz-app-full-container">
+              <div className="hz-app-full-container">
                 <button onClick={() => setActiveApp(null)} className="hz-glass-btn" style={{ color: '#fff', padding: '6px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '15px' }}>← العودة للقائمة</button>
                 <div className="hz-section-shell">
                   {currentApp && currentApp.component ? (
