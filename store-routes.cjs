@@ -5,7 +5,7 @@ module.exports = function buildStoreRouter(deps) {
     Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification, VisitorEvent,
     Customer, Transaction, Ticket, Sale, Employee, Achievement, Announcement,
     WorkHour, AttendanceLog, AppState,
-    Settings, Salary, Task, DocumentModel, Coupon, StoreCreditCard,
+    Settings, Salary, Task, DocumentModel, Coupon, Commission, CommissionLog, StoreCreditCard,
     mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
     io, User, getUserFromAuthHeader, publicActionLimiter
   } = deps;
@@ -1142,6 +1142,8 @@ module.exports = function buildStoreRouter(deps) {
   crud('/announcements', Announcement, { list: 'manage_announcements', create: 'manage_announcements', update: 'manage_announcements', remove: 'manager' });
   crud('/achievements', Achievement, { remove: 'manager' });
   crud('/mails', Mail, { sort: { date: -1 } });
+  crud('/commissions', Commission, { list: 'manage_commissions', create: 'manage_commissions', update: 'manage_commissions', remove: 'manager', sort: { date: -1, createdAt: -1 } });
+  crud('/commissions-logs', CommissionLog, { list: 'manage_commissions', create: 'manage_commissions', update: 'manage_commissions', remove: 'manager', sort: { date: -1, createdAt: -1 } });
 
   router.post('/analytics/visit', publicActionLimiter, async (req, res) => {
     try {

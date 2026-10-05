@@ -510,6 +510,20 @@ const couponSchema = new mongoose.Schema({
 }, { timestamps: true });
 const Coupon = mongoose.model('Coupon', couponSchema);
 
+const commissionSchema = new mongoose.Schema({
+  id: { type: String, index: true },
+  employee: { type: String, required: true },
+  amount: { type: Number, required: true, min: 0 },
+  notes: { type: String, default: '' },
+  date: { type: Date, default: Date.now },
+  status: { type: String, enum: ['pending', 'paid'], default: 'pending' },
+  createdBy: { type: String, default: 'النظام' },
+  lastModified: { type: Date }
+}, { timestamps: true, strict: false });
+const Commission = mongoose.model('Commission', commissionSchema);
+const commissionLogSchema = new mongoose.Schema({ log: { type: String, required: true }, date: { type: Date, default: Date.now } }, { timestamps: true });
+const CommissionLog = mongoose.model('CommissionLog', commissionLogSchema);
+
 const checkOwnerAccess = (email) => {
   return OWNER_EMAIL && email && email.trim().toLowerCase() === OWNER_EMAIL.toLowerCase();
 };
@@ -764,7 +778,7 @@ setupRealtime({
   models: {
     Product, Order, Support, Mail, Notification, VisitorEvent, Customer, Transaction, Ticket, Sale,
     Employee, Achievement, Announcement, WorkHour, AttendanceLog, AppState, Settings, Salary, Task,
-    DocumentModel, Coupon, StoreCreditCard, User // User للمصادقة فقط، غير مراقب
+    DocumentModel, Coupon, Commission, CommissionLog, StoreCreditCard, User // User للمصادقة فقط، غير مراقب
   }
 });
 
@@ -775,7 +789,7 @@ app.use('/api', buildStoreRouter({
   Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification, VisitorEvent,
   Customer, Transaction, Ticket, Sale, Employee, Achievement, Announcement,
   WorkHour, AttendanceLog, AppState,
-  Settings, Salary, Task, DocumentModel, Coupon, StoreCreditCard,
+  Settings, Salary, Task, DocumentModel, Coupon, Commission, CommissionLog, StoreCreditCard,
   mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
   io, User, getUserFromAuthHeader, publicActionLimiter
 }));
