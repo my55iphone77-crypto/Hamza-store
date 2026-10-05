@@ -1,22 +1,20 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
+  --text: #cbd5e1;
+  --text-h: #f8fafc;
+  --bg: #05060a;
+  --border: rgba(255, 255, 255, 0.16);
+  --code-bg: rgba(15, 23, 42, 0.8);
+  --accent: #38bdf8;
+  --accent-bg: rgba(56, 189, 248, 0.12);
+  --accent-border: rgba(56, 189, 248, 0.55);
+  --social-bg: rgba(15, 23, 42, 0.55);
+  --shadow: rgba(0, 0, 0, 0.45) 0 18px 45px -12px;
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
+  font: 16px/145% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
+  color-scheme: dark;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -28,28 +26,7 @@
 }
 
 @media (max-width: 1024px) {
-  :root {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+  :root { font-size: 15px; }
 }
 
 body {
@@ -59,7 +36,8 @@ body {
   min-width: 0;
   max-width: 100%;
   min-height: 100dvh;
-  background-color: var(--bg);
+  color: var(--text);
+  background: var(--bg);
   overflow-x: clip;
   overscroll-behavior-x: none;
 }
@@ -82,60 +60,57 @@ img, video, canvas, svg { max-width: 100%; }
 button, input, textarea, select { max-width: 100%; min-width: 0; font: inherit; }
 table { max-width: 100%; }
 
+::selection { background: rgba(56, 189, 248, 0.35); color: #fff; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 @media (max-width: 640px) {
   html { width: 100%; min-width: 0; overflow-x: clip; }
   #root { min-height: 100dvh; overflow-x: clip; }
-  h1 { overflow-wrap: anywhere; }
+  h1, h2, h3, h4, p { overflow-wrap: anywhere; }
 }
 
-h1,
-h2 {
+h1, h2, h3, h4 {
   font-family: var(--heading);
-  font-weight: 500;
   color: var(--text-h);
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-}
+h1 { font-size: 42px; letter-spacing: -1px; margin: 24px 0; }
+h2 { font-size: 24px; line-height: 118%; letter-spacing: -0.24px; margin: 0 0 8px; }
+h3 { font-size: 18px; }
 
 @media (max-width: 1024px) {
-  h1 {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+  h1 { font-size: 32px; margin: 18px 0; }
+  h2 { font-size: 20px; }
 }
 
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-}
+p { margin: 0; }
 
-@media (max-width: 1024px) {
-  h2 {
-    font-size: 20px;
-  }
-}
-
-p {
-  margin: 0;
-}
-
-code,
-.counter {
+code, .counter {
   font-family: var(--mono);
   display: inline-flex;
-  border-radius: 4px;
+  border-radius: 6px;
   color: var(--text-h);
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+code { font-size: 14px; line-height: 135%; padding: 4px 8px; background: var(--code-bg); }
+
+.hz-section-error {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 260px;
+  padding: 32px 20px;
+  color: #cbd5e1;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.42);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 18px;
 }
+
+.hz-section-error h2 { margin: 0; color: #fecaca; }
+.hz-section-error p { max-width: 520px; line-height: 1.8; }
+.hz-section-error button { margin-top: 8px; color: #fff; padding: 10px 18px; border-radius: 12px; cursor: pointer; }

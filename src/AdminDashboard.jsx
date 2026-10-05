@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, Component } from 'react';
 // استدعاء التطبيقات
 import Accounting from './app/Accounting';
 import Achievements from './app/Achievements';
-import AIbot from './app/AIbot';
+import AIbot from './app/AiBot';
 import Analytics from './app/Analytics';
 import Announcements from './app/Announcements';
 import Attendance from './app/Attendance';

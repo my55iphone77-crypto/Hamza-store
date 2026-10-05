@@ -347,19 +347,16 @@ function MainContent() {
     { id: 'Commissions', name: 'العمولات والمبيعات', icon: '💎', borderColor: '#ec4899', component: <Commissions commissions={commissions} setCommissions={setCommissions} /> },
   ], [currentUser, sessions, currentSessionId, chatHistories, aiInputText, inputStyle, accountingTransactions, products, employees, searchTerm, salaries, contacts, mails, employeeChat, salesLog, coupons, tickets, announcements, tasks, logs, performance, workHours, achievements, customers, customerService, documents, attendance, commissions]);
 
-  const currentApp = useMemo(() => {
-    const safeList = Array.isArray(appsList) ? appsList.filter(app => hasPermission(APP_PERMISSION_MAP[app.id])) : [];
-    return safeList.find(app => app && app.id === activeApp);
-  }, [appsList, activeApp, hasPermission]);
-
   const visibleAppsList = useMemo(() => {
     const safeList = Array.isArray(appsList) ? appsList : [];
     return safeList.filter(app => hasPermission(APP_PERMISSION_MAP[app.id]));
   }, [appsList, hasPermission]);
 
-  useEffect(() => {
-    if (activeApp && !visibleAppsList.some(app => app.id === activeApp)) setActiveApp(null);
-  }, [activeApp, visibleAppsList]);
+  const effectiveActiveApp = visibleAppsList.some(app => app.id === activeApp) ? activeApp : null;
+  const currentApp = useMemo(
+    () => visibleAppsList.find(app => app && app.id === effectiveActiveApp),
+    [visibleAppsList, effectiveActiveApp]
+  );
 
   const isManagerOrEmployee = useMemo(() => {
     if (!currentUser || typeof currentUser !== 'object') return false;
@@ -388,7 +385,7 @@ function MainContent() {
           <Storefront inputStyle={inputStyle} onOpenDashboard={() => setShowStorefront(false)} />
         ) : (
           <div style={{ width: '100%' }}>
-            {!activeApp ? (
+            {!effectiveActiveApp ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '20px', width: '100%' }}>
                 {visibleAppsList.map((app, index) => {
                   if (!app) return null;
@@ -412,7 +409,11 @@ function MainContent() {
               <div className="hz-glass-card hz-app-full-container">
                 <button onClick={() => setActiveApp(null)} className="hz-glass-btn" style={{ color: '#fff', padding: '6px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '15px' }}>← العودة للقائمة</button>
                 <div className="hz-section-shell">
-                  {currentApp && currentApp.component ? currentApp.component : <div>التطبيق غير موجود</div>}
+                  {currentApp && currentApp.component ? (
+                    <SectionErrorBoundary appName={currentApp.name} onBack={() => setActiveApp(null)}>
+                      {currentApp.component}
+                    </SectionErrorBoundary>
+                  ) : <div>التطبيق غير موجود</div>}
                 </div>
               </div>
             )}
@@ -421,6 +422,33 @@ function MainContent() {
       </main>
     </div>
   );
+}
+
+class SectionErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error) {
+    console.error(`تعذر تشغيل قسم ${this.props.appName || 'غير معروف'}:`, error);
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return (
+      <section className="hz-section-error" role="alert" dir="rtl">
+        <div className="hz-glass-icon" style={{ '--glow': '#ef4444', margin: '0 auto 14px' }}>!</div>
+        <h2>تعذر تشغيل هذا القسم</h2>
+        <p>تم عزل العطل حتى تبقى بقية لوحة التحكم تعمل. يمكنك العودة للقائمة وتجربة قسم آخر.</p>
+        <button type="button" className="hz-glass-btn" onClick={this.props.onBack}>العودة إلى الأقسام</button>
+      </section>
+    );
+  }
 }
 
 class AppErrorBoundary extends React.Component {
