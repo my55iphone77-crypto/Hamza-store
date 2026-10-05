@@ -224,7 +224,7 @@ app.get('/api/instagram/status', async (req, res) => {
   const token = instagramTokenFromRequest(req);
   if (!token) return res.json({ connected: false });
   try {
-    const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type&access_token=${encodeURIComponent(token)}`);
+    const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,name,biography,profile_picture_url,followers_count,follows_count,media_count&access_token=${encodeURIComponent(token)}`);
     if (!profileResponse.ok) throw new Error('Instagram token is not valid');
     res.json({ connected: true, profile: await profileResponse.json() });
   } catch (statusError) {
@@ -237,7 +237,7 @@ app.get('/api/instagram/media', async (req, res) => {
   const token = instagramTokenFromRequest(req);
   if (!token) return res.status(401).json({ connected: false, media: [] });
   try {
-    const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type&access_token=${encodeURIComponent(token)}`);
+    const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,name,biography,profile_picture_url,followers_count,follows_count,media_count&access_token=${encodeURIComponent(token)}`);
     if (!profileResponse.ok) throw new Error('Instagram profile request failed');
     const profile = await profileResponse.json();
     const mediaUrl = new URL(`https://graph.instagram.com/${profile.id}/media`);

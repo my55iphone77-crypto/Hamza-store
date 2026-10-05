@@ -21,6 +21,7 @@ export function getSocialUrl(card) {
 export default function SocialCards({ cards = [] }) {
   const [instagramProfile, setInstagramProfile] = useState(null);
   const [instagramMedia, setInstagramMedia] = useState([]);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
   useEffect(() => {
     fetch('/api/instagram/status').then((response) => response.ok ? response.json() : null).then((data) => {
       if (data?.connected) {
@@ -29,6 +30,11 @@ export default function SocialCards({ cards = [] }) {
       }
     }).catch(() => {});
   }, []);
+  useEffect(() => {
+    if (instagramMedia.length < 2) return undefined;
+    const timer = window.setInterval(() => setFeaturedIndex((index) => (index + 1) % instagramMedia.length), 5000);
+    return () => window.clearInterval(timer);
+  }, [instagramMedia.length]);
   const defaults = [{ platform: 'instagram', account: '', title: '', enabled: true }, { platform: 'tiktok', account: '', title: '', enabled: true }];
   const configuredCards = Array.isArray(cards) && cards.length ? cards : defaults;
   const activeCards = configuredCards.filter((card) => card && card.enabled !== false).slice(0, 2);
@@ -58,8 +64,9 @@ export default function SocialCards({ cards = [] }) {
       </div>
       {instagramProfile && (
         <div className="hz-instagram-live-panel">
-          <div className="hz-instagram-live-heading"><strong>أحدث محتوى من @{instagramProfile.username}</strong><a href={`https://www.instagram.com/${instagramProfile.username}/`} target="_blank" rel="noreferrer">فتح Instagram ↗</a></div>
-          {instagramMedia.length > 0 ? <div className="hz-instagram-media-grid">{instagramMedia.map((media) => <a key={media.id} href={media.permalink} target="_blank" rel="noreferrer" className="hz-instagram-media"><img src={media.media_type === 'VIDEO' ? (media.thumbnail_url || media.media_url) : media.media_url} alt={media.caption || 'Instagram post'} loading="lazy" /><span>{media.media_type === 'VIDEO' ? '▶ فيديو' : 'عرض المنشور ↗'}</span></a>)}</div> : <p className="hz-instagram-empty">تم الربط، لكن Instagram لم يُرجع منشورات قابلة للعرض حاليًا.</p>}
+          <div className="hz-instagram-profile-head"><img src={instagramProfile.profile_picture_url} alt={instagramProfile.username} /><div><strong>{instagramProfile.name || instagramProfile.username}</strong><span>@{instagramProfile.username}</span><p>{instagramProfile.biography || 'حساب Instagram الرسمي'}</p></div><a href={`https://www.instagram.com/${instagramProfile.username}/`} target="_blank" rel="noreferrer">فتح البروفايل ↗</a></div>
+          <div className="hz-instagram-profile-stats"><span><b>{instagramProfile.media_count ?? instagramMedia.length}</b> منشور</span><span><b>{instagramProfile.followers_count ?? '—'}</b> متابع</span><span><b>{instagramProfile.follows_count ?? '—'}</b> يتابع</span></div>
+          {instagramMedia.length > 0 ? <div className="hz-instagram-featured"><a href={instagramMedia[featuredIndex].permalink} target="_blank" rel="noreferrer" className="hz-instagram-featured-media">{instagramMedia[featuredIndex].media_type === 'VIDEO' ? <video src={instagramMedia[featuredIndex].media_url} poster={instagramMedia[featuredIndex].thumbnail_url} autoPlay muted loop playsInline /> : <img src={instagramMedia[featuredIndex].media_url} alt={instagramMedia[featuredIndex].caption || 'Instagram post'} />}<span>{instagramMedia[featuredIndex].media_type === 'VIDEO' ? '▶ فيديو مباشر من الحساب' : 'عرض المنشور ↗'}</span></a><div className="hz-instagram-dots">{instagramMedia.map((media, index) => <button type="button" key={media.id} onClick={() => setFeaturedIndex(index)} className={index === featuredIndex ? 'active' : ''} aria-label={`عرض ${index + 1}`} />)}</div></div> : <p className="hz-instagram-empty">تم الربط، لكن Instagram لم يُرجع محتوى قابلًا للعرض حاليًا.</p>}
         </div>
       )}
     </section>

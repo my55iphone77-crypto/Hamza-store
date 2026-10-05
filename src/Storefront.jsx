@@ -144,6 +144,22 @@ const GLASS_STYLE = `
   .hz-instagram-media:hover img { transform: scale(1.06); }
   .hz-instagram-media span { position: absolute; inset: auto 8px 8px; padding: 5px 7px; border-radius: 8px; color: #fff; background: rgba(2,6,23,0.72); font-size: 10px; text-align: center; }
   .hz-instagram-empty { margin: 0; color: #94a3b8; font-size: 12px; }
+  .hz-instagram-profile-head { display: flex; align-items: center; gap: 14px; }
+  .hz-instagram-profile-head > img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid #f472b6; background: #1e293b; }
+  .hz-instagram-profile-head > div { min-width: 0; flex: 1; }
+  .hz-instagram-profile-head strong, .hz-instagram-profile-head span, .hz-instagram-profile-head p { display: block; }
+  .hz-instagram-profile-head strong { color: #f8fafc; font-size: 17px; }
+  .hz-instagram-profile-head span { margin-top: 3px; color: #f9a8d4; font-size: 12px; }
+  .hz-instagram-profile-head p { margin: 7px 0 0; color: #cbd5e1; font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
+  .hz-instagram-profile-head > a { flex: 0 0 auto; padding: 9px 12px; border-radius: 10px; color: #fff; background: linear-gradient(135deg, #ec4899, #8b5cf6); text-decoration: none; font-size: 11px; font-weight: 800; }
+  .hz-instagram-profile-stats { display: flex; gap: 22px; margin: 16px 0; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 11px; }
+  .hz-instagram-profile-stats b { color: #f8fafc; font-size: 14px; margin-left: 4px; }
+  .hz-instagram-featured-media { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 18px; background: #020617; }
+  .hz-instagram-featured-media img, .hz-instagram-featured-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hz-instagram-featured-media > span { position: absolute; right: 12px; bottom: 12px; padding: 7px 10px; border-radius: 9px; color: #fff; background: rgba(2,6,23,0.78); font-size: 11px; }
+  .hz-instagram-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+  .hz-instagram-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: #475569; cursor: pointer; }
+  .hz-instagram-dots button.active { width: 20px; border-radius: 99px; background: #f472b6; }
   .hz-social-arrow { margin-right: auto; color: var(--social-color); font-size: 20px; }
   .hz-store-intro { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin: 0 0 18px; padding: 0 4px; }
   .hz-store-intro-copy { min-width: 0; }
