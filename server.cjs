@@ -233,6 +233,26 @@ app.get('/api/instagram/status', async (req, res) => {
   }
 });
 
+app.get('/api/instagram/media', async (req, res) => {
+  const token = instagramTokenFromRequest(req);
+  if (!token) return res.status(401).json({ connected: false, media: [] });
+  try {
+    const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type&access_token=${encodeURIComponent(token)}`);
+    if (!profileResponse.ok) throw new Error('Instagram profile request failed');
+    const profile = await profileResponse.json();
+    const mediaUrl = new URL(`https://graph.instagram.com/${profile.id}/media`);
+    mediaUrl.searchParams.set('fields', 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp');
+    mediaUrl.searchParams.set('limit', '6');
+    mediaUrl.searchParams.set('access_token', token);
+    const mediaResponse = await fetch(mediaUrl);
+    if (!mediaResponse.ok) throw new Error('Instagram media request failed');
+    const mediaData = await mediaResponse.json();
+    res.json({ connected: true, profile, media: Array.isArray(mediaData.data) ? mediaData.data : [] });
+  } catch (mediaError) {
+    res.status(502).json({ connected: false, media: [], error: mediaError.message || 'Instagram media unavailable' });
+  }
+});
+
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(s => s.trim())

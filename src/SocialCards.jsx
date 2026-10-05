@@ -20,9 +20,13 @@ export function getSocialUrl(card) {
 
 export default function SocialCards({ cards = [] }) {
   const [instagramProfile, setInstagramProfile] = useState(null);
+  const [instagramMedia, setInstagramMedia] = useState([]);
   useEffect(() => {
     fetch('/api/instagram/status').then((response) => response.ok ? response.json() : null).then((data) => {
-      if (data?.connected) setInstagramProfile(data.profile || null);
+      if (data?.connected) {
+        setInstagramProfile(data.profile || null);
+        fetch('/api/instagram/media').then((response) => response.ok ? response.json() : null).then((mediaData) => setInstagramMedia(Array.isArray(mediaData?.media) ? mediaData.media : [])).catch(() => {});
+      }
     }).catch(() => {});
   }, []);
   const defaults = [{ platform: 'instagram', account: '', title: '', enabled: true }, { platform: 'tiktok', account: '', title: '', enabled: true }];
@@ -52,6 +56,12 @@ export default function SocialCards({ cards = [] }) {
           );
         })}
       </div>
+      {instagramProfile && (
+        <div className="hz-instagram-live-panel">
+          <div className="hz-instagram-live-heading"><strong>أحدث محتوى من @{instagramProfile.username}</strong><a href={`https://www.instagram.com/${instagramProfile.username}/`} target="_blank" rel="noreferrer">فتح Instagram ↗</a></div>
+          {instagramMedia.length > 0 ? <div className="hz-instagram-media-grid">{instagramMedia.map((media) => <a key={media.id} href={media.permalink} target="_blank" rel="noreferrer" className="hz-instagram-media"><img src={media.media_type === 'VIDEO' ? (media.thumbnail_url || media.media_url) : media.media_url} alt={media.caption || 'Instagram post'} loading="lazy" /><span>{media.media_type === 'VIDEO' ? '▶ فيديو' : 'عرض المنشور ↗'}</span></a>)}</div> : <p className="hz-instagram-empty">تم الربط، لكن Instagram لم يُرجع منشورات قابلة للعرض حاليًا.</p>}
+        </div>
+      )}
     </section>
   );
 }
