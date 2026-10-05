@@ -8,6 +8,10 @@ function canManageCustomers(role) {
 }
 
 const isCustomerActive = (customer) => ['active', 'نشط'].includes(String(customer?.status || '').toLowerCase()) || customer?.status === true || customer?.status === undefined || customer?.status === null;
+const parseLoyaltyValue = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 && (number === 0 || number >= 0.1) && Math.round(number * 100) / 100 === number ? number : null;
+};
 
 function Customers({ inputStyle = {} }) {
   const contextData = useApp() || {};
@@ -508,7 +512,7 @@ function Customers({ inputStyle = {} }) {
               </div>
               <div>
                 <label style={{ fontSize: '12px', color: '#c4b5fd', display: 'block', marginBottom: '4px' }}>نقاط الولاء:</label>
-                <input type="number" min="0" step="1" defaultValue={Number(selectedCustomer.loyaltyPoints || 0)} onBlur={(e) => handleUpdateCustomer(selectedCustomer._id || selectedCustomer.id, "loyaltyPoints", Math.max(0, Math.floor(Number(e.target.value) || 0)))} style={glassInputStyle} disabled={!canManage} dir="ltr" />
+                <input type="number" min="0" step="0.01" defaultValue={Number(selectedCustomer.loyaltyPoints || 0)} onBlur={(e) => { const value = parseLoyaltyValue(e.target.value); if (value === null) { alert("نقاط الولاء يجب أن تكون 0 أو قيمة موجبة لا تقل عن 0.1 وبحد أقصى منزلتين عشريتين."); e.target.value = Number(selectedCustomer.loyaltyPoints || 0); return; } handleUpdateCustomer(selectedCustomer._id || selectedCustomer.id, "loyaltyPoints", value); }} style={glassInputStyle} disabled={!canManage} dir="ltr" />
               </div>
               <div>
                 <label style={{ fontSize: '12px', color: '#38bdf8', display: 'block', marginBottom: '4px' }}>حالة العميل:</label>

@@ -17,6 +17,15 @@ const toISOStringOrNull = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
+const parseLoyaltyValue = (value, label) => {
+  if (value === "" || value === null || value === undefined) return 0;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0 || (number > 0 && number < 0.1) || Math.round(number * 100) / 100 !== number) {
+    alert(`${label} يجب أن تكون 0 أو قيمة موجبة لا تقل عن 0.1 وبحد أقصى منزلتين عشريتين.`);
+    return null;
+  }
+  return number;
+};
 const DELIVERY_TYPES = [
   { value: "code", label: "🔑 كود جاهز (جوجل بلاي / ستيم / آيتونز...)" },
   { value: "id_topup", label: "🆔 تعبئة عن طريق آيدي (ببجي / فري فاير...)" },
@@ -227,12 +236,15 @@ export default function Products() {
     const codesArray = deliveryType === "code" || deliveryType === "subscription"
       ? newCodeText.split('\n').filter(c => c.trim() !== '') 
       : [];
+    const loyaltyPointsValue = parseLoyaltyValue(loyaltyPoints, "نقاط الولاء");
+    const loyaltyPriceValue = parseLoyaltyValue(loyaltyPrice, "سعر النقاط");
+    if (loyaltyPointsValue === null || loyaltyPriceValue === null) return;
 
     const payload = {
       name, description, category: category || UNCATEGORIZED, deliveryType,
       storeCreditAmount: deliveryType === "store_credit" ? (parseFloat(storeCreditAmount) || parseFloat(price)) : undefined,
-      loyaltyPoints: Math.max(0, parseFloat(loyaltyPoints) || 0),
-      loyaltyPrice: loyaltyPrice !== "" ? Math.max(0, parseInt(loyaltyPrice, 10) || 0) : 0,
+      loyaltyPoints: loyaltyPointsValue,
+      loyaltyPrice: loyaltyPriceValue,
       price: parseFloat(price), discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
       image: image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300",
       status, scheduledDate: toISOStringOrNull(scheduledDate) || undefined, unpublishDate: toISOStringOrNull(unpublishDate) || undefined,
@@ -274,11 +286,14 @@ export default function Products() {
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
+    const loyaltyPointsValue = parseLoyaltyValue(editLoyaltyPoints, "نقاط الولاء");
+    const loyaltyPriceValue = parseLoyaltyValue(editLoyaltyPrice, "سعر النقاط");
+    if (loyaltyPointsValue === null || loyaltyPriceValue === null) return;
     const payload = {
       name: editName, description: editDescription || "", category: editCategory,
       price: parseFloat(editPrice), discountPrice: editDiscountPrice !== "" ? parseFloat(editDiscountPrice) : null,
-      loyaltyPoints: Math.max(0, parseFloat(editLoyaltyPoints) || 0),
-      loyaltyPrice: editLoyaltyPrice !== "" ? Math.max(0, parseInt(editLoyaltyPrice, 10) || 0) : 0,
+      loyaltyPoints: loyaltyPointsValue,
+      loyaltyPrice: loyaltyPriceValue,
       image: editImage, status: editStatus,
       scheduledDate: toISOStringOrNull(editScheduledDate), unpublishDate: toISOStringOrNull(editUnpublishDate),
       lowStockThreshold: parseInt(editLowStockThreshold) || 3,
@@ -583,10 +598,10 @@ export default function Products() {
                 <input type="number" step="0.01" placeholder="سعر الخصم" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
               </div>
               <label className="hz-field-label">🎁 نقاط الولاء التي يمنحها هذا المنتج
-                <input type="number" min="0" step="0.5" placeholder="مثال: 2.5 نقطة" value={loyaltyPoints} onChange={(e) => setLoyaltyPoints(e.target.value)} style={glassInputStyle} />
+                <input type="number" min="0" step="0.01" placeholder="مثال: 0.1 أو 2.25 نقطة" value={loyaltyPoints} onChange={(e) => setLoyaltyPoints(e.target.value)} style={glassInputStyle} />
               </label>
               <label className="hz-field-label">⭐ سعر المنتج بنقاط الولاء (اختياري)
-                <input type="number" min="0" step="1" placeholder="مثال: 100 نقطة — 0 لتعطيل الشراء بالنقاط" value={loyaltyPrice} onChange={(e) => setLoyaltyPrice(e.target.value)} style={glassInputStyle} />
+                <input type="number" min="0" step="0.01" placeholder="مثال: 0.1 أو 100.25 نقطة — 0 لتعطيل الشراء بالنقاط" value={loyaltyPrice} onChange={(e) => setLoyaltyPrice(e.target.value)} style={glassInputStyle} />
               </label>
               {deliveryType === "store_credit" && <>
                 <input type="number" min="0.01" step="0.01" placeholder="قيمة الرصيد داخل البطاقة (دينار)" value={storeCreditAmount} onChange={(e) => setStoreCreditAmount(e.target.value)} style={glassInputStyle} />
@@ -725,10 +740,10 @@ export default function Products() {
                   <input type="number" step="0.01" placeholder="سعر الخصم..." value={editDiscountPrice} onChange={(e) => setEditDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
                 </div>
                 <label className="hz-field-label">🎁 نقاط الولاء التي يمنحها هذا المنتج
-                  <input type="number" min="0" step="0.5" placeholder="مثال: 2.5 نقطة" value={editLoyaltyPoints} onChange={(e) => setEditLoyaltyPoints(e.target.value)} style={glassInputStyle} />
+                  <input type="number" min="0" step="0.01" placeholder="مثال: 0.1 أو 2.25 نقطة" value={editLoyaltyPoints} onChange={(e) => setEditLoyaltyPoints(e.target.value)} style={glassInputStyle} />
                 </label>
                 <label className="hz-field-label">⭐ سعر المنتج بنقاط الولاء (اختياري)
-                  <input type="number" min="0" step="1" placeholder="0 = غير متاح بالنقاط" value={editLoyaltyPrice} onChange={(e) => setEditLoyaltyPrice(e.target.value)} style={glassInputStyle} />
+                  <input type="number" min="0" step="0.01" placeholder="0 = غير متاح بالنقاط، أو قيمة حتى منزلتين" value={editLoyaltyPrice} onChange={(e) => setEditLoyaltyPrice(e.target.value)} style={glassInputStyle} />
                 </label>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <input type="file" accept="image/*" onChange={(e) => handleImageFileSelect(e, true)} style={{ color: "#94a3b8", fontSize: "12px" }} />

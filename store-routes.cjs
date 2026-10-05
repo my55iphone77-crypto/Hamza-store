@@ -25,6 +25,20 @@ module.exports = function buildStoreRouter(deps) {
     if (publishAt && !Number.isNaN(publishAt.getTime()) && publishAt > new Date()) payload.status = 'غير منشور';
     return payload;
   };
+  const normalizeLoyaltyValue = (value, label = 'قيمة النقاط') => {
+    if (value === undefined || value === null || value === '') return 0;
+    const number = Number(value);
+    if (!Number.isFinite(number) || number < 0 || (number > 0 && number < 0.1) || Math.round(number * 100) / 100 !== number) {
+      throw new Error(`${label} يجب أن تكون 0 أو قيمة موجبة لا تقل عن 0.1 وبحد أقصى منزلتين عشريتين.`);
+    }
+    return number;
+  };
+  const normalizeLoyaltyFields = (payload) => {
+    const normalized = { ...payload };
+    if (Object.prototype.hasOwnProperty.call(normalized, 'loyaltyPoints')) normalized.loyaltyPoints = normalizeLoyaltyValue(normalized.loyaltyPoints, 'نقاط الولاء');
+    if (Object.prototype.hasOwnProperty.call(normalized, 'loyaltyPrice')) normalized.loyaltyPrice = normalizeLoyaltyValue(normalized.loyaltyPrice, 'سعر النقاط');
+    return normalized;
+  };
 
   // رفع الملفات (اختياري): npm i multer  +  app.use('/uploads', express.static('uploads'))
   let upload = { single: () => (req, res, next) => next() };
@@ -376,7 +390,7 @@ module.exports = function buildStoreRouter(deps) {
     router.post(path, routeGuard(create), async (req, res) => {
       try {
         const payload = path === '/customers'
-          ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), name: String(req.body?.name || '').trim(), status: ['inactive', 'غير نشط'].includes(String(req.body?.status || '').toLowerCase()) ? 'inactive' : 'active' }
+          ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), name: String(req.body?.name || '').trim(), status: ['inactive', 'غير نشط'].includes(String(req.body?.status || '').toLowerCase()) ? 'inactive' : 'active', loyaltyPoints: normalizeLoyaltyValue(req.body?.loyaltyPoints, 'نقاط الولاء') }
           : req.body;
         // حماية idempotency للإعلانات: إعادة إرسال نفس الطلب خلال ثوانٍ لا تنشئ إعلاناً ثانياً.
         if (path === '/announcements' && payload?.title && payload?.message) {
@@ -407,7 +421,7 @@ module.exports = function buildStoreRouter(deps) {
           ? { $or: [...(mongoose.isValidObjectId(req.params.id) ? [{ _id: req.params.id }] : []), { id: req.params.id }] }
           : { _id: req.params.id };
         const payload = path === '/customers'
-          ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), status: ['inactive', 'غير نشط'].includes(String(req.body?.status || '').toLowerCase()) ? 'inactive' : 'active' }
+          ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), status: ['inactive', 'غير نشط'].includes(String(req.body?.status || '').toLowerCase()) ? 'inactive' : 'active', ...(Object.prototype.hasOwnProperty.call(req.body || {}, 'loyaltyPoints') ? { loyaltyPoints: normalizeLoyaltyValue(req.body.loyaltyPoints, 'نقاط الولاء') } : {}) }
           : req.body;
         if (path === '/customers' && payload.email && await Model.exists({ email: payload.email, _id: { $ne: req.params.id } })) return res.status(409).json({ error: 'هذا البريد الإلكتروني مرتبط بعميل آخر.' });
         const d = supportsCustomId
@@ -482,7 +496,7 @@ module.exports = function buildStoreRouter(deps) {
   });
   router.post('/products', guard('staff'), async (req, res) => {
     try {
-      const payload = normalizeProductSchedule(req.body);
+      const payload = normalizeLoyaltyFields(normalizeProductSchedule(req.body));
       if (CODE_STOCK_TYPES.has(String(payload.deliveryType || ''))) {
         payload.codes = normalizeCodes(payload.codes);
         payload.stock = payload.codes.length;
@@ -497,7 +511,7 @@ module.exports = function buildStoreRouter(deps) {
     try {
       const existing = await Product.findById(req.params.id);
       if (!existing) return res.status(404).json({ error: 'المنتج غير موجود' });
-      const payload = normalizeProductSchedule(req.body);
+      const payload = normalizeLoyaltyFields(normalizeProductSchedule(req.body));
       const deliveryType = String(payload.deliveryType || existing.deliveryType || '');
       if (CODE_STOCK_TYPES.has(deliveryType)) {
         payload.codes = Array.isArray(payload.codes) ? normalizeCodes(payload.codes) : (existing.codes || []);
@@ -724,7 +738,7 @@ module.exports = function buildStoreRouter(deps) {
         if (!reserved) return res.status(409).json({ error: `تم حجز أكواد المنتج ${need.productName} للتو، أعد المحاولة.` });
         items[need.itemIndex].deliveredCodes = selectedCodes;
       }
-      const pointsEarned = authUser ? Math.max(0, Math.round(earnedPoints * 2) / 2) : 0;
+      const pointsEarned = authUser ? Math.max(0, Math.round(earnedPoints * 100) / 100) : 0;
       if (authUser) {
         const update = { $inc: { loyaltyPoints: pointsEarned - loyaltyPointsRedeemed } };
         if (walletAmount > 0) update.$inc.storeBalance = -walletAmount;
