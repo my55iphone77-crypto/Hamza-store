@@ -402,11 +402,17 @@ module.exports = function buildStoreRouter(deps) {
     router.put(`${path}/:id`, routeGuard(update), async (req, res) => {
       try {
         const before = path === '/customers' ? await Model.findById(req.params.id) : null;
+        const supportsCustomId = path === '/commissions' || path === '/commissions-logs';
+        const recordFilter = supportsCustomId
+          ? { $or: [...(mongoose.isValidObjectId(req.params.id) ? [{ _id: req.params.id }] : []), { id: req.params.id }] }
+          : { _id: req.params.id };
         const payload = path === '/customers'
           ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), status: ['inactive', 'غير نشط'].includes(String(req.body?.status || '').toLowerCase()) ? 'inactive' : 'active' }
           : req.body;
         if (path === '/customers' && payload.email && await Model.exists({ email: payload.email, _id: { $ne: req.params.id } })) return res.status(409).json({ error: 'هذا البريد الإلكتروني مرتبط بعميل آخر.' });
-        const d = await Model.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
+        const d = supportsCustomId
+          ? await Model.findOneAndUpdate(recordFilter, payload, { new: true, runValidators: true })
+          : await Model.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
         if (!d) return res.status(404).json({ error: 'غير موجود' });
         if (path === '/customers' && User && before?.email && String(before.email).trim().toLowerCase() !== String(d.email || '').trim().toLowerCase()) {
           await User.updateOne({ email: String(before.email).trim().toLowerCase() }, { $set: { email: String(d.email).trim().toLowerCase() } });
@@ -427,9 +433,11 @@ module.exports = function buildStoreRouter(deps) {
             ? { $or: [{ _id: req.params.id }, { name: categoryName }] }
             : { name: categoryName })
           : null;
+        const supportsCustomId = path === '/commissions' || path === '/commissions-logs';
+        const customIdFilter = { $or: [...(mongoose.isValidObjectId(req.params.id) ? [{ _id: req.params.id }] : []), { id: req.params.id }] };
         const d = path === '/categories'
           ? await Model.findOneAndDelete(categoryFilter)
-          : await Model.findByIdAndDelete(req.params.id);
+          : supportsCustomId ? await Model.findOneAndDelete(customIdFilter) : await Model.findByIdAndDelete(req.params.id);
         if (!d) return res.status(404).json({ error: 'غير موجود' });
         if (path === '/categories' && Product) await Product.updateMany({ category: d.name }, { $set: { category: 'غير مصنف' } });
         res.json({ success: true });
