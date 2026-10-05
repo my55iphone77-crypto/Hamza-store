@@ -40,6 +40,7 @@ module.exports = function buildStoreRouter(deps) {
     return normalized;
   };
   const LOYALTY_POINTS_PER_DINAR = 0.25;
+  const LOYALTY_REDEMPTION_POINTS_PER_DINAR = 10;
 
   // رفع الملفات (اختياري): npm i multer  +  app.use('/uploads', express.static('uploads'))
   let upload = { single: () => (req, res, next) => next() };
@@ -660,6 +661,7 @@ module.exports = function buildStoreRouter(deps) {
             return res.status(409).json({ error: `لا يوجد عدد كافٍ من الأكواد للمنتج: ${prod.name}.` });
           }
         }
+        loyaltyPrice = Math.max(0, Math.round(price * LOYALTY_REDEMPTION_POINTS_PER_DINAR * 100) / 100);
         if (loyaltyOnly) {
           price = 0;
           itemPoints = 0;

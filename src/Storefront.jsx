@@ -495,7 +495,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
               const discountPrice = Number(rawDiscount);
               const hasDiscount = discountPrice > 0 && discountPrice < originalPrice;
               const displayPrice = hasDiscount ? discountPrice : originalPrice;
-              const loyaltyPrice = Math.max(0, Number(product.loyaltyPrice || 0));
+              const loyaltyPrice = Math.max(0, Math.round(displayPrice * 10 * 100) / 100);
 
               const name = product.name || product.title || 'منتج رقمي';
               const imageUrl = product.image || product.imageUrl || product.img || product.photo || product.picture || '';
