@@ -36,6 +36,7 @@ const KEY_MAP = {
   Task: 'tasks',
   DocumentModel: 'documents',
   Coupon: 'coupons',
+  Commission: 'commissions',
 };
 
 // هذه فقط يشوفها الزبائن (واجهة المتجر). الباقي للموظفين فقط.
