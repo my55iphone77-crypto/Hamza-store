@@ -135,7 +135,7 @@ const GLASS_STYLE = `
   .hz-social-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
   .hz-social-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #94a3b8; font-size: 11px; }
   .hz-social-login { display: inline-flex; width: fit-content; margin-top: 4px; padding: 4px 8px; border-radius: 999px; color: #fbcfe8; background: rgba(244,114,182,0.12); border: 1px solid rgba(244,114,182,0.26); font-size: 10px; font-weight: 800; }
-  .hz-instagram-live-panel { margin-top: 16px; padding: 18px; border: 1px solid rgba(244,114,182,0.24); border-radius: 22px; background: linear-gradient(135deg, rgba(244,114,182,0.08), rgba(15,23,42,0.68)); }
+  .hz-instagram-live-panel { width: min(100%, 680px); box-sizing: border-box; margin: 12px auto 0; padding: 12px; border: 1px solid rgba(244,114,182,0.24); border-radius: 18px; background: linear-gradient(135deg, rgba(244,114,182,0.08), rgba(15,23,42,0.68)); }
   .hz-instagram-live-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; color: #fbcfe8; font-size: 14px; }
   .hz-instagram-live-heading a { color: #67e8f9; font-size: 12px; text-decoration: none; }
   .hz-instagram-media-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -145,16 +145,16 @@ const GLASS_STYLE = `
   .hz-instagram-media span { position: absolute; inset: auto 8px 8px; padding: 5px 7px; border-radius: 8px; color: #fff; background: rgba(2,6,23,0.72); font-size: 10px; text-align: center; }
   .hz-instagram-empty { margin: 0; color: #94a3b8; font-size: 12px; }
   .hz-instagram-profile-head { display: flex; align-items: center; gap: 14px; }
-  .hz-instagram-profile-head > img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid #f472b6; background: #1e293b; }
+  .hz-instagram-profile-head > img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid #f472b6; background: #1e293b; }
   .hz-instagram-profile-head > div { min-width: 0; flex: 1; }
   .hz-instagram-profile-head strong, .hz-instagram-profile-head span, .hz-instagram-profile-head p { display: block; }
-  .hz-instagram-profile-head strong { color: #f8fafc; font-size: 17px; }
+  .hz-instagram-profile-head strong { color: #f8fafc; font-size: 14px; }
   .hz-instagram-profile-head span { margin-top: 3px; color: #f9a8d4; font-size: 12px; }
-  .hz-instagram-profile-head p { margin: 7px 0 0; color: #cbd5e1; font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
+  .hz-instagram-profile-head p { margin: 4px 0 0; color: #cbd5e1; font-size: 11px; line-height: 1.4; white-space: pre-wrap; max-height: 32px; overflow: hidden; }
   .hz-instagram-profile-head > a { flex: 0 0 auto; padding: 9px 12px; border-radius: 10px; color: #fff; background: linear-gradient(135deg, #ec4899, #8b5cf6); text-decoration: none; font-size: 11px; font-weight: 800; }
-  .hz-instagram-profile-stats { display: flex; gap: 22px; margin: 16px 0; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 11px; }
+  .hz-instagram-profile-stats { display: flex; gap: 18px; margin: 10px 0; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 10px; }
   .hz-instagram-profile-stats b { color: #f8fafc; font-size: 14px; margin-left: 4px; }
-  .hz-instagram-featured-media { position: relative; display: block; width: min(100%, 620px); margin: 0 auto; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 16px; background: #020617; }
+  .hz-instagram-featured-media { position: relative; display: block; width: min(100%, 420px); margin: 0 auto; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 13px; background: #020617; }
   .hz-instagram-featured-media img, .hz-instagram-featured-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .hz-instagram-featured-media > span { position: absolute; right: 12px; bottom: 12px; padding: 7px 10px; border-radius: 9px; color: #fff; background: rgba(2,6,23,0.78); font-size: 11px; }
   .hz-instagram-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
