@@ -792,7 +792,10 @@ module.exports = function buildStoreRouter(deps) {
   });
   router.put('/orders/:id', guard('staff'), async (req, res) => {
     try {
-      const o = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      const allowedStatuses = new Set(['جديد', 'قيد المعالجة', 'تم الدفع', 'تم التسليم', 'مكتمل', 'ملغي']);
+      const requestedStatus = String(req.body?.status || '').trim();
+      if (!allowedStatuses.has(requestedStatus)) return res.status(400).json({ error: 'حالة الطلب غير صالحة.' });
+      const o = await Order.findByIdAndUpdate(req.params.id, { $set: { status: requestedStatus } }, { new: true, runValidators: true });
       if (!o) return res.status(404).json({ error: 'الطلب غير موجود' });
       res.json(o);
     } catch (e) { res.status(400).json({ error: 'فشل تحديث الطلب' }); }

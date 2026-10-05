@@ -71,6 +71,7 @@ export default function Products() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("الكل");
+  const [statusFilter, setStatusFilter] = useState("الكل");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false); // نافذة إرسال الإيميل
   const [isEditing, setIsEditing] = useState(false);
@@ -387,6 +388,17 @@ export default function Products() {
   const stockOf = (prod) => (prod.deliveryType === "store_credit" ? "مفتوح" : prod.deliveryType === "id_topup" ? (prod.stock || 0) : (prod.codes?.length || 0));
   const deliveryLabel = (type) => DELIVERY_TYPES.find((d) => d.value === type)?.label || type;
   const fmtJOD = (n) => `${n} د.أ`;
+  const safeProducts = Array.isArray(products) ? products : [];
+  const filteredProducts = safeProducts.filter((prod) => {
+    const query = searchTerm.toLowerCase();
+    const matchesSearch = !query || String(prod?.name || '').toLowerCase().includes(query) || String(prod?.category || '').toLowerCase().includes(query);
+    const matchesCat = selectedCategoryFilter === "الكل" || prod.category === selectedCategoryFilter;
+    const isLow = prod.deliveryType !== "store_credit" && Number(stockOf(prod)) <= Number(prod.lowStockThreshold ?? 3);
+    const matchesStatus = statusFilter === "الكل" || (statusFilter === "منخفض" ? isLow : prod.status === statusFilter);
+    return matchesSearch && matchesCat && matchesStatus;
+  });
+  const lowStockCount = safeProducts.filter((prod) => prod.deliveryType !== "store_credit" && Number(stockOf(prod)) <= Number(prod.lowStockThreshold ?? 3)).length;
+  const unpublishedCount = safeProducts.filter((prod) => prod.status !== "منشور").length;
 
   if (isLoading) {
     return (
@@ -416,10 +428,23 @@ export default function Products() {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ ...glassInputStyle, width: "min(360px, 100%)" }}
           />
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ ...glassInputStyle, minWidth: "150px" }}>
+            <option value="الكل">كل الحالات</option>
+            <option value="منشور">منشور</option>
+            <option value="غير منشور">غير منشور</option>
+            <option value="منخفض">مخزون منخفض</option>
+          </select>
           <button onClick={() => setIsEmailModalOpen(true)} style={secondaryButtonStyle}>
             📨 إرسال تقرير إيميل
           </button>
         </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "10px", marginBottom: "18px" }}>
+        <div style={glassSubContainerStyle}><span style={{ color: "#94a3b8", fontSize: "12px" }}>إجمالي المنتجات</span><strong style={{ color: "#f8fafc", fontSize: "22px" }}>{safeProducts.length}</strong></div>
+        <div style={glassSubContainerStyle}><span style={{ color: "#94a3b8", fontSize: "12px" }}>مخزون منخفض</span><strong style={{ color: lowStockCount ? "#f87171" : "#34d399", fontSize: "22px" }}>{lowStockCount}</strong></div>
+        <div style={glassSubContainerStyle}><span style={{ color: "#94a3b8", fontSize: "12px" }}>غير منشور</span><strong style={{ color: unpublishedCount ? "#facc15" : "#34d399", fontSize: "22px" }}>{unpublishedCount}</strong></div>
+        <div style={glassSubContainerStyle}><span style={{ color: "#94a3b8", fontSize: "12px" }}>نتائج الفلترة</span><strong style={{ color: "#67e8f9", fontSize: "22px" }}>{filteredProducts.length}</strong></div>
       </div>
 
       {/* قسم إدارة الفئات */}
@@ -467,11 +492,7 @@ export default function Products() {
           <strong>إضافة منتج جديد</strong>
           <span style={{ fontSize: "12px", color: "#94a3b8" }}>بطاقة أو كود أو بطاقة رصيد</span>
         </div>
-        {products.filter(prod => {
-          const matchesSearch = !searchTerm || prod.name.toLowerCase().includes(searchTerm.toLowerCase()) || prod.category.toLowerCase().includes(searchTerm.toLowerCase());
-          const matchesCat = selectedCategoryFilter === "الكل" || prod.category === selectedCategoryFilter;
-          return matchesSearch && matchesCat;
-        }).map((prod) => {
+        {filteredProducts.map((prod) => {
           const currentStock = stockOf(prod);
           const isLow = prod.deliveryType !== "store_credit" && Number(currentStock) <= (prod.lowStockThreshold ?? 3);
           const hasDiscount = prod.discountPrice && prod.discountPrice < prod.price;
