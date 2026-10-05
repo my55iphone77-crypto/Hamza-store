@@ -184,7 +184,14 @@ function Analytics() {
   const totalExpense = safeTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount || 0), 0);
   const netProfit = totalIncome - totalExpense;
 
-  const lowStockProducts = safeProducts.filter(p => Number(p.stock) <= 5);
+  // بطاقات رصيد المتجر لا تعتمد على أكواد محفوظة؛ كودها يتولد تلقائياً عند الشراء.
+  // لذلك لا يجوز اعتبار قيمة stock الافتراضية (0) نفاداً للمخزون.
+  const stockOf = (product) => {
+    if (product?.deliveryType === 'store_credit') return Infinity;
+    if (product?.deliveryType === 'id_topup') return Number(product?.stock || 0);
+    return Array.isArray(product?.codes) ? product.codes.length : Number(product?.stock || 0);
+  };
+  const lowStockProducts = safeProducts.filter(p => stockOf(p) <= 5);
   const safeOrders = Array.isArray(orders) ? orders : [];
   const chartRows = useMemo(() => {
     const rows = [];
@@ -324,7 +331,7 @@ function Analytics() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {lowStockProducts.map(p => (
               <span key={p.id || p._id} style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', padding: '4px 10px', borderRadius: '6px', fontSize: '12px' }}>
-                {p.name} (مخزون: {p.stock})
+                {p.name} (مخزون: {stockOf(p)})
               </span>
             ))}
           </div>
