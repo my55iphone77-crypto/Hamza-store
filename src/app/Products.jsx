@@ -61,7 +61,7 @@ function fileToCompressedBase64(file) {
 }
 
 export default function Products() {
-  const { apiUrl, getAuthHeaders, products = [], setProducts, globalBus, triggerGlobalSync } = useApp();
+  const { apiUrl, getAuthHeaders, products = [], setProducts, globalBus, triggerGlobalSync, addLog } = useApp();
 
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +72,8 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("الكل");
   const [statusFilter, setStatusFilter] = useState("الكل");
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [bulkStatus, setBulkStatus] = useState("منشور");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false); // نافذة إرسال الإيميل
   const [isEditing, setIsEditing] = useState(false);
@@ -307,6 +309,22 @@ export default function Products() {
     }
   };
 
+  const toggleProductSelection = (id) => setSelectedProductIds((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);
+
+  const handleBulkStatusUpdate = async () => {
+    if (!selectedProductIds.length) return;
+    try {
+      const updatedRows = await Promise.all(selectedProductIds.map((id) => apiFetch(`/products/${id}/status`, { method: "PATCH", body: JSON.stringify({ status: bulkStatus }) })));
+      const updatedById = new Map(updatedRows.map((row) => [row._id, row]));
+      setProducts((prev) => prev.map((product) => updatedById.get(product._id) || product));
+      if (typeof addLog === 'function') addLog({ action: `🔄 تم تطبيق الحالة (${bulkStatus}) على ${updatedRows.length} منتجات`, type: 'product_bulk_update' });
+      setSelectedProductIds([]);
+      flashSaving(`✅ تم تحديث ${updatedRows.length} منتجات جماعياً`);
+    } catch (err) {
+      alert(err.message || 'تعذر تنفيذ العملية الجماعية.');
+    }
+  };
+
   const handleDeleteProduct = async (id, prodName) => {
     if (!window.confirm(`هل أنت متأكد من حذف المنتج "${prodName}" نهائياً؟`)) return;
     try {
@@ -478,6 +496,13 @@ export default function Products() {
         </div>
       </div>
 
+      {selectedProductIds.length > 0 && <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", padding: "12px 14px", marginTop: "18px", border: "1px solid rgba(56,189,248,0.3)", borderRadius: "14px", background: "rgba(14, 116, 144, 0.14)" }}>
+        <strong style={{ color: "#bae6fd", fontSize: "13px" }}>تم تحديد {selectedProductIds.length} منتجات</strong>
+        <select value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)} style={{ ...glassInputStyle, padding: "8px 10px" }}><option value="منشور">منشور</option><option value="غير منشور">غير منشور</option></select>
+        <button type="button" onClick={handleBulkStatusUpdate} style={secondaryButtonStyle}>تطبيق الحالة جماعياً</button>
+        <button type="button" onClick={() => setSelectedProductIds([])} style={{ ...secondaryButtonStyle, color: "#fca5a5" }}>إلغاء التحديد</button>
+      </div>}
+
       {/* شبكة المنتجات */}
       <div className="hz-products-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: "20px", marginTop: "20px", width: "100%", minWidth: 0, overflow: "visible" }}>
         <div
@@ -498,6 +523,7 @@ export default function Products() {
           const hasDiscount = prod.discountPrice && prod.discountPrice < prod.price;
           return (
             <div key={prod._id} onClick={() => { setSelectedProduct(prod); setIsEditing(false); setActiveTab("details"); }} style={glassCardStyle}>
+              <input type="checkbox" checked={selectedProductIds.includes(prod._id)} onChange={() => toggleProductSelection(prod._id)} onClick={(event) => event.stopPropagation()} aria-label={`تحديد ${prod.name}`} style={{ alignSelf: "flex-start", accentColor: "#38bdf8" }} />
               <span style={badgeStyle(prod.status === "منشور")}>{prod.status}</span>
               {hasDiscount && <span style={discountBadgeStyle}>🔥 خصم</span>}
               <img src={prod.image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300"} alt={prod.name} style={{ width: "65px", height: "65px", borderRadius: "10px", objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)", marginTop: "10px" }} />

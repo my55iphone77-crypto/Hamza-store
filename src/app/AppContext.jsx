@@ -43,7 +43,9 @@ export function AppProvider({ children }) {
   const [announcements, setAnnouncements] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [documents, setDocuments] = useState([]);
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('hamza_audit_logs') || '[]'); } catch { return []; }
+  });
   const [commissions, setCommissions] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [aiBot, setAiBot] = useState([]);
@@ -53,6 +55,10 @@ export function AppProvider({ children }) {
   const [orders, setOrders] = useState([]);
   const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    try { localStorage.setItem('hamza_audit_logs', JSON.stringify((Array.isArray(logs) ? logs : []).slice(0, 500))); } catch { /* التخزين المحلي اختياري */ }
+  }, [logs]);
 
   // 🔌 حالة اتصال Socket.IO
   const [socketConnected, setSocketConnected] = useState(false);

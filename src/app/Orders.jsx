@@ -6,7 +6,7 @@ const idOf = (row) => row?._id || row?.id;
 const money = (value) => `${Number(value || 0).toFixed(2)} ${value === undefined ? '' : 'د.أ'}`;
 
 export default function Orders() {
-  const { apiRequest, orders = [], setOrders = () => {}, triggerGlobalSync } = useApp() || {};
+  const { apiRequest, orders = [], setOrders = () => {}, triggerGlobalSync, addLog } = useApp() || {};
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState('');
   const [error, setError] = useState('');
@@ -39,6 +39,7 @@ export default function Orders() {
     try {
       const updated = await apiRequest(`/orders/${id}`, 'PUT', { status });
       setOrders((prev) => prev.map((item) => idOf(item) === id ? (updated || { ...item, status }) : item));
+      if (typeof addLog === 'function') addLog({ action: `🧾 تم تغيير حالة الطلب ${order.orderNumber || id} إلى (${status})`, type: 'order_status_update' });
       if (typeof triggerGlobalSync === 'function') triggerGlobalSync({ type: 'ORDERS' });
     } catch (err) {
       setError(err?.message || 'تعذر تحديث حالة الطلب.');

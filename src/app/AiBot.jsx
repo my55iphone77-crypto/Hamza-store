@@ -112,8 +112,10 @@ function AiBot({ inputStyle = {} }) {
       }
 
       const permissionKey = detectQuestionType(textToSend);
-      if (!hasPermission(permissionKey)) {
-        pushBotReply(`⛔ عذراً يا (${currentUser.name})، دورك (${currentUser.role}) لا يمتلك صلاحية لهذا الأمر.`, updatedChat);
+      const permissionAliases = { view_orders: 'manage_orders', manage_products: 'manage_products', delete_product: 'manage_products', hire_employee: 'manage_employees', fire_employee: 'manage_employees', manage_accounting: 'manage_accounting', send_marketing: 'send_email' };
+      const requiredPermission = permissionAliases[permissionKey] || permissionKey;
+      if (!currentUser || !hasPermission(requiredPermission)) {
+        pushBotReply(`⛔ لا توجد صلاحية كافية لتنفيذ هذا الطلب لهذا المستخدم.`, updatedChat);
         return;
       }
 
@@ -174,6 +176,12 @@ function AiBot({ inputStyle = {} }) {
         setSyncedChat(prev => [...(Array.isArray(prev) ? prev : []), { sender: 'bot', text: `تم إرسال الحملة إلى (${sentCount}) عميل.` }]);
         return;
       } 
+      else if (permissionKey === 'view_orders') {
+        const orderRows = Array.isArray(orders) ? orders : [];
+        const pendingOrders = orderRows.filter((order) => !['مكتمل', 'ملغي', 'تم التسليم'].includes(order.status));
+        const orderValue = orderRows.filter((order) => order.status !== 'ملغي').reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+        botReply = `تقرير الطلبات:\n- إجمالي الطلبات: ${orderRows.length}\n- الطلبات قيد المتابعة: ${pendingOrders.length}\n- قيمة الطلبات غير الملغاة: ${orderValue.toLocaleString()} دينار.`;
+      }
       else if (permissionKey === 'manage_accounting') {
         botReply = `تقرير الحسابات:\n- الدخل: ${totalIncome.toLocaleString()} دينار\n- المصاريف: ${totalExpense.toLocaleString()} دينار\n- صافي الأرباح: ${netProfit.toLocaleString()} دينار.`;
       } 
@@ -182,7 +190,7 @@ function AiBot({ inputStyle = {} }) {
         await humanTypingDelay(textToSend);
         setIsThinking(false);
         typingAlreadyHandled = true;
-        botReply = `مرحباً بك ${currentUser.name}، أنا ${BOT_PERSONA_NAME}. يمكنك طلب:\n• عرض الأرباح\n• إضافة/حذف منتج\n• تعيين/فصل موظف\n• إرسال حملة تسويقية\n• تصعيد شكوى`;
+        botReply = `مرحباً بك ${currentUser.name}، أنا ${BOT_PERSONA_NAME}. هذا ملخص حي للنظام:\n- المنتجات: ${totalProductsCount}\n- المخزون المحسوب: ${totalStockQty}\n- الطلبات: ${Array.isArray(orders) ? orders.length : 0}\n- صافي الأرباح: ${netProfit.toLocaleString()} دينار\n\nيمكنك طلب تقرير الأرباح أو الطلبات، إضافة/حذف منتج، تعيين موظف، أو إرسال حملة تسويقية.`;
       }
 
       if (!typingAlreadyHandled) {

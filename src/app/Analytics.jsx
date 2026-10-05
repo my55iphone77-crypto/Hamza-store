@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useApp } from "./AppContext";
 import { useFullBleedStyle } from "./useWindowSize";
 
@@ -9,7 +9,7 @@ function Analytics() {
     token, apiUrl, apiRequest, getAuthHeaders,
     currentUser, socket,
     employees = [], customers = [], products = [],
-    accountingTransactions: transactions = [],
+    accountingTransactions: transactions = [], orders = [],
     tickets = [], workHours = [],
     setEmployees = () => {}, setCustomers = () => {},
     setProducts = () => {}, setAccountingTransactions: setTransactions = () => {},
@@ -19,6 +19,7 @@ function Analytics() {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [savingState, setSavingState] = useState("");
+  const [chartPeriod, setChartPeriod] = useState(14);
   const didInit = useRef(false);
 
   useEffect(() => {
@@ -184,6 +185,25 @@ function Analytics() {
   const netProfit = totalIncome - totalExpense;
 
   const lowStockProducts = safeProducts.filter(p => Number(p.stock) <= 5);
+  const safeOrders = Array.isArray(orders) ? orders : [];
+  const chartRows = useMemo(() => {
+    const rows = [];
+    const now = new Date();
+    for (let offset = chartPeriod - 1; offset >= 0; offset -= 1) {
+      const day = new Date(now);
+      day.setHours(0, 0, 0, 0);
+      day.setDate(day.getDate() - offset);
+      const next = new Date(day);
+      next.setDate(next.getDate() + 1);
+      const sameDay = (value) => { const date = new Date(value); return !Number.isNaN(date.getTime()) && date >= day && date < next; };
+      const income = safeTransactions.filter((row) => row.type === 'income' && sameDay(row.date || row.createdAt)).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+      const expense = safeTransactions.filter((row) => row.type === 'expense' && sameDay(row.date || row.createdAt)).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+      const dayOrders = safeOrders.filter((row) => row.status !== 'ملغي' && sameDay(row.date || row.createdAt));
+      rows.push({ label: `${String(day.getDate()).padStart(2, '0')}/${String(day.getMonth() + 1).padStart(2, '0')}`, income, expense, orders: dayOrders.length, orderValue: dayOrders.reduce((sum, row) => sum + Number(row.totalAmount || 0), 0) });
+    }
+    return rows;
+  }, [chartPeriod, safeOrders, safeTransactions]);
+  const chartMax = Math.max(1, ...chartRows.flatMap((row) => [row.income, row.expense, row.orderValue]));
 
   return (
     <div style={{ background: "linear-gradient(135deg, #0b0f19 0%, #111827 100%)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "30px", color: "#f8fafc", fontFamily: "Tajawal, sans-serif", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7)", ...fullBleedStyle }} dir="rtl">
@@ -279,6 +299,24 @@ function Analytics() {
           </div>
         </div>
       </div>
+
+      <section style={{ marginTop: '25px', background: 'rgba(17, 24, 39, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '18px', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
+          <div><h3 style={{ margin: 0, color: '#67e8f9', fontSize: '17px' }}>📈 حركة الأرباح والطلبات</h3><span style={{ color: '#94a3b8', fontSize: '12px' }}>بيانات فعلية من المعاملات والطلبات المحفوظة</span></div>
+          <select value={chartPeriod} onChange={(event) => setChartPeriod(Number(event.target.value))} style={{ background: '#0f172a', color: '#fff', border: '1px solid #334155', borderRadius: '9px', padding: '8px 10px' }}>
+            <option value={7}>آخر 7 أيام</option><option value={14}>آخر 14 يوم</option><option value={30}>آخر 30 يوم</option><option value={90}>آخر 90 يوم</option>
+          </select>
+        </div>
+        <div style={{ display: 'flex', gap: '14px', color: '#cbd5e1', fontSize: '11px', marginBottom: '12px' }}><span>🟢 الإيرادات</span><span>🔴 المصاريف</span><span>🔵 قيمة الطلبات</span></div>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${chartRows.length}, minmax(8px, 1fr))`, alignItems: 'end', gap: chartPeriod > 30 ? '2px' : '5px', minHeight: '190px', padding: '12px 4px 0', borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
+          {chartRows.map((row) => <div key={row.label} title={`${row.label} | إيرادات: ${row.income.toLocaleString()} | مصاريف: ${row.expense.toLocaleString()} | طلبات: ${row.orders}`} style={{ display: 'flex', alignItems: 'end', justifyContent: 'center', gap: '2px', height: '180px' }}>
+            <span style={{ width: '30%', height: `${Math.max(2, row.income / chartMax * 100)}%`, background: '#22c55e', borderRadius: '4px 4px 0 0' }} />
+            <span style={{ width: '30%', height: `${Math.max(2, row.expense / chartMax * 100)}%`, background: '#ef4444', borderRadius: '4px 4px 0 0' }} />
+            <span style={{ width: '30%', height: `${Math.max(2, row.orderValue / chartMax * 100)}%`, background: '#38bdf8', borderRadius: '4px 4px 0 0' }} />
+          </div>)}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${chartRows.length}, minmax(8px, 1fr))`, gap: chartPeriod > 30 ? '2px' : '5px', marginTop: '7px', color: '#64748b', fontSize: '9px', textAlign: 'center' }}>{chartRows.map((row) => <span key={`label-${row.label}`}>{row.label}</span>)}</div>
+      </section>
 
       {lowStockProducts.length > 0 && (
         <div style={{ marginTop: '25px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '15px', borderRadius: '12px' }}>

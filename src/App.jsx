@@ -23,6 +23,7 @@ import Products from './app/Products';
 import Salaries from './app/Salaries';
 import SalesLog from './app/SalesLog';
 import Settings from './app/Settings';
+import StockAlerts from './app/StockAlerts';
 import Tasks from './app/Tasks';
 import Tickets from './app/Tickets';
 import WorkHours from './app/WorkHours';
@@ -244,6 +245,16 @@ const GLASS_STYLE = `
   .hz-order-total { color: #86efac; font-size: 16px; font-weight: 800; white-space: nowrap; }
   .hz-order-status { display: flex; flex-direction: column; gap: 5px; color: #94a3b8; font-size: 11px; }
   .hz-orders-empty { padding: 45px 20px; color: #94a3b8; text-align: center; border: 1px dashed rgba(148,163,184,0.35); border-radius: 16px; }
+  .hz-stock-alert { margin-bottom: 22px; padding: 16px; border: 1px solid rgba(248,113,113,0.42); border-radius: 18px; background: linear-gradient(145deg, rgba(127,29,29,0.38), rgba(30,41,59,0.55)); box-shadow: 0 0 28px rgba(239,68,68,0.12), inset 0 1px 0 rgba(255,255,255,0.1); }
+  .hz-stock-alert-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .hz-stock-alert-heading > div:first-child { display: flex; flex-direction: column; gap: 5px; }
+  .hz-stock-alert-heading strong { color: #fecaca; font-size: 16px; }
+  .hz-stock-alert-heading span { color: #fda4af; font-size: 12px; }
+  .hz-stock-alert-actions { display: flex; gap: 8px; }
+  .hz-stock-alert-actions button, .hz-stock-alert-list button { border: 1px solid rgba(248,113,113,0.35); border-radius: 9px; background: rgba(15,23,42,0.5); color: #fecaca; padding: 8px 11px; cursor: pointer; }
+  .hz-stock-alert-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .hz-stock-alert-list button { display: flex; gap: 9px; align-items: center; color: #f8fafc; font-size: 12px; }
+  .hz-stock-alert-list b { color: #fca5a5; }
   @media (max-width: 800px) { .hz-order-card { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hz-order-main { grid-column: 1 / -1; } }
   @media (max-width: 560px) { .hz-orders-filters { grid-template-columns: 1fr; } .hz-order-card { grid-template-columns: 1fr; } }
 `;
@@ -365,7 +376,7 @@ function MainContent() {
     { id: 'Products', name: 'إدارة المنتجات والمخزون', icon: '📦', borderColor: '#10b981', component: <Products products={products} setProducts={setProducts} inputStyle={inputStyle} currentUser={currentUser} /> },
     { id: 'Employees', name: 'إدارة الموظفين (HR)', icon: '👥', borderColor: '#8b5cf6', component: <Employees employees={employees} setEmployees={setEmployees} searchTerm={searchTerm} setSearchTerm={setSearchTerm} /> },
     { id: 'Salaries', name: 'الرواتب والمكافآت', icon: '💵', borderColor: '#f59e0b', component: <Salaries salaries={salaries} setSalaries={setSalaries} inputStyle={inputStyle} currentUser={currentUser} /> },
-    { id: 'EmailCenter', name: 'مركز البريد (Gmail)', icon: '✉️', borderColor: '#3b82f6', component: <EmailCenter emails={mails} setEmails={setMails} messages={mails} inputStyle={inputStyle} /> },
+    { id: 'EmailCenter', name: 'مركز البريد (Gmail)', icon: '✉️', borderColor: '#3b82f6', component: <EmailCenter mails={mails} setEmails={setMails} inputStyle={inputStyle} /> },
     { id: 'Accounting', name: 'المحاسبة والأرباح', icon: '💰', borderColor: '#10b981', component: <Accounting transactions={accountingTransactions} setTransactions={setAccountingTransactions} mails={mails} setMails={setMails} currentUser={currentUser} inputStyle={inputStyle} /> },
     { id: 'Orders', name: 'مركز الطلبات', icon: '🛒', borderColor: '#22d3ee', component: <Orders /> },
     { id: 'SalesLog', name: 'سجل المبيعات والطلبات', icon: '📊', borderColor: '#6366f1', component: <SalesLog transactions={salesLog} sales={salesLog} /> },
@@ -432,6 +443,7 @@ function MainContent() {
           <div style={{ width: '100%' }}>
             {!effectiveActiveApp ? (
               <div>
+                <StockAlerts onOpenProducts={() => setActiveApp('Products')} />
                 <div className="hz-dashboard-summary">
                   <div><strong>مركز التشغيل</strong><span>الأقسام العاملة: {visibleAppsList.length}</span></div>
                   <div><strong>{products.length}</strong><span>منتج في الكتالوج</span></div>

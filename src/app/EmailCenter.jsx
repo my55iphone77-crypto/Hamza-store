@@ -288,7 +288,7 @@ export default function EmailCenter({
   const deleteMail = async (id) => {
     if (!window.confirm('هل أنت متأكد من نقل هذه الرسالة إلى السبام؟')) return;
     try {
-      await secureApiRequest(`/mails/${encodeURIComponent(id)}`, "PATCH", { deleted: true, folder: "spam" });
+      await secureApiRequest(`/mails/${encodeURIComponent(id)}`, "PUT", { deleted: true, folder: "spam" });
       const updated = safeMails.map(m => (m.id || m._id) === id ? { ...m, deleted: true, folder: "spam" } : m);
       updateEmails(updated);
       if (typeof addLog === 'function') addLog({ action: `🗑️ رسالة نقلت للسبام: ${id}` });
@@ -300,7 +300,7 @@ export default function EmailCenter({
   // 📖 قراءة بريد
   const markAsRead = async (id) => {
     try {
-      await secureApiRequest(`/mails/${encodeURIComponent(id)}`, "PATCH", { read: true });
+      await secureApiRequest(`/mails/${encodeURIComponent(id)}`, "PUT", { read: true });
       const updated = safeMails.map(m => (m.id || m._id) === id ? { ...m, read: true } : m);
       updateEmails(updated);
     } catch (err) {
@@ -311,7 +311,7 @@ export default function EmailCenter({
   // 📦 أرشفة بريد
   const archiveMail = async (id) => {
     try {
-      await secureApiRequest(`/mails/${encodeURIComponent(id)}`, "PATCH", { archived: true, folder: "archive" });
+      await secureApiRequest(`/mails/${encodeURIComponent(id)}`, "PUT", { archived: true, folder: "archive" });
       const updated = safeMails.map(m => (m.id || m._id) === id ? { ...m, archived: true, folder: "archive" } : m);
       updateEmails(updated);
     } catch (err) {
