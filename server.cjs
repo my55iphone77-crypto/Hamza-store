@@ -819,6 +819,17 @@ app.use((err, req, res, next) => {
 const DAILY_REPORT_TIMES = String(process.env.DAILY_REPORT_TIMES || '09:00,17:00,23:00').split(',').map((value) => value.trim()).filter(Boolean);
 const DAILY_REPORT_TZ = process.env.DAILY_REPORT_TZ || 'Asia/Amman';
 let lastDailyReportAttempt = '';
+const dailyReportSchedule = DAILY_REPORT_TIMES
+  .map((time) => {
+    const match = String(time).match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return null;
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    if (hour > 23 || minute > 59) return null;
+    return { time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`, minutes: hour * 60 + minute };
+  })
+  .filter(Boolean)
+  .sort((a, b) => a.minutes - b.minutes);
 const jordanDateParts = () => {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: DAILY_REPORT_TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
   return Object.fromEntries(parts.filter((p) => p.type !== 'literal').map((p) => [p.type, p.value]));
@@ -828,9 +839,11 @@ const sendDailyReport = async () => {
     if (!Array.isArray(NOTIFY_EMAILS) || NOTIFY_EMAILS.length === 0) return;
     const now = jordanDateParts();
     const today = `${now.year}-${now.month}-${now.day}`;
-    const currentTime = `${now.hour}:${now.minute}`;
-    const reportTime = DAILY_REPORT_TIMES.find((time) => time === currentTime);
-    if (!reportTime) return;
+    const currentMinutes = Number(now.hour) * 60 + Number(now.minute);
+    // Render قد يوقظ الخدمة بعد الموعد؛ نلتقط آخر تقرير مستحق بدل تفويت اليوم بالكامل.
+    const dueReport = dailyReportSchedule.filter((item) => item.minutes <= currentMinutes).at(-1);
+    if (!dueReport) return;
+    const reportTime = dueReport.time;
     const reportKey = `${today}_${reportTime}`;
     if (lastDailyReportAttempt === reportKey) return;
     lastDailyReportAttempt = reportKey;
