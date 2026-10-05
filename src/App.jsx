@@ -252,6 +252,15 @@ const GLASS_STYLE = `
   .hz-section-shell > * th { background: rgba(30,41,59,0.8) !important; color: #bae6fd !important; }
   .hz-section-shell > * td { border-color: rgba(148,163,184,0.12) !important; }
   .hz-section-shell > * [style*="grid-template-columns"] { gap: 14px !important; }
+  .hz-email-center { min-height: 0 !important; padding: clamp(14px, 3vw, 30px) !important; overflow: visible; }
+  .hz-email-center .hz-email-compose > div[style*="grid-template-columns"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .hz-email-center > div[style*="repeat(auto-fill"] { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important; }
+  .hz-email-center [style*="white-space: nowrap"] { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .hz-email-center textarea, .hz-email-center input, .hz-email-center select { max-width: 100% !important; min-width: 0 !important; }
+  .hz-order-receipt { max-width: 100%; overflow: hidden; }
+  .hz-order-receipt .hz-rc-item, .hz-order-receipt .hz-rc-code { min-width: 0; max-width: 100%; }
+  .hz-order-receipt .hz-rc-code code { min-width: 0; overflow-wrap: anywhere; word-break: break-word; white-space: pre-wrap; }
+  @media (max-width: 640px) { .hz-email-center .hz-email-compose > div[style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; } .hz-email-center > div[style*="repeat(auto-fill"] { grid-template-columns: minmax(0, 1fr) !important; } .hz-email-center { border-radius: 16px !important; } }
   .hz-inner-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 20px; padding: 4px 2px 16px; border-bottom: 1px solid rgba(56,189,248,0.18); }
   .hz-inner-section-heading-copy { min-width: 0; }
   .hz-inner-section-eyebrow { display: inline-flex; align-items: center; gap: 7px; color: #67e8f9; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; }

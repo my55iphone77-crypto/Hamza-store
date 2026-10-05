@@ -454,7 +454,7 @@ function OrderReceipt({ order, onClose }) {
   );
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(11, 15, 25, 0.98))', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', padding: '25px', borderRadius: '20px', border: '1px solid rgba(16, 185, 129, 0.5)', marginBottom: '25px', boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(16, 185, 129, 0.12)' }} dir="rtl">
+    <div className="hz-order-receipt" style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(11, 15, 25, 0.98))', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', padding: '25px', borderRadius: '20px', border: '1px solid rgba(16, 185, 129, 0.5)', marginBottom: '25px', boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(16, 185, 129, 0.12)' }} dir="rtl">
       <style>{RECEIPT_STYLES}</style>
 
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>

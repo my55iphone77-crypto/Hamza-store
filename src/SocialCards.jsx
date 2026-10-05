@@ -19,8 +19,9 @@ export function getSocialUrl(card) {
 }
 
 export default function SocialCards({ cards = [] }) {
-  const activeCards = Array.isArray(cards) ? cards.filter((card) => card && card.enabled !== false && card.account) : [];
-  if (!activeCards.length) return null;
+  const defaults = [{ platform: 'instagram', account: '', title: '', enabled: true }, { platform: 'tiktok', account: '', title: '', enabled: true }];
+  const configuredCards = Array.isArray(cards) && cards.length ? cards : defaults;
+  const activeCards = configuredCards.filter((card) => card && card.enabled !== false).slice(0, 2);
 
   return (
     <section className="hz-social-section" aria-label="حسابات المتجر على المنصات">
@@ -36,9 +37,9 @@ export default function SocialCards({ cards = [] }) {
           const meta = PLATFORM_META[card.platform] || PLATFORM_META.instagram;
           const url = getSocialUrl(card);
           return (
-            <a key={`${card.platform}-${card.account}-${index}`} className="hz-social-card" href={url} target="_blank" rel="noreferrer" style={{ '--social-color': meta.color }}>
+            <a key={`${card.platform}-${card.account}-${index}`} className="hz-social-card" href={url || '#'} target={url ? '_blank' : undefined} rel={url ? 'noreferrer' : undefined} onClick={(event) => { if (!url) event.preventDefault(); }} style={{ '--social-color': meta.color }}>
               <span className="hz-social-icon">{meta.icon}</span>
-              <span className="hz-social-copy"><strong>{card.title || `حسابنا على ${meta.label}`}</strong><small>{meta.label} • {card.account}</small></span>
+              <span className="hz-social-copy"><strong>{card.title || `حسابنا على ${meta.label}`}</strong><small>{card.account ? `${meta.label} • ${card.account}` : `${meta.label} • لم يتم ربط الحساب بعد`}</small></span>
               <span className="hz-social-arrow">↗</span>
             </a>
           );

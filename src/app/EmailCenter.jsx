@@ -353,7 +353,7 @@ export default function EmailCenter({
   const totalUnread = safeMails.filter(m => m && m.folder === "inbox" && !m.read && !m.deleted).length;
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, #090d16 0%, #111827 100%)', padding: '30px', borderRadius: '20px', color: '#fff', fontFamily: 'Tajawal, sans-serif', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', minHeight: '100vh', width: '100%', boxSizing: 'border-box' }} dir="rtl">
+    <div className="hz-email-center" style={{ background: 'linear-gradient(135deg, #090d16 0%, #111827 100%)', padding: '30px', borderRadius: '20px', color: '#fff', fontFamily: 'Tajawal, sans-serif', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', minHeight: '100vh', width: '100%', boxSizing: 'border-box' }} dir="rtl">
 
       {/* عنوان القسم */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '15px', flexWrap: 'wrap', gap: '15px' }}>
@@ -399,7 +399,7 @@ export default function EmailCenter({
       )}
 
       {/* البحث والفلترة */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '25px' }}>
+        <div className="hz-email-filters" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '25px' }}>
         <input
           type="text"
           placeholder="🔍 ابحث في رسائل البريد..."
@@ -426,7 +426,7 @@ export default function EmailCenter({
 
       {/* نموذج إرسال بريد */}
       {isComposeOpen && (
-        <form onSubmit={(e) => e.preventDefault()} style={{ background: 'rgba(30, 41, 59, 0.95)', backdropFilter: 'blur(16px)', padding: '25px', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: '30px', boxShadow: '0 12px 30px rgba(0,0,0,0.4)' }}>
+        <form className="hz-email-compose" onSubmit={(e) => e.preventDefault()} style={{ background: 'rgba(30, 41, 59, 0.95)', backdropFilter: 'blur(16px)', padding: '25px', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: '30px', boxShadow: '0 12px 30px rgba(0,0,0,0.4)' }}>
           <h4 style={{ margin: '0 0 18px 0', color: '#38bdf8', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>✉️</span> إنشاء وإرسال رسالة حقيقية بقالب زجاجي احترافي
           </h4>
