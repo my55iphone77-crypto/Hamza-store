@@ -117,9 +117,9 @@ const GLASS_STYLE = `
     box-shadow: 0 16px 40px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.14);
   }
   .hz-store-header::after { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 12% 0%, rgba(56,189,248,0.16), transparent 38%), radial-gradient(circle at 88% 100%, rgba(249,115,22,0.12), transparent 42%); pointer-events: none; }
-  .hz-hero-frame { position: relative; width: 100%; aspect-ratio: 16 / 6; max-height: 420px; min-height: 190px; margin-bottom: 24px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(240,192,96,0.38); box-shadow: 0 20px 60px rgba(0,0,0,0.42), 0 0 45px rgba(56,189,248,0.08); background: #080b10; }
+  .hz-hero-frame { position: relative; width: 100%; height: auto; margin-bottom: 24px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(240,192,96,0.38); box-shadow: 0 20px 60px rgba(0,0,0,0.42), 0 0 45px rgba(56,189,248,0.08); background: #080b10; }
   .hz-hero-frame::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(2,6,23,0.02), rgba(2,6,23,0.32)); }
-  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: 100%; max-height: none !important; object-fit: cover; object-position: center; }
+  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: auto; max-height: 520px !important; object-fit: contain; object-position: center; }
   .hz-store-intro { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin: 0 0 18px; padding: 0 4px; }
   .hz-store-intro-copy { min-width: 0; }
   .hz-store-kicker { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 8px; color: #67e8f9; font-size: 11px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; }
@@ -173,7 +173,7 @@ const GLASS_STYLE = `
   /* موبايل */
   @media (max-width: 559px) {
     .hz-store-header { border-radius: 18px; padding: 10px !important; }
-    .hz-hero-frame { aspect-ratio: 16 / 9; min-height: 150px; border-radius: 18px; }
+    .hz-hero-frame { min-height: 0; border-radius: 18px; }
     .hz-store-intro { display: block; }
     .hz-catalog-count { display: inline-flex; margin-top: 12px; }
     .hz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
