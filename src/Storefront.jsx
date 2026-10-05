@@ -110,6 +110,30 @@ const GLASS_STYLE = `
     transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
   .hz-glass-btn:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.4); box-shadow: 0 10px 24px rgba(0,0,0,0.5); }
+  .hz-store-header {
+    position: relative; overflow: hidden; isolation: isolate;
+    background: linear-gradient(135deg, rgba(15,23,42,0.88), rgba(8,11,16,0.62));
+    border: 1px solid rgba(148,163,184,0.22); border-radius: 22px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.14);
+  }
+  .hz-store-header::after { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 12% 0%, rgba(56,189,248,0.16), transparent 38%), radial-gradient(circle at 88% 100%, rgba(249,115,22,0.12), transparent 42%); pointer-events: none; }
+  .hz-hero-frame { position: relative; width: 100%; aspect-ratio: 16 / 6; max-height: 420px; min-height: 190px; margin-bottom: 24px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(240,192,96,0.38); box-shadow: 0 20px 60px rgba(0,0,0,0.42), 0 0 45px rgba(56,189,248,0.08); background: #080b10; }
+  .hz-hero-frame::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(2,6,23,0.02), rgba(2,6,23,0.32)); }
+  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: 100%; max-height: none !important; object-fit: cover; object-position: center; }
+  .hz-store-intro { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin: 0 0 18px; padding: 0 4px; }
+  .hz-store-intro-copy { min-width: 0; }
+  .hz-store-kicker { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 8px; color: #67e8f9; font-size: 11px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; }
+  .hz-store-kicker::before { content: ''; width: 24px; height: 2px; border-radius: 999px; background: linear-gradient(90deg, #38bdf8, #f59e0b); }
+  .hz-store-intro h2 { margin: 0 0 6px !important; font-size: clamp(22px, 3vw, 32px) !important; line-height: 1.15; color: #f8fafc !important; text-shadow: 0 6px 24px rgba(56,189,248,0.16); }
+  .hz-store-intro p { margin: 0 !important; max-width: 720px; color: #94a3b8 !important; line-height: 1.7; }
+  .hz-catalog-count { flex: 0 0 auto; padding: 10px 14px; border: 1px solid rgba(52,211,153,0.25); border-radius: 14px; color: #a7f3d0; background: rgba(16,185,129,0.08); font-size: 12px; font-weight: 800; white-space: nowrap; }
+  .hz-category-glass-bar { border-radius: 20px; padding: 14px 16px; margin-bottom: 22px; box-shadow: 0 14px 34px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.16); }
+  .hz-category-chip { border-radius: 14px; padding: 8px 14px; }
+  .hz-category-chip.active { box-shadow: 0 8px 20px rgba(37,99,235,0.25), inset 0 1px 0 rgba(255,255,255,0.2); }
+  .hz-grid { gap: clamp(14px, 1.8vw, 22px); }
+  .hz-product-card { border-radius: 22px; box-shadow: 0 16px 38px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.24); }
+  .hz-product-card:hover { transform: translateY(-6px) scale(1.01); }
+  .hz-add-btn { border-radius: 13px !important; font-weight: 800; box-shadow: 0 8px 18px rgba(16,185,129,0.16); }
   .hz-atmosphere {
     background:
       radial-gradient(ellipse 800px 500px at 10% -5%, rgba(249,115,22,0.38), transparent 55%),
@@ -148,6 +172,10 @@ const GLASS_STYLE = `
   }
   /* موبايل */
   @media (max-width: 559px) {
+    .hz-store-header { border-radius: 18px; padding: 10px !important; }
+    .hz-hero-frame { aspect-ratio: 16 / 9; min-height: 150px; border-radius: 18px; }
+    .hz-store-intro { display: block; }
+    .hz-catalog-count { display: inline-flex; margin-top: 12px; }
     .hz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
     .hz-category-glass-bar { padding: 12px; border-radius: 16px; }
     /* بطاقات مضغوطة عشان تكفي عمودين جنب بعض بالموبايل */
@@ -418,7 +446,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
       <div className="hz-container">
 
-      <div className="hz-glass-btn" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', marginBottom: '20px', borderRadius: '18px', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="hz-glass-btn hz-store-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', marginBottom: '20px', borderRadius: '18px', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img src="/logo.png" alt="Hamza Store" style={{ width: '118px', height: 'auto', maxHeight: '52px', objectFit: 'contain', objectPosition: 'left center', display: 'block' }} />
           <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '14px' }}>{settings.storeName || 'HAMZA STORE'}</span>
@@ -430,7 +458,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
       </div>
 
-      {!settings.hideHero && <div style={{ width: '100%', marginBottom: '20px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(240, 192, 96, 0.35)', boxShadow: '0 18px 50px rgba(0, 0, 0, 0.35)', background: '#080b10' }}>
+      {!settings.hideHero && <div className="hz-hero-frame">
         {/[.]mp4($|[?#])|[.]webm($|[?#])|[.]mov($|[?#])/i.test(settings.heroMediaUrl || '') ? (
           <video src={settings.heroMediaUrl} controls muted playsInline style={{ display: 'block', width: '100%', height: 'auto', maxHeight: `${Number(settings.heroHeight || 520)}px`, objectFit: 'cover' }} />
         ) : (
@@ -441,11 +469,15 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       <CheckoutForm authCart={authCart} inputStyle={inputStyle} />
       <OrderConfirmation authCart={authCart} />
 
-      <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ margin: '0 0 5px 0', color: '#f97316', fontSize: 'clamp(19px, 3vw, 24px)', fontWeight: 'bold' }}>
+      <div className="hz-store-intro">
+        <div className="hz-store-intro-copy">
+        <span className="hz-store-kicker">Hamza Digital Market</span>
+        <h2>
           🛍️ {settings.storeName || 'متجر بطاقات الألعاب الرقمية السحابي'}
         </h2>
-        <p style={{ margin: '0', color: '#94a3b8', fontSize: '13px' }}>{settings.storeTagline || settings.welcomeText || 'مرتبط كلياً بقنوات الأمان وتحديثات البيانات في جزء من الثانية.'}</p>
+        <p>{settings.storeTagline || settings.welcomeText || 'بطاقات رقمية أصلية، تسليم سريع، وتجربة شراء آمنة.'}</p>
+        </div>
+        <span className="hz-catalog-count">● متجر موثوق ومتصل</span>
       </div>
 
       {error && (

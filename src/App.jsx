@@ -215,7 +215,23 @@ const GLASS_STYLE = `
     border-color: rgba(255,255,255,0.4);
     box-shadow: 0 10px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
   }
-  .hz-dashboard-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 26px; }
+  .hz-admin-header {
+    position: sticky; top: 12px; z-index: 40; max-width: 1500px; margin: 0 auto 18px;
+    background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(8,11,16,0.72));
+    border: 1px solid rgba(148,163,184,0.2); border-radius: 22px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12);
+    backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%);
+  }
+  .hz-admin-main { max-width: 1500px; margin: 0 auto; }
+  .hz-admin-main > .hz-glass-card { border-radius: 26px; box-shadow: 0 18px 50px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.18); }
+  .hz-dashboard-summary { gap: 14px; margin-bottom: 30px; }
+  .hz-dashboard-summary > div { min-height: 88px; justify-content: center; border-radius: 20px; background: linear-gradient(145deg, rgba(15,23,42,0.86), rgba(30,41,59,0.42)); box-shadow: 0 10px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1); }
+  .hz-app-group { margin-bottom: 34px; }
+  .hz-app-group-heading { margin-bottom: 16px; padding: 0 6px 12px; border-bottom-color: rgba(56,189,248,0.2); }
+  .hz-app-group-heading h2 { font-size: 19px; letter-spacing: -0.2px; }
+  .hz-app-group-heading span { padding: 5px 10px; border-radius: 999px; color: #7dd3fc; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.16); }
+  @media (max-width: 640px) { .hz-admin-header { position: relative; top: 0; border-radius: 18px; margin-bottom: 12px; } .hz-admin-main > .hz-glass-card { border-radius: 20px; } }
+  .hz-dashboard-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 30px; }
   .hz-dashboard-summary > div { display: flex; flex-direction: column; gap: 5px; padding: 16px 18px; border: 1px solid rgba(56,189,248,0.2); border-radius: 18px; background: linear-gradient(145deg, rgba(15,23,42,0.8), rgba(30,41,59,0.38)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); }
   .hz-dashboard-summary strong { color: #f8fafc; font-size: 22px; }
   .hz-dashboard-summary span { color: #94a3b8; font-size: 12px; }
