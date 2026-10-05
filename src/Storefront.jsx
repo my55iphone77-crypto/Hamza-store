@@ -180,7 +180,7 @@ const GLASS_STYLE = `
 `;
 
 export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {} }) {
-  const { token, products: globalProducts, setProducts: setGlobalProducts, globalEventBus, handleForgotPasswordRequest: globalForgot, forgotPasswordSent, forgotPasswordSubmitting, loginError } = useApp();
+  const { token, products: globalProducts, setProducts: setGlobalProducts, settings = {}, globalEventBus, handleForgotPasswordRequest: globalForgot, forgotPasswordSent, forgotPasswordSubmitting, loginError } = useApp();
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const socketRef = useRef(null);
@@ -409,6 +409,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       <div className="hz-glass-btn" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', marginBottom: '20px', borderRadius: '18px', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img src="/logo.png" alt="Hamza Store" style={{ width: '118px', height: 'auto', maxHeight: '52px', objectFit: 'contain', objectPosition: 'left center', display: 'block' }} />
+          <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '14px' }}>{settings.storeName || 'HAMZA STORE'}</span>
           <span style={{ fontSize: '11px', padding: '3px 10px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
             {sensitiveSyncStatus}
           </span>
@@ -426,10 +427,20 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
       <div style={{ marginBottom: '20px' }}>
         <h2 style={{ margin: '0 0 5px 0', color: '#f97316', fontSize: 'clamp(19px, 3vw, 24px)', fontWeight: 'bold' }}>
-          🛍️ متجر بطاقات الألعاب الرقمية السحابي
+          🛍️ {settings.storeName || 'متجر بطاقات الألعاب الرقمية السحابي'}
         </h2>
-        <p style={{ margin: '0', color: '#94a3b8', fontSize: '13px' }}>مرتبط كلياً بقنوات الآمان وتحديثات الملفات والبيانات الحساسة في جزء من الثانية عبر Global State Bus.</p>
+        <p style={{ margin: '0', color: '#94a3b8', fontSize: '13px' }}>{settings.storeTagline || settings.welcomeText || 'مرتبط كلياً بقنوات الأمان وتحديثات البيانات في جزء من الثانية.'}</p>
       </div>
+
+      {settings.heroMediaUrl && (
+        <div style={{ width: '100%', maxHeight: '360px', overflow: 'hidden', borderRadius: '18px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(15,23,42,0.6)' }}>
+          {/[.]mp4($|[?#])|[.]webm($|[?#])|[.]mov($|[?#])/i.test(settings.heroMediaUrl) ? (
+            <video src={settings.heroMediaUrl} controls muted playsInline style={{ width: '100%', maxHeight: '360px', objectFit: 'cover', display: 'block' }} />
+          ) : (
+            <img src={settings.heroMediaUrl} alt={settings.storeName || 'واجهة المتجر'} style={{ width: '100%', maxHeight: '360px', objectFit: 'cover', display: 'block' }} />
+          )}
+        </div>
+      )}
 
       {error && (
         <div style={{ background: '#7f1d1d', color: '#fca5a5', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '13px' }}>

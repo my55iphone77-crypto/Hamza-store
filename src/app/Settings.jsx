@@ -36,6 +36,11 @@ function Settings({ inputStyle = {} } = {}) {
   const [loading, setLoading] = useState(false);
   const [globalName, setGlobalName] = useState('');
   const [globalLogo, setGlobalLogo] = useState(null);
+  const [storeName, setStoreName] = useState(settings.storeName || 'متجر حمزة');
+  const [storeTagline, setStoreTagline] = useState(settings.storeTagline || 'متجر بطاقات الألعاب الرقمية');
+  const [welcomeText, setWelcomeText] = useState(settings.welcomeText || 'أهلاً بك في متجرنا');
+  const [heroMediaUrl, setHeroMediaUrl] = useState(settings.heroMediaUrl || '');
+  const [footerText, setFooterText] = useState(settings.footerText || 'جميع الحقوق محفوظة');
   const [successMsg, setSuccessMsg] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
@@ -74,6 +79,11 @@ function Settings({ inputStyle = {} } = {}) {
           if (data.exportFormat) setExportFormat(data.exportFormat);
           if (data.autoRefresh) setAutoRefresh(Number(data.autoRefresh));
           if (data.twoFactor !== undefined) setTwoFactor(Boolean(data.twoFactor));
+          if (data.storeName !== undefined) setStoreName(String(data.storeName));
+          if (data.storeTagline !== undefined) setStoreTagline(String(data.storeTagline));
+          if (data.welcomeText !== undefined) setWelcomeText(String(data.welcomeText));
+          if (data.heroMediaUrl !== undefined) setHeroMediaUrl(String(data.heroMediaUrl));
+          if (data.footerText !== undefined) setFooterText(String(data.footerText));
         }
       } catch (error) {
         console.error('Error fetching settings, using local fallback:', error);
@@ -197,7 +207,12 @@ function Settings({ inputStyle = {} } = {}) {
       notifications,
       exportFormat,
       autoRefresh,
-      twoFactor
+      twoFactor,
+      storeName: storeName.trim(),
+      storeTagline: storeTagline.trim(),
+      welcomeText: welcomeText.trim(),
+      heroMediaUrl: heroMediaUrl.trim(),
+      footerText: footerText.trim()
     };
 
     try {
@@ -233,7 +248,7 @@ function Settings({ inputStyle = {} } = {}) {
 
     setEmailSending(true);
     try {
-      await fetch(`${activeApiUrl}/send-document-email`, {
+      const response = await fetch(`${activeApiUrl}/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -244,7 +259,9 @@ function Settings({ inputStyle = {} } = {}) {
           subject: 'تقرير إعدادات النظام والفروع الشامل',
           message: `اللغة الحالية: ${language} | الثيم: ${theme} | الفروع المسجلة: ${branches.length}`
         })
-      }).catch(() => ({ ok: true }));
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `فشل إرسال التقرير (${response.status})`);
 
       setSuccessMsg(`تم إرسال تقرير الإعدادات بنجاح إلى: ${recipientEmail}`);
       if (typeof addLog === 'function') {
@@ -328,6 +345,18 @@ function Settings({ inputStyle = {} } = {}) {
           </select>
         </div>
 
+      </div>
+
+      <div style={{ ...glassCardStyle, marginTop: '20px' }}>
+        <h4 style={{ margin: '0 0 6px 0', color: '#fbbf24', fontSize: '16px' }}>🛍️ هوية ومحتوى واجهة المتجر</h4>
+        <p style={{ margin: '0 0 14px', color: '#94a3b8', fontSize: '12px' }}>تحكم بالنصوص الظاهرة للزبائن، وضع رابط صورة أو فيديو للواجهة الرئيسية.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+          <label style={{ color: '#cbd5e1', fontSize: '12px' }}>اسم المتجر<input value={storeName} onChange={(e) => setStoreName(e.target.value)} style={inputStyle} /></label>
+          <label style={{ color: '#cbd5e1', fontSize: '12px' }}>الوصف المختصر<input value={storeTagline} onChange={(e) => setStoreTagline(e.target.value)} style={inputStyle} /></label>
+          <label style={{ color: '#cbd5e1', fontSize: '12px' }}>رسالة الترحيب<input value={welcomeText} onChange={(e) => setWelcomeText(e.target.value)} style={inputStyle} /></label>
+          <label style={{ color: '#cbd5e1', fontSize: '12px' }}>رابط صورة/فيديو الواجهة<input value={heroMediaUrl} onChange={(e) => setHeroMediaUrl(e.target.value)} placeholder="https://..." dir="ltr" style={inputStyle} /></label>
+          <label style={{ color: '#cbd5e1', fontSize: '12px' }}>نص أسفل المتجر<input value={footerText} onChange={(e) => setFooterText(e.target.value)} style={inputStyle} /></label>
+        </div>
       </div>
 
       {/* إعدادات الأمان والإشعارات والتحديث التلقائي */}
