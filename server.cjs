@@ -187,13 +187,14 @@ app.get('/api/instagram/oauth/start', (req, res) => {
   authorizeUrl.searchParams.set('redirect_uri', INSTAGRAM_REDIRECT_URI);
   authorizeUrl.searchParams.set('response_type', 'code');
   authorizeUrl.searchParams.set('scope', 'instagram_business_basic');
+  authorizeUrl.searchParams.set('state', state);
   res.redirect(authorizeUrl.toString());
 });
 
 app.get('/api/instagram/oauth/callback', async (req, res) => {
   const { code, state, error } = req.query;
   const returnUrl = `${FRONTEND_URL}/?instagram=${error ? 'cancelled' : 'connected'}`;
-  if (error || !code || !state || !instagramOAuthStates.has(String(state))) return res.redirect(returnUrl);
+  if (error || !code || !state || !instagramOAuthStates.has(String(state))) return res.redirect(`${FRONTEND_URL}/?instagram=error&reason=invalid_oauth_state`);
   instagramOAuthStates.delete(String(state));
   try {
     const form = new URLSearchParams({ client_id: INSTAGRAM_APP_ID, client_secret: INSTAGRAM_APP_SECRET, grant_type: 'authorization_code', redirect_uri: INSTAGRAM_REDIRECT_URI, code: String(code) });
