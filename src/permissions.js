@@ -55,10 +55,11 @@ export const APP_PERMISSION_MAP = {
 };
 
 export function permissionsForUser(user) {
-  if (!user || user.role === 'customer') return [];
-  if (user.isOwner || user.role === 'owner') return ROLE_DEFAULT_PERMISSIONS.owner;
+  const role = String(user?.role || '').toLowerCase();
+  if (!user || role === 'customer') return [];
+  if (user.isOwner || role === 'owner') return ROLE_DEFAULT_PERMISSIONS.owner;
   if (Array.isArray(user.permissions)) return user.permissions;
-  return ROLE_DEFAULT_PERMISSIONS[user.role] || [];
+  return ROLE_DEFAULT_PERMISSIONS[role] || [];
 }
 
 export function canAccessApp(user, appId) {

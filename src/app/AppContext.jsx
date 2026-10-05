@@ -47,6 +47,9 @@ export function AppProvider({ children }) {
     try { return JSON.parse(localStorage.getItem('hamza_audit_logs') || '[]'); } catch { return []; }
   });
   const [commissions, setCommissions] = useState([]);
+  const [syncedChat, setSyncedChat] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('hamza_synced_chat') || '[]'); } catch { return []; }
+  });
   const [contacts, setContacts] = useState([]);
   const [aiBot, setAiBot] = useState([]);
   const [managerMonitor, setManagerMonitor] = useState([]);
@@ -59,6 +62,10 @@ export function AppProvider({ children }) {
   useEffect(() => {
     try { localStorage.setItem('hamza_audit_logs', JSON.stringify((Array.isArray(logs) ? logs : []).slice(0, 500))); } catch { /* التخزين المحلي اختياري */ }
   }, [logs]);
+
+  useEffect(() => {
+    try { localStorage.setItem('hamza_synced_chat', JSON.stringify((Array.isArray(syncedChat) ? syncedChat : []).slice(-200))); } catch { /* التخزين المحلي اختياري */ }
+  }, [syncedChat]);
 
   // 🔌 حالة اتصال Socket.IO
   const [socketConnected, setSocketConnected] = useState(false);
@@ -590,6 +597,7 @@ export function AppProvider({ children }) {
       documents, setDocuments,
       logs, setLogs,
       commissions, setCommissions,
+      syncedChat, setSyncedChat,
       contacts, setContacts,
       aiBot, setAiBot,
       managerMonitor, setManagerMonitor,
