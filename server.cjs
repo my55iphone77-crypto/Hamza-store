@@ -247,9 +247,29 @@ app.get('/api/instagram/media', async (req, res) => {
     const mediaResponse = await fetch(mediaUrl);
     if (!mediaResponse.ok) throw new Error('Instagram media request failed');
     const mediaData = await mediaResponse.json();
-    res.json({ connected: true, profile, media: Array.isArray(mediaData.data) ? mediaData.data : [] });
+    const media = Array.isArray(mediaData.data) ? mediaData.data.map((item) => ({ ...item, playable_url: `/api/instagram/media-file?url=${encodeURIComponent(item.media_url || '')}`, playable_thumbnail_url: item.thumbnail_url ? `/api/instagram/media-file?url=${encodeURIComponent(item.thumbnail_url)}` : '' })) : [];
+    res.json({ connected: true, profile, media });
   } catch (mediaError) {
     res.status(502).json({ connected: false, media: [], error: mediaError.message || 'Instagram media unavailable' });
+  }
+});
+
+app.get('/api/instagram/media-file', async (req, res) => {
+  const token = instagramTokenFromRequest(req);
+  const mediaUrl = String(req.query.url || '');
+  if (!token || !mediaUrl) return res.status(401).end();
+  try {
+    const parsedUrl = new URL(mediaUrl);
+    const allowedHost = parsedUrl.hostname === 'graph.instagram.com' || parsedUrl.hostname.endsWith('.cdninstagram.com') || parsedUrl.hostname.endsWith('.fbcdn.net');
+    if (!allowedHost) return res.status(400).send('Invalid Instagram media URL');
+    parsedUrl.searchParams.set('access_token', token);
+    const mediaResponse = await fetch(parsedUrl);
+    if (!mediaResponse.ok) return res.status(mediaResponse.status).end();
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.setHeader('Content-Type', mediaResponse.headers.get('content-type') || 'application/octet-stream');
+    res.send(Buffer.from(await mediaResponse.arrayBuffer()));
+  } catch (mediaError) {
+    res.status(502).send(mediaError.message || 'Instagram media unavailable');
   }
 });
 
