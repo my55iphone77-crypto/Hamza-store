@@ -154,14 +154,14 @@ const GLASS_STYLE = `
   .hz-instagram-profile-head > a { flex: 0 0 auto; padding: 9px 12px; border-radius: 10px; color: #fff; background: linear-gradient(135deg, #ec4899, #8b5cf6); text-decoration: none; font-size: 11px; font-weight: 800; }
   .hz-instagram-profile-stats { display: flex; gap: 18px; margin: 10px 0; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 10px; }
   .hz-instagram-profile-stats b { color: #f8fafc; font-size: 14px; margin-left: 4px; }
-  .hz-instagram-featured-media { position: relative; display: block; width: min(100%, 420px); margin: 0 auto; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 13px; background: #020617; }
+  .hz-instagram-featured-media { position: relative; display: block; width: 100%; margin: 0; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 13px; background: #020617; }
   .hz-instagram-featured-media img, .hz-instagram-featured-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .hz-instagram-featured-media > span { position: absolute; right: 12px; bottom: 12px; padding: 7px 10px; border-radius: 9px; color: #fff; background: rgba(2,6,23,0.78); font-size: 11px; }
   .hz-instagram-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
   .hz-instagram-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: #475569; cursor: pointer; }
   .hz-instagram-dots button.active { width: 20px; border-radius: 99px; background: #f472b6; }
   .hz-instagram-featured-actions { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 8px; }
-  .hz-instagram-featured-actions > button { padding: 6px 10px; border: 1px solid rgba(244,114,182,0.35); border-radius: 9px; color: #fbcfe8; background: rgba(244,114,182,0.1); font-size: 11px; cursor: pointer; }
+  .hz-instagram-featured-actions > button, .hz-instagram-featured-actions > a { padding: 6px 10px; border: 1px solid rgba(244,114,182,0.35); border-radius: 9px; color: #fbcfe8; background: rgba(244,114,182,0.1); font-size: 11px; cursor: pointer; text-decoration: none; }
   .hz-social-arrow { margin-right: auto; color: var(--social-color); font-size: 20px; }
   .hz-store-intro { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin: 0 0 18px; padding: 0 4px; }
   .hz-store-intro-copy { min-width: 0; }
