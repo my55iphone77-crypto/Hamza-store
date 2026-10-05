@@ -119,7 +119,9 @@ const GLASS_STYLE = `
   .hz-store-header::after { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 12% 0%, rgba(56,189,248,0.16), transparent 38%), radial-gradient(circle at 88% 100%, rgba(249,115,22,0.12), transparent 42%); pointer-events: none; }
   .hz-hero-frame { position: relative; width: 100%; height: auto; margin-bottom: 24px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(240,192,96,0.38); box-shadow: 0 20px 60px rgba(0,0,0,0.42), 0 0 45px rgba(56,189,248,0.08); background: #080b10; }
   .hz-hero-frame::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(2,6,23,0.02), rgba(2,6,23,0.32)); }
-  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: auto; max-height: 520px !important; object-fit: contain; object-position: center; }
+  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: auto !important; max-height: none !important; object-fit: contain !important; object-position: center; }
+  .hz-store-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: 26px 0 4px; padding: 16px 18px; border: 1px solid rgba(148,163,184,0.18); border-radius: 18px; background: linear-gradient(135deg, rgba(15,23,42,0.72), rgba(8,11,16,0.52)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); color: #94a3b8; font-size: 11px; }
+  .hz-store-footer strong { color: #bae6fd; font-size: 13px; }
   .hz-store-intro { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin: 0 0 18px; padding: 0 4px; }
   .hz-store-intro-copy { min-width: 0; }
   .hz-store-kicker { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 8px; color: #67e8f9; font-size: 11px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; }
@@ -460,9 +462,9 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
       {!settings.hideHero && <div className="hz-hero-frame">
         {/[.]mp4($|[?#])|[.]webm($|[?#])|[.]mov($|[?#])/i.test(settings.heroMediaUrl || '') ? (
-          <video src={settings.heroMediaUrl} controls muted playsInline style={{ display: 'block', width: '100%', height: 'auto', maxHeight: `${Number(settings.heroHeight || 520)}px`, objectFit: 'cover' }} />
+          <video src={settings.heroMediaUrl} controls muted playsInline style={{ display: 'block', width: '100%', height: 'auto' }} />
         ) : (
-          <img src={settings.heroMediaUrl || '/hero-banner.png'} alt={settings.storeName || 'Hamza Store - ألعاب وتقنية'} style={{ display: 'block', width: '100%', height: 'auto', maxHeight: `${Number(settings.heroHeight || 520)}px`, objectFit: 'cover', objectPosition: 'center' }} />
+          <img src={settings.heroMediaUrl || '/hero-banner.png'} alt={settings.storeName || 'Hamza Store - ألعاب وتقنية'} style={{ display: 'block', width: '100%', height: 'auto' }} />
         )}
       </div>}
 
@@ -673,6 +675,12 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       <div style={{ marginTop: '30px' }}>
         <SupportSection api={api} currentUser={authCart && authCart.currentUser} inputStyle={inputStyle} />
       </div>
+
+      <footer className="hz-store-footer">
+        <strong>{settings.storeName || 'HAMZA STORE'}</strong>
+        <span>تجربة رقمية آمنة وسريعة • جميع الحقوق محفوظة</span>
+        <span>متصل وآمن 🔒</span>
+      </footer>
 
       </div>
     </div>
