@@ -216,7 +216,7 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
           رصيد المتجر: <strong>{Number(currentUser?.storeBalance || 0).toFixed(2)} دينار</strong><br /><span style={{ color: '#94a3b8' }}>للشراء فقط، غير قابل للسحب</span>
         </div>
         <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.3)', color: '#ddd6fe', fontSize: '12px' }}>
-          نقاط الولاء: <strong>{Number(currentUser?.loyaltyPoints || 0)}</strong> / {Number(currentUser?.loyaltyThreshold || 100)}<br /><span style={{ color: '#94a3b8' }}>الكسب: كل 2 دينار = 0.5 نقطة — سعر الشراء بالنقاط يحدده المتجر لكل منتج، وللشراء فقط</span>
+          نقاط الولاء: <strong>{Number(currentUser?.loyaltyPoints || 0)}</strong> / {Number(currentUser?.loyaltyThreshold || 100)}<br /><span style={{ color: '#94a3b8' }}>نقاط المكافأة عند الشراء يحددها المتجر لكل منتج — وسعر الشراء بالنقاط يحدد يدويًا أيضًا</span>
         </div>
         {Number(loyaltyPointsCost) > 0 && <div style={{ padding: '10px 12px', borderRadius: '12px', background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.4)', color: '#e9d5ff', fontSize: '12px' }}>
           تكلفة المنتجات بالنقاط: <strong>{Number(loyaltyPointsCost)} نقطة</strong>
