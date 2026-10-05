@@ -724,7 +724,7 @@ module.exports = function buildStoreRouter(deps) {
         if (!reserved) return res.status(409).json({ error: `تم حجز أكواد المنتج ${need.productName} للتو، أعد المحاولة.` });
         items[need.itemIndex].deliveredCodes = selectedCodes;
       }
-      const pointsEarned = authUser ? Math.max(0, Math.floor(earnedPoints)) : 0;
+      const pointsEarned = authUser ? Math.max(0, Math.round(earnedPoints * 2) / 2) : 0;
       if (authUser) {
         const update = { $inc: { loyaltyPoints: pointsEarned - loyaltyPointsRedeemed } };
         if (walletAmount > 0) update.$inc.storeBalance = -walletAmount;

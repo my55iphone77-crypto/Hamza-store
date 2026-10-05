@@ -231,7 +231,7 @@ export default function Products() {
     const payload = {
       name, description, category: category || UNCATEGORIZED, deliveryType,
       storeCreditAmount: deliveryType === "store_credit" ? (parseFloat(storeCreditAmount) || parseFloat(price)) : undefined,
-      loyaltyPoints: Math.max(0, parseInt(loyaltyPoints, 10) || 0),
+      loyaltyPoints: Math.max(0, parseFloat(loyaltyPoints) || 0),
       loyaltyPrice: loyaltyPrice !== "" ? Math.max(0, parseInt(loyaltyPrice, 10) || 0) : 0,
       price: parseFloat(price), discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
       image: image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300",
@@ -277,7 +277,7 @@ export default function Products() {
     const payload = {
       name: editName, description: editDescription || "", category: editCategory,
       price: parseFloat(editPrice), discountPrice: editDiscountPrice !== "" ? parseFloat(editDiscountPrice) : null,
-      loyaltyPoints: Math.max(0, parseInt(editLoyaltyPoints, 10) || 0),
+      loyaltyPoints: Math.max(0, parseFloat(editLoyaltyPoints) || 0),
       loyaltyPrice: editLoyaltyPrice !== "" ? Math.max(0, parseInt(editLoyaltyPrice, 10) || 0) : 0,
       image: editImage, status: editStatus,
       scheduledDate: toISOStringOrNull(editScheduledDate), unpublishDate: toISOStringOrNull(editUnpublishDate),
@@ -583,7 +583,7 @@ export default function Products() {
                 <input type="number" step="0.01" placeholder="سعر الخصم" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
               </div>
               <label className="hz-field-label">🎁 نقاط الولاء التي يمنحها هذا المنتج
-                <input type="number" min="0" step="1" placeholder="مثال: 10 نقاط" value={loyaltyPoints} onChange={(e) => setLoyaltyPoints(e.target.value)} style={glassInputStyle} />
+                <input type="number" min="0" step="0.5" placeholder="مثال: 2.5 نقطة" value={loyaltyPoints} onChange={(e) => setLoyaltyPoints(e.target.value)} style={glassInputStyle} />
               </label>
               <label className="hz-field-label">⭐ سعر المنتج بنقاط الولاء (اختياري)
                 <input type="number" min="0" step="1" placeholder="مثال: 100 نقطة — 0 لتعطيل الشراء بالنقاط" value={loyaltyPrice} onChange={(e) => setLoyaltyPrice(e.target.value)} style={glassInputStyle} />
@@ -725,7 +725,7 @@ export default function Products() {
                   <input type="number" step="0.01" placeholder="سعر الخصم..." value={editDiscountPrice} onChange={(e) => setEditDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
                 </div>
                 <label className="hz-field-label">🎁 نقاط الولاء التي يمنحها هذا المنتج
-                  <input type="number" min="0" step="1" placeholder="مثال: 10 نقاط" value={editLoyaltyPoints} onChange={(e) => setEditLoyaltyPoints(e.target.value)} style={glassInputStyle} />
+                  <input type="number" min="0" step="0.5" placeholder="مثال: 2.5 نقطة" value={editLoyaltyPoints} onChange={(e) => setEditLoyaltyPoints(e.target.value)} style={glassInputStyle} />
                 </label>
                 <label className="hz-field-label">⭐ سعر المنتج بنقاط الولاء (اختياري)
                   <input type="number" min="0" step="1" placeholder="0 = غير متاح بالنقاط" value={editLoyaltyPrice} onChange={(e) => setEditLoyaltyPrice(e.target.value)} style={glassInputStyle} />
