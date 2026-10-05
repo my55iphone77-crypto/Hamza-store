@@ -123,14 +123,14 @@ const GLASS_STYLE = `
     width: 100% !important;
     min-height: 0;
     margin: 0 !important;
-    border-radius: 20px;
+    border-radius: 26px !important;
     box-sizing: border-box;
     cursor: default !important;
     overflow: visible !important;
   }
   .hz-app-full-container > div { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
   .hz-section-shell { width: 100%; max-width: 100%; min-width: 0; display: block; }
-  .hz-section-shell > * { width: 100%; max-width: 100%; min-width: 0; }
+  .hz-section-shell > * { width: 100%; max-width: 100%; min-width: 0; border-radius: 24px !important; }
   .hz-section-shell > [style*="position: fixed"] { width: 100vw !important; max-width: none !important; min-width: 0 !important; height: 100dvh !important; max-height: none !important; overflow-y: auto !important; align-items: center !important; padding: clamp(12px, 3vw, 24px) !important; background: rgba(15, 23, 42, 0.16) !important; backdrop-filter: blur(4px) !important; touch-action: pan-y; }
   .hz-section-shell > [style*="position: fixed"] > div { width: min(100%, 760px) !important; max-width: min(100%, 760px) !important; height: min(760px, calc(100dvh - clamp(24px, 3vw, 48px))) !important; max-height: calc(100dvh - clamp(24px, 3vw, 48px)) !important; min-height: 0 !important; margin: auto !important; overflow-y: auto !important; overflow-x: hidden !important; flex: 0 1 auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
   .hz-section-shell img, .hz-section-shell video, .hz-section-shell canvas { max-width: 100%; }
