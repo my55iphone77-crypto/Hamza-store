@@ -15,6 +15,7 @@ function AiBot({ inputStyle = {} }) {
   const [localInputText, setLocalInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
+  const [liveMetrics, setLiveMetrics] = useState(null);
   const chatContainerRef = useRef(null);
 
   const BOT_PERSONA_NAME = "مساعد المتجر الذكي";
@@ -24,6 +25,9 @@ function AiBot({ inputStyle = {} }) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [syncedChat, isThinking]);
+  useEffect(() => {
+    apiRequest('/customerAiMetrics').then(setLiveMetrics).catch(() => setLiveMetrics(null));
+  }, [apiRequest]);
 
   const getGlassEmailTemplate = (title, contentHtml) => `
     <div style="font-family: 'Tajawal', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); padding: 40px; direction: rtl; color: #f8fafc;">
@@ -93,6 +97,12 @@ function AiBot({ inputStyle = {} }) {
     setSyncedChat(updatedChat);
 
     try {
+      const readOnlyRequest = /(?:ضيف|أضف|احذف|حذف|وظف|عيّن|عين|افصل|فصل|اطرد|أرسل حملة|حملة تسويقية|عدّل|عدل|غيّر|غير|امسح)/i.test(textToSend);
+      if (readOnlyRequest || pendingAction) {
+        setPendingAction(null);
+        pushBotReply('أنا مخصص للقراءة والتحليل والتقارير فقط 🔒 ما بقدر أضيف أو أحذف أو أعدّل أي إشي بالمتجر. إذا بدك تنفيذ تغيير، اعمله من القسم المختص بلوحة الإدارة.', updatedChat);
+        return;
+      }
       if (pendingAction) {
         if (textToSend.toLowerCase().includes('نعم') || textToSend === '1') {
           if (pendingAction.type === 'fire_employee') {
@@ -213,23 +223,7 @@ function AiBot({ inputStyle = {} }) {
         <div style={{ fontSize: '13px', color: '#38bdf8' }}>
           👤 المستخدم: <strong>{currentUser?.name}</strong> | الدور: <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>{(currentUser?.role || 'sales').toUpperCase()}</span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <span style={{ fontSize: '12px', color: '#94a3b8' }}>تبديل الصلاحية:</span>
-          <select 
-            value={currentUser?.role || 'sales'} 
-            onChange={(e) => {
-              const role = e.target.value;
-              const names = { admin: 'المدير العام', manager: 'المدير التنفيذي', sales: 'موظف مبيعات', support: 'دعم العملاء' };
-              setCurrentUser({ id: 1, name: names[role], role, email: `${role}@store.com` });
-            }}
-            style={{ background: '#0f172a', color: '#fff', border: '1px solid #475569', padding: '5px 10px', borderRadius: '6px', fontSize: '12px' }}
-          >
-            <option value="admin">مدير عام (Admin)</option>
-            <option value="manager">مدير تنفيذي (Manager)</option>
-            <option value="sales">موظف مبيعات (Sales)</option>
-            <option value="support">خدمة عملاء (Support)</option>
-          </select>
-        </div>
+        <span style={{ fontSize: '12px', color: '#a7f3d0' }}>قراءة وتحليل فقط 🔒</span>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
@@ -243,6 +237,12 @@ function AiBot({ inputStyle = {} }) {
           </button>
         </div>
       </div>
+      {liveMetrics && <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
+        <span style={metricStyle}>طلبات البوت: {liveMetrics.requests}</span>
+        <span style={metricStyle}>المنتجات: {liveMetrics.counters?.products ?? 0}</span>
+        <span style={metricStyle}>المتوفر: {liveMetrics.counters?.availableProducts ?? 0}</span>
+        <span style={metricStyle}>المعرفة محدثة: {new Date(liveMetrics.contextUpdatedAt).toLocaleTimeString('ar-JO')}</span>
+      </div>}
 
       <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <select value={currentSessionId} onChange={(e) => setCurrentSessionId(e.target.value)} style={{ background: '#1e293b', border: '1px solid #334155', padding: '8px 12px', borderRadius: '8px', color: '#fff', width: '220px' }}>
@@ -282,6 +282,8 @@ function AiBot({ inputStyle = {} }) {
     </div>
   );
 }
+
+const metricStyle = { padding: '6px 9px', borderRadius: '9px', border: '1px solid rgba(56,189,248,0.25)', background: 'rgba(15,23,42,0.7)', color: '#bae6fd', fontSize: '11px' };
 
 const glassContainerStyle = {
   background: 'rgba(11, 15, 25, 0.85)',

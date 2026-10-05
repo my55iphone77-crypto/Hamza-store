@@ -809,12 +809,48 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
+app.get('/api/customerAiMetrics', verifyOwnerMiddleware, async (req, res) => {
+  try {
+    const [metrics, context] = await Promise.all([
+      AppState.findOne({ key: 'customer_bot_metrics' }).lean(),
+      buildPublicBotContext()
+    ]);
+    res.json({ requests: Number(metrics?.value || 0), contextUpdatedAt: context.generatedAt, counters: context.counters, publicFeatures: context.publicFeatures });
+  } catch (error) {
+    res.status(503).json({ error: 'تعذر تحميل عدادات البوت حالياً.' });
+  }
+});
+
 // ------------------------------------------------------------------
 // 🤖 مسارات روبوت خدمة العملاء باستخدام Groq SDK
 // ------------------------------------------------------------------
+const buildPublicBotContext = async () => {
+  const [products, settings, featureNotes] = await Promise.all([
+    Product.find({ status: { $nin: ['inactive', 'غير نشط', 'deleted'] } }).select('name price discountPrice description category deliveryType stock codes').lean(),
+    Settings.findOne().lean(),
+    AppState.findOne({ key: 'store_feature_manifest' }).lean()
+  ]);
+  const catalog = products.map((product) => {
+    const stock = product.deliveryType === 'store_credit' ? 'متوفر تلقائياً' : (Array.isArray(product.codes) ? product.codes.length : Number(product.stock || 0));
+    return { name: String(product.name || ''), price: product.discountPrice ?? product.price ?? null, description: String(product.description || '').slice(0, 500), category: String(product.category || ''), deliveryType: String(product.deliveryType || ''), stock };
+  });
+  return {
+    generatedAt: new Date().toISOString(),
+    catalog,
+    storeInfo: Object.fromEntries(['storeName', 'storeTagline', 'welcomeText', 'contactEmail', 'contactPhone', 'footerText'].filter((key) => settings?.[key]).map((key) => [key, settings[key]])),
+    publicFeatures: featureNotes?.value?.public || [],
+    counters: { products: catalog.length, availableProducts: catalog.filter((item) => item.stock === 'متوفر تلقائياً' || Number(item.stock) > 0).length }
+  };
+};
+
+app.get('/api/customerAiContext', async (req, res) => {
+  try { res.json(await buildPublicBotContext()); }
+  catch (error) { res.status(503).json({ error: 'تعذر تحديث معلومات المتجر حالياً.' }); }
+});
+
 app.post('/api/customerAiChat', publicActionLimiter, async (req, res) => {
   try {
-    const { message, conversationHistory, persona, taskInstruction, data } = req.body;
+    const { message, conversationHistory, persona, taskInstruction } = req.body;
     if (typeof message !== 'string' || !message.trim() || message.length > 4000) {
       return res.status(400).json({ error: 'الرسالة مطلوبة وبحد أقصى 4000 حرف.' });
     }
@@ -829,6 +865,7 @@ app.post('/api/customerAiChat', publicActionLimiter, async (req, res) => {
 
     const groq = new Groq({ apiKey });
     const modelName = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+    const liveContext = await buildPublicBotContext();
 
     let dynamicSystemPrompt = `
 أنت ${persona?.name || 'حمزة'}, مساعد ذكي وودود جداً لمتجر إلكتروني.
@@ -847,7 +884,7 @@ app.post('/api/customerAiChat', publicActionLimiter, async (req, res) => {
 `;
 
     if (taskInstruction) dynamicSystemPrompt += `\nالمهمة الحالية: ${taskInstruction}`;
-    if (data) dynamicSystemPrompt += `\nبيانات المتجر المتاحة للرد (اعتمد عليها فقط، ولا تخترع أي شي خارجها): ${JSON.stringify(data)}`;
+    dynamicSystemPrompt += `\nمعلومات المتجر الحية الموثوقة (تُجلب من الخادم وقت السؤال، اعتمد عليها فقط): ${JSON.stringify(liveContext)}`;
 
     const messages = [{ role: 'system', content: dynamicSystemPrompt }];
 
@@ -868,8 +905,9 @@ app.post('/api/customerAiChat', publicActionLimiter, async (req, res) => {
       temperature: 0.6,
     });
 
-    const replyText = completion.choices[0]?.message?.content || 'يا هلا، معلش صار عندي ضغط ثواني وأرجعلك!';
-    res.json({ reply: replyText });
+    const replyText = completion.choices[0]?.message?.content || 'يا هلا، صار عندي ضغط بسيط هسع. جرّب تبعثلي كمان شوي 🙏';
+    await AppState.findOneAndUpdate({ key: 'customer_bot_metrics' }, { $inc: { value: 1 }, $set: { updatedAt: new Date() } }, { upsert: true });
+    res.json({ reply: replyText, contextUpdatedAt: liveContext.generatedAt, counters: liveContext.counters });
 
   } catch (error) {
     console.error('Error in /api/customerAiChat with Groq:', error);
