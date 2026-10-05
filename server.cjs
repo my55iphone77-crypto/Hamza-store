@@ -195,7 +195,8 @@ app.get('/api/instagram/oauth/start', (req, res) => {
 app.get('/api/instagram/oauth/callback', async (req, res) => {
   const { code, state, error } = req.query;
   const returnUrl = `${FRONTEND_URL}/?instagram=${error ? 'cancelled' : 'connected'}`;
-  if (error || !code || !state || !instagramOAuthStates.has(String(state))) return res.redirect(`${FRONTEND_URL}/?instagram=error&reason=invalid_oauth_state`);
+  if (error) return res.status(400).send(`<h2>Instagram login cancelled</h2><p>${String(req.query.error_description || error)}</p><p>Close this page and try again.</p>`);
+  if (!code || !state || !instagramOAuthStates.has(String(state))) return res.status(400).send('<h2>Instagram login could not be verified</h2><p>The OAuth state was missing or expired. Start the connection again from the store.</p>');
   instagramOAuthStates.delete(String(state));
   try {
     const form = new URLSearchParams({ client_id: INSTAGRAM_APP_ID, client_secret: INSTAGRAM_APP_SECRET, grant_type: 'authorization_code', redirect_uri: INSTAGRAM_REDIRECT_URI, code: String(code) });
@@ -215,7 +216,7 @@ app.get('/api/instagram/oauth/callback', async (req, res) => {
     return res.redirect(returnUrl);
   } catch (oauthError) {
     console.error('Instagram OAuth callback failed:', oauthError.message || oauthError);
-    return res.redirect(`${FRONTEND_URL}/?instagram=error`);
+    return res.status(502).send(`<h2>Instagram login failed</h2><p>${String(oauthError.message || oauthError).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]))}</p><p>Check the Instagram App Secret and the exact OAuth Redirect URI in Meta, then try again.</p>`);
   }
 });
 
