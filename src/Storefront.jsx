@@ -418,9 +418,13 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
       </div>
 
-      <div style={{ width: '100%', marginBottom: '20px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(240, 192, 96, 0.35)', boxShadow: '0 18px 50px rgba(0, 0, 0, 0.35)', background: '#080b10' }}>
-        <img src="/hero-banner.png" alt="Hamza Store - ألعاب وتقنية" style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 'clamp(220px, 42vw, 520px)', objectFit: 'cover', objectPosition: 'center' }} />
-      </div>
+      {!settings.hideHero && <div style={{ width: '100%', marginBottom: '20px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(240, 192, 96, 0.35)', boxShadow: '0 18px 50px rgba(0, 0, 0, 0.35)', background: '#080b10' }}>
+        {/[.]mp4($|[?#])|[.]webm($|[?#])|[.]mov($|[?#])/i.test(settings.heroMediaUrl || '') ? (
+          <video src={settings.heroMediaUrl} controls muted playsInline style={{ display: 'block', width: '100%', height: 'auto', maxHeight: `${Number(settings.heroHeight || 520)}px`, objectFit: 'cover' }} />
+        ) : (
+          <img src={settings.heroMediaUrl || '/hero-banner.png'} alt={settings.storeName || 'Hamza Store - ألعاب وتقنية'} style={{ display: 'block', width: '100%', height: 'auto', maxHeight: `${Number(settings.heroHeight || 520)}px`, objectFit: 'cover', objectPosition: 'center' }} />
+        )}
+      </div>}
 
       <CheckoutForm authCart={authCart} inputStyle={inputStyle} />
       <OrderConfirmation authCart={authCart} />
@@ -431,16 +435,6 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         </h2>
         <p style={{ margin: '0', color: '#94a3b8', fontSize: '13px' }}>{settings.storeTagline || settings.welcomeText || 'مرتبط كلياً بقنوات الأمان وتحديثات البيانات في جزء من الثانية.'}</p>
       </div>
-
-      {settings.heroMediaUrl && (
-        <div style={{ width: '100%', maxHeight: '360px', overflow: 'hidden', borderRadius: '18px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(15,23,42,0.6)' }}>
-          {/[.]mp4($|[?#])|[.]webm($|[?#])|[.]mov($|[?#])/i.test(settings.heroMediaUrl) ? (
-            <video src={settings.heroMediaUrl} controls muted playsInline style={{ width: '100%', maxHeight: '360px', objectFit: 'cover', display: 'block' }} />
-          ) : (
-            <img src={settings.heroMediaUrl} alt={settings.storeName || 'واجهة المتجر'} style={{ width: '100%', maxHeight: '360px', objectFit: 'cover', display: 'block' }} />
-          )}
-        </div>
-      )}
 
       {error && (
         <div style={{ background: '#7f1d1d', color: '#fca5a5', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '13px' }}>

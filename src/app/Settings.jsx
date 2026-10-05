@@ -40,6 +40,8 @@ function Settings({ inputStyle = {} } = {}) {
   const [storeTagline, setStoreTagline] = useState(settings.storeTagline || 'متجر بطاقات الألعاب الرقمية');
   const [welcomeText, setWelcomeText] = useState(settings.welcomeText || 'أهلاً بك في متجرنا');
   const [heroMediaUrl, setHeroMediaUrl] = useState(settings.heroMediaUrl || '');
+  const [heroHeight, setHeroHeight] = useState(Number(settings.heroHeight || 520));
+  const [hideHero, setHideHero] = useState(Boolean(settings.hideHero));
   const [footerText, setFooterText] = useState(settings.footerText || 'جميع الحقوق محفوظة');
   const [successMsg, setSuccessMsg] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -83,6 +85,8 @@ function Settings({ inputStyle = {} } = {}) {
           if (data.storeTagline !== undefined) setStoreTagline(String(data.storeTagline));
           if (data.welcomeText !== undefined) setWelcomeText(String(data.welcomeText));
           if (data.heroMediaUrl !== undefined) setHeroMediaUrl(String(data.heroMediaUrl));
+          if (data.heroHeight !== undefined) setHeroHeight(Number(data.heroHeight) || 520);
+          if (data.hideHero !== undefined) setHideHero(Boolean(data.hideHero));
           if (data.footerText !== undefined) setFooterText(String(data.footerText));
         }
       } catch (error) {
@@ -212,6 +216,8 @@ function Settings({ inputStyle = {} } = {}) {
       storeTagline: storeTagline.trim(),
       welcomeText: welcomeText.trim(),
       heroMediaUrl: heroMediaUrl.trim(),
+      heroHeight: Math.min(900, Math.max(180, Number(heroHeight) || 520)),
+      hideHero,
       footerText: footerText.trim()
     };
 
@@ -356,6 +362,8 @@ function Settings({ inputStyle = {} } = {}) {
           <label style={{ color: '#cbd5e1', fontSize: '12px' }}>رسالة الترحيب<input value={welcomeText} onChange={(e) => setWelcomeText(e.target.value)} style={inputStyle} /></label>
           <label style={{ color: '#cbd5e1', fontSize: '12px' }}>رابط صورة/فيديو الواجهة<input value={heroMediaUrl} onChange={(e) => setHeroMediaUrl(e.target.value)} placeholder="https://..." dir="ltr" style={inputStyle} /></label>
           <label style={{ color: '#cbd5e1', fontSize: '12px' }}>نص أسفل المتجر<input value={footerText} onChange={(e) => setFooterText(e.target.value)} style={inputStyle} /></label>
+          <label style={{ color: '#cbd5e1', fontSize: '12px' }}>ارتفاع البانر بالبكسل<input type="number" min="180" max="900" value={heroHeight} onChange={(e) => setHeroHeight(e.target.value)} style={inputStyle} /></label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#cbd5e1', fontSize: '12px', cursor: 'pointer' }}><input type="checkbox" checked={hideHero} onChange={(e) => setHideHero(e.target.checked)} /> إخفاء البانر من واجهة المتجر</label>
         </div>
       </div>
 
