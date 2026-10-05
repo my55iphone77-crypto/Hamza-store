@@ -202,6 +202,11 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
       return;
     }
 
+    if (Number(finalTotal || 0) > 0 && !isStoreBalancePayment && getActivePaymentMethods().length === 0) {
+      if (typeof setError === 'function') setError('لا توجد بوابة دفع مفعّلة حالياً. لا يمكن إتمام طلب مدفوع حتى يتم ربط طريقة دفع آمنة.');
+      return;
+    }
+
     // 🆕 تحقق: كل منتج تعبئة آيدي لازم يكون له آيدي مُدخَل
     const missingPlayerId = safeCart.find(item => item && item.deliveryType === 'id_topup' && !String(item.playerId || '').trim());
     if (missingPlayerId) {
@@ -209,7 +214,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
       return;
     }
 
-    if (getActivePaymentMethods().length > 0 && !paymentMethod) {
+    if (getActivePaymentMethods().length > 0 && !paymentMethod && !isStoreBalancePayment) {
       alert('⚠️ يرجى اختيار طريقة الدفع.');
       return;
     }

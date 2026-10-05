@@ -684,6 +684,9 @@ module.exports = function buildStoreRouter(deps) {
       }
       let walletAmount = 0;
       const usesStoreBalance = ['store_balance', 'balance'].includes(String(paymentMethod || '').trim().toLowerCase());
+      if (total > 0 && !usesStoreBalance) {
+        return res.status(402).json({ error: 'لا توجد بوابة دفع مفعّلة حالياً. لا يمكن إتمام الطلب قبل ربط طريقة دفع آمنة.' });
+      }
       if (usesStoreBalance) {
         if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام رصيد المتجر.' });
         if (Number(authUser.storeBalance || 0) < total) return res.status(400).json({ error: 'رصيد المتجر غير كافٍ.' });

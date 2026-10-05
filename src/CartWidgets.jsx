@@ -316,13 +316,19 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
         </label>
       )}
 
+      {Number(finalTotal || 0) > 0 && activeMethods.length === 0 && paymentMethod !== 'store_balance' && (
+        <div role="status" style={{ padding: '12px 14px', borderRadius: '12px', color: '#fde68a', background: 'rgba(120,53,15,0.22)', border: '1px solid rgba(245,158,11,0.4)', fontSize: '13px', lineHeight: 1.7 }}>
+          ⚠️ لا توجد بوابة دفع إلكترونية مفعّلة حالياً. اختر الدفع من رصيد المتجر إذا كان رصيدك كافياً، أو أعد المحاولة بعد ربط بوابة دفع آمنة.
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '15px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
         <span style={{ color: '#f8fafc' }}>الإجمالي</span>
         <span style={{ color: '#facc15', fontSize: '18px' }}>{appliedCoupon && <s style={{ color: '#94a3b8', fontSize: '13px', marginLeft: '8px' }}>{Number(totalPrice).toFixed(2)}</s>}{Number(finalTotal).toFixed(2)} دينار</span>
       </div>
 
       <div style={{ display: 'flex', gap: '12px' }}>
-        <button type="submit" disabled={submittingCheckout} className="hz-checkout-btn" style={{ flex: 1, background: submittingCheckout ? '#065f46' : 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', padding: '14px', borderRadius: '12px', cursor: submittingCheckout ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '15px', boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)' }}>
+        <button type="submit" disabled={submittingCheckout || (Number(finalTotal || 0) > 0 && activeMethods.length === 0 && paymentMethod !== 'store_balance')} className="hz-checkout-btn" style={{ flex: 1, background: submittingCheckout ? '#065f46' : 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', padding: '14px', borderRadius: '12px', cursor: submittingCheckout ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '15px', boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)' }}>
           {submittingCheckout ? 'جاري تأكيد الطلب...' : (activeMethods.length > 0 ? `ادفع ${Number(finalTotal).toFixed(2)} دينار واستلم أكوادك 🔓` : 'تأكيد الطلب والتسليم الرقمي 🛒')}
         </button>
         <button type="button" onClick={() => setCheckoutMode(false)} className="hz-cancel-btn" style={{ background: 'linear-gradient(135deg, #4b5563, #374151)', color: '#fff', border: 'none', padding: '14px 22px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
