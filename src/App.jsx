@@ -252,6 +252,17 @@ const GLASS_STYLE = `
   .hz-section-shell > * th { background: rgba(30,41,59,0.8) !important; color: #bae6fd !important; }
   .hz-section-shell > * td { border-color: rgba(148,163,184,0.12) !important; }
   .hz-section-shell > * [style*="grid-template-columns"] { gap: 14px !important; }
+  .hz-inner-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 20px; padding: 4px 2px 16px; border-bottom: 1px solid rgba(56,189,248,0.18); }
+  .hz-inner-section-heading-copy { min-width: 0; }
+  .hz-inner-section-eyebrow { display: inline-flex; align-items: center; gap: 7px; color: #67e8f9; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; }
+  .hz-inner-section-eyebrow::before { content: ''; width: 20px; height: 2px; border-radius: 999px; background: linear-gradient(90deg, #38bdf8, #a78bfa); }
+  .hz-inner-section-heading h1 { margin: 0; color: #f8fafc; font-size: clamp(20px, 3vw, 28px); line-height: 1.2; }
+  .hz-inner-section-heading p { margin: 6px 0 0; color: #94a3b8; font-size: 12px; }
+  .hz-inner-section-heading .hz-glass-btn { flex: 0 0 auto; color: #e0f2fe !important; padding: 10px 14px !important; border-radius: 13px !important; }
+  .hz-section-shell > * > form, .hz-section-shell > * > [role="search"] { margin-bottom: 18px; }
+  .hz-section-shell > * > form input, .hz-section-shell > * > form select { min-height: 42px; }
+  .hz-section-shell > * > div[style*="display: grid"] { align-items: start; }
+  @media (max-width: 640px) { .hz-inner-section-heading { align-items: stretch; flex-direction: column; gap: 12px; } .hz-inner-section-heading .hz-glass-btn { width: 100%; } }
   @media (max-width: 640px) { .hz-dashboard-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hz-dashboard-summary > div { padding: 12px; } }
   .hz-orders-panel { padding: 4px; color: #e2e8f0; }
   .hz-orders-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -501,7 +512,14 @@ function MainContent() {
               </div>
             ) : (
               <div className="hz-glass-card hz-app-full-container">
-                <button onClick={() => setActiveApp(null)} className="hz-glass-btn" style={{ color: '#fff', padding: '6px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '15px' }}>← العودة للقائمة</button>
+                <div className="hz-inner-section-heading">
+                  <div className="hz-inner-section-heading-copy">
+                    <span className="hz-inner-section-eyebrow">مركز التشغيل / {APP_GROUPS[currentApp?.id] || 'الأقسام'}</span>
+                    <h1>{currentApp?.name || 'القسم الداخلي'}</h1>
+                    <p>إدارة واضحة تبدأ بالمؤشرات، ثم أدوات البحث والتحكم، ثم تفاصيل القسم.</p>
+                  </div>
+                  <button onClick={() => setActiveApp(null)} className="hz-glass-btn">← العودة للأقسام</button>
+                </div>
                 <div className="hz-section-shell">
                   {currentApp && currentApp.component ? (
                     <SectionErrorBoundary appName={currentApp.name} onBack={() => setActiveApp(null)}>
