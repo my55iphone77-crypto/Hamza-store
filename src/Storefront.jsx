@@ -118,6 +118,12 @@ const GLASS_STYLE = `
       radial-gradient(ellipse 500px 350px at 25% 55%, rgba(16,185,129,0.20), transparent 60%),
       #05060a;
   }
+  .hz-root {
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 28px;
+    overflow: clip;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
 
   /* ================= إصلاحات الأداء (بدون أي تغيير بالشكل) ================= */
   /* بطاقة فيها صورة: الصورة تغطيها بالكامل، فالبلور تحتها مش ظاهر أصلاً → نوقفه (الشكل نفسه تماماً) */
