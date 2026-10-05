@@ -127,14 +127,10 @@ const GLASS_STYLE = `
     box-sizing: border-box;
     cursor: default !important;
     overflow: visible !important;
-    padding: 0 !important;
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
   }
   .hz-app-full-container > div { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
   .hz-section-shell { width: 100%; max-width: 100%; min-width: 0; display: block; }
-  .hz-section-shell > * { width: 100%; max-width: 100%; min-width: 0; border-radius: 24px !important; }
+  .hz-section-shell > * { width: 100%; max-width: 100%; min-width: 0; border-radius: 24px !important; background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
   .hz-section-shell > [style*="position: fixed"] { width: 100vw !important; max-width: none !important; min-width: 0 !important; height: 100dvh !important; max-height: none !important; overflow-y: auto !important; align-items: center !important; padding: clamp(12px, 3vw, 24px) !important; background: rgba(15, 23, 42, 0.16) !important; backdrop-filter: blur(4px) !important; touch-action: pan-y; }
   .hz-section-shell > [style*="position: fixed"] > div { width: min(100%, 760px) !important; max-width: min(100%, 760px) !important; height: min(760px, calc(100dvh - clamp(24px, 3vw, 48px))) !important; max-height: calc(100dvh - clamp(24px, 3vw, 48px)) !important; min-height: 0 !important; margin: auto !important; overflow-y: auto !important; overflow-x: hidden !important; flex: 0 1 auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
   .hz-section-shell img, .hz-section-shell video, .hz-section-shell canvas { max-width: 100%; }
@@ -475,7 +471,7 @@ function MainContent() {
                 ))}
               </div>
             ) : (
-              <div className="hz-app-full-container">
+              <div className="hz-glass-card hz-app-full-container">
                 <button onClick={() => setActiveApp(null)} className="hz-glass-btn" style={{ color: '#fff', padding: '6px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '15px' }}>← العودة للقائمة</button>
                 <div className="hz-section-shell">
                   {currentApp && currentApp.component ? (
