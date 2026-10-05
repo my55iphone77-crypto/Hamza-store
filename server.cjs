@@ -188,6 +188,7 @@ app.get('/api/instagram/oauth/start', (req, res) => {
   authorizeUrl.searchParams.set('response_type', 'code');
   authorizeUrl.searchParams.set('scope', 'instagram_business_basic');
   authorizeUrl.searchParams.set('state', state);
+  res.setHeader('Set-Cookie', `ig_oauth_state=${state}; Max-Age=600; Path=/; HttpOnly; Secure; SameSite=Lax`);
   res.redirect(authorizeUrl.toString());
 });
 
@@ -200,7 +201,9 @@ app.get('/api/instagram/oauth/callback', async (req, res) => {
     const form = new URLSearchParams({ client_id: INSTAGRAM_APP_ID, client_secret: INSTAGRAM_APP_SECRET, grant_type: 'authorization_code', redirect_uri: INSTAGRAM_REDIRECT_URI, code: String(code) });
     const tokenResponse = await fetch('https://api.instagram.com/oauth/access_token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form });
     if (!tokenResponse.ok) throw new Error(`Instagram token exchange failed: ${tokenResponse.status}`);
-    const tokenData = await tokenResponse.json();
+    const rawTokenData = await tokenResponse.json();
+    const tokenData = Array.isArray(rawTokenData.data) ? rawTokenData.data[0] : rawTokenData;
+    if (!tokenData?.access_token) throw new Error(`Instagram did not return an access token: ${JSON.stringify(rawTokenData).slice(0, 300)}`);
     const longLivedUrl = new URL('https://graph.instagram.com/access_token');
     longLivedUrl.searchParams.set('grant_type', 'ig_exchange_token');
     longLivedUrl.searchParams.set('client_secret', INSTAGRAM_APP_SECRET);
