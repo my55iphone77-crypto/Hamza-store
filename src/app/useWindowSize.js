@@ -63,10 +63,10 @@ export function useFullBleedStyle() {
   return useMemo(() => ({
     width: '100%',
     maxWidth: '100%',
-    minHeight: '100dvh',
+    minHeight: 0,
     boxSizing: 'border-box',
     overflowX: 'clip',
-    borderRadius: 0,
+    borderRadius: '22px',
     padding: isMobile ? '12px' : isTablet ? '20px' : '30px',
   }), [isMobile, isTablet]);
 }
@@ -76,9 +76,9 @@ export function useFullBleedStyle() {
 export const fullBleedStyle = {
   width: '100%',
   maxWidth: '100%',
-  minHeight: '100dvh',
+  minHeight: 0,
   boxSizing: 'border-box',
   overflowX: 'clip',
-  borderRadius: 0,
+  borderRadius: '22px',
   padding: '0px',
 };
