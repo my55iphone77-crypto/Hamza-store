@@ -5,6 +5,7 @@ import { useApp } from './app/AppContext';
 import LoginPage from './app/LoginPage';
 import { useProducts, ProductSearchBar, ProductGrid } from './StoreProducts';
 import SupportSection from './SupportSection';
+import SocialCards from './SocialCards';
 import { useAuthCart, HeaderControls, CheckoutForm, OrderConfirmation, ResetPasswordPage } from './AuthCartCheckout';
 
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
@@ -122,6 +123,18 @@ const GLASS_STYLE = `
   .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: auto !important; max-height: none !important; object-fit: contain !important; object-position: center; }
   .hz-store-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: 26px 0 4px; padding: 16px 18px; border: 1px solid rgba(148,163,184,0.18); border-radius: 18px; background: linear-gradient(135deg, rgba(15,23,42,0.72), rgba(8,11,16,0.52)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); color: #94a3b8; font-size: 11px; }
   .hz-store-footer strong { color: #bae6fd; font-size: 13px; }
+  .hz-social-section { margin-top: 26px; }
+  .hz-social-heading { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 14px; padding: 0 4px; }
+  .hz-social-heading h2 { margin: 0; color: #f8fafc; font-size: clamp(18px, 2.5vw, 24px); }
+  .hz-social-heading > span { color: #64748b; font-size: 11px; }
+  .hz-social-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .hz-social-card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 16px 18px; border: 1px solid color-mix(in srgb, var(--social-color) 35%, rgba(255,255,255,0.16)); border-radius: 20px; color: #f8fafc; text-decoration: none; background: linear-gradient(135deg, color-mix(in srgb, var(--social-color) 15%, rgba(15,23,42,0.78)), rgba(8,11,16,0.62)); box-shadow: 0 14px 30px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.14); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+  .hz-social-card:hover { transform: translateY(-4px); border-color: var(--social-color); box-shadow: 0 18px 38px rgba(0,0,0,0.35), 0 0 26px color-mix(in srgb, var(--social-color) 24%, transparent); }
+  .hz-social-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 44px; height: 44px; border-radius: 14px; color: var(--social-color); background: color-mix(in srgb, var(--social-color) 15%, rgba(15,23,42,0.72)); border: 1px solid color-mix(in srgb, var(--social-color) 50%, transparent); font-size: 22px; font-weight: 900; }
+  .hz-social-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .hz-social-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+  .hz-social-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #94a3b8; font-size: 11px; }
+  .hz-social-arrow { margin-right: auto; color: var(--social-color); font-size: 20px; }
   .hz-store-intro { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin: 0 0 18px; padding: 0 4px; }
   .hz-store-intro-copy { min-width: 0; }
   .hz-store-kicker { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 8px; color: #67e8f9; font-size: 11px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; }
@@ -193,6 +206,8 @@ const GLASS_STYLE = `
     .hz-root input, .hz-root textarea, .hz-root select { font-size: 16px !important; }
     .hz-header-wallet { width: 100%; justify-content: center; order: 3; }
     .hz-redeem-form input { width: 120px; }
+    .hz-social-grid { grid-template-columns: minmax(0, 1fr); }
+    .hz-social-heading { align-items: start; flex-direction: column; }
   }
   /* تابلت / آيباد */
   @media (min-width: 560px) and (max-width: 1023px) { .hz-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -675,6 +690,8 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       <div style={{ marginTop: '30px' }}>
         <SupportSection api={api} currentUser={authCart && authCart.currentUser} inputStyle={inputStyle} />
       </div>
+
+      <SocialCards cards={settings.socialCards} />
 
       <footer className="hz-store-footer">
         <strong>{settings.storeName || 'HAMZA STORE'}</strong>

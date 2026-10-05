@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from "./AppContext";
 import { useFullBleedStyle } from "./useWindowSize";
+import { SOCIAL_PLATFORM_OPTIONS } from "../SocialCards";
+
+const DEFAULT_SOCIAL_CARDS = [
+  { platform: 'instagram', account: '', title: '', enabled: true },
+  { platform: 'tiktok', account: '', title: '', enabled: true }
+];
 
 function Settings({ inputStyle = {} } = {}) {
   // 🔗 جلب البيانات والسياق المركزي مع حماية ضد القيم الفارغة
@@ -44,6 +50,7 @@ function Settings({ inputStyle = {} } = {}) {
   const [heroHeight, setHeroHeight] = useState(Number(settings.heroHeight || 520));
   const [hideHero, setHideHero] = useState(Boolean(settings.hideHero));
   const [footerText, setFooterText] = useState(settings.footerText || 'جميع الحقوق محفوظة');
+  const [socialCards, setSocialCards] = useState(() => Array.isArray(settings.socialCards) && settings.socialCards.length ? settings.socialCards.slice(0, 2) : DEFAULT_SOCIAL_CARDS);
   const [successMsg, setSuccessMsg] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
@@ -89,6 +96,7 @@ function Settings({ inputStyle = {} } = {}) {
           if (data.heroHeight !== undefined) setHeroHeight(Number(data.heroHeight) || 520);
           if (data.hideHero !== undefined) setHideHero(Boolean(data.hideHero));
           if (data.footerText !== undefined) setFooterText(String(data.footerText));
+          if (Array.isArray(data.socialCards)) setSocialCards(data.socialCards.slice(0, 2));
         }
       } catch (error) {
         console.error('Error fetching settings, using local fallback:', error);
@@ -220,6 +228,9 @@ function Settings({ inputStyle = {} } = {}) {
       heroHeight: Math.min(900, Math.max(180, Number(heroHeight) || 520)),
       hideHero,
       footerText: footerText.trim()
+      ,socialCards: socialCards.slice(0, 2).map((card) => ({
+        platform: card.platform || 'instagram', account: String(card.account || '').trim(), title: String(card.title || '').trim(), enabled: card.enabled !== false
+      }))
     };
 
     try {
@@ -365,6 +376,30 @@ function Settings({ inputStyle = {} } = {}) {
           <label style={{ color: '#cbd5e1', fontSize: '12px' }}>نص أسفل المتجر<input value={footerText} onChange={(e) => setFooterText(e.target.value)} style={inputStyle} /></label>
           <label style={{ color: '#cbd5e1', fontSize: '12px' }}>ارتفاع البانر بالبكسل<input type="number" min="180" max="900" value={heroHeight} onChange={(e) => setHeroHeight(e.target.value)} style={inputStyle} /></label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#cbd5e1', fontSize: '12px', cursor: 'pointer' }}><input type="checkbox" checked={hideHero} onChange={(e) => setHideHero(e.target.checked)} /> إخفاء البانر من واجهة المتجر</label>
+        </div>
+      </div>
+
+      <div style={{ ...glassCardStyle, marginTop: '20px' }}>
+        <h4 style={{ margin: '0 0 6px 0', color: '#a78bfa', fontSize: '16px' }}>🌐 بطاقات حسابات المتجر</h4>
+        <p style={{ margin: '0 0 14px', color: '#94a3b8', fontSize: '12px' }}>اختر المنصة واكتب اسم الحساب. ستظهر بطاقتان تحت خدمة العملاء وتفتحان الحساب مباشرة عند الضغط.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+          {socialCards.map((card, index) => (
+            <div key={index} style={{ padding: '14px', border: '1px solid rgba(167,139,250,0.24)', borderRadius: '16px', background: 'rgba(30,41,59,0.35)' }}>
+              <strong style={{ display: 'block', marginBottom: '10px', color: '#e9d5ff', fontSize: '13px' }}>البطاقة {index + 1}</strong>
+              <label style={{ display: 'block', marginBottom: '9px', color: '#cbd5e1', fontSize: '12px' }}>المنصة
+                <select value={card.platform || 'instagram'} onChange={(e) => setSocialCards((prev) => prev.map((item, i) => i === index ? { ...item, platform: e.target.value } : item))} style={inputStyle}>
+                  {SOCIAL_PLATFORM_OPTIONS.map((platform) => <option key={platform.value} value={platform.value} style={{ background: '#0b0f19' }}>{platform.icon} {platform.label}</option>)}
+                </select>
+              </label>
+              <label style={{ display: 'block', marginBottom: '9px', color: '#cbd5e1', fontSize: '12px' }}>اسم الحساب أو المعرّف
+                <input value={card.account || ''} onChange={(e) => setSocialCards((prev) => prev.map((item, i) => i === index ? { ...item, account: e.target.value } : item))} placeholder="مثال: hamza_store" dir="ltr" style={inputStyle} />
+              </label>
+              <label style={{ display: 'block', marginBottom: '10px', color: '#cbd5e1', fontSize: '12px' }}>عنوان البطاقة (اختياري)
+                <input value={card.title || ''} onChange={(e) => setSocialCards((prev) => prev.map((item, i) => i === index ? { ...item, title: e.target.value } : item))} placeholder="حسابنا الرسمي" style={inputStyle} />
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#cbd5e1', fontSize: '12px', cursor: 'pointer' }}><input type="checkbox" checked={card.enabled !== false} onChange={(e) => setSocialCards((prev) => prev.map((item, i) => i === index ? { ...item, enabled: e.target.checked } : item))} /> إظهار البطاقة للزوار</label>
+            </div>
+          ))}
         </div>
       </div>
 
