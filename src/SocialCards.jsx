@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const PLATFORM_META = {
   instagram: { label: 'Instagram', icon: '◎', color: '#f472b6', build: (value) => `https://instagram.com/${value.replace(/^@/, '')}` },
@@ -19,6 +19,12 @@ export function getSocialUrl(card) {
 }
 
 export default function SocialCards({ cards = [] }) {
+  const [instagramProfile, setInstagramProfile] = useState(null);
+  useEffect(() => {
+    fetch('/api/instagram/status').then((response) => response.ok ? response.json() : null).then((data) => {
+      if (data?.connected) setInstagramProfile(data.profile || null);
+    }).catch(() => {});
+  }, []);
   const defaults = [{ platform: 'instagram', account: '', title: '', enabled: true }, { platform: 'tiktok', account: '', title: '', enabled: true }];
   const configuredCards = Array.isArray(cards) && cards.length ? cards : defaults;
   const activeCards = configuredCards.filter((card) => card && card.enabled !== false).slice(0, 2);
@@ -36,11 +42,12 @@ export default function SocialCards({ cards = [] }) {
         {activeCards.slice(0, 2).map((card, index) => {
           const meta = PLATFORM_META[card.platform] || PLATFORM_META.instagram;
           const url = getSocialUrl(card);
+          const actionUrl = card.platform === 'instagram' && !url ? '/api/instagram/oauth/start' : (url || '#');
           return (
-            <a key={`${card.platform}-${card.account}-${index}`} className="hz-social-card" href={url || '#'} target={url ? '_blank' : undefined} rel={url ? 'noreferrer' : undefined} onClick={(event) => { if (!url) event.preventDefault(); }} style={{ '--social-color': meta.color }}>
+            <a key={`${card.platform}-${card.account}-${index}`} className="hz-social-card" href={actionUrl} target={url ? '_blank' : undefined} rel={url ? 'noreferrer' : undefined} onClick={(event) => { if (!url && card.platform !== 'instagram') event.preventDefault(); }} style={{ '--social-color': meta.color }}>
               <span className="hz-social-icon">{meta.icon}</span>
-              <span className="hz-social-copy"><strong>{card.title || `حسابنا على ${meta.label}`}</strong><small>{card.account ? `${meta.label} • ${card.account}` : `${meta.label} • لم يتم ربط الحساب بعد`}</small></span>
-              <span className="hz-social-arrow">↗</span>
+              <span className="hz-social-copy"><strong>{card.title || `حسابنا على ${meta.label}`}</strong><small>{instagramProfile && card.platform === 'instagram' ? `متصل مباشرة • @${instagramProfile.username}` : (card.account ? `${meta.label} • ${card.account}` : `${meta.label} • اختر المنصة وسجّل الدخول`)}</small>{card.platform === 'instagram' && !instagramProfile && <span className="hz-social-login">تسجيل الدخول الرسمي</span>}</span>
+              <span className="hz-social-arrow">{card.platform === 'instagram' && !instagramProfile ? '🔐' : '↗'}</span>
             </a>
           );
         })}

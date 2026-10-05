@@ -168,6 +168,66 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, smtp: { configured: smtpStatus.configured, verified: smtpStatus.verified, lastError: smtpStatus.lastError || null } });
 });
 
+// Instagram Business Login: كلمة السر لا تمر عبر متجرنا، بل عبر صفحة Instagram الرسمية.
+const INSTAGRAM_APP_ID = String(process.env.INSTAGRAM_APP_ID || '').trim();
+const INSTAGRAM_APP_SECRET = String(process.env.INSTAGRAM_APP_SECRET || '').trim();
+const INSTAGRAM_REDIRECT_URI = String(process.env.INSTAGRAM_REDIRECT_URI || `${FRONTEND_URL}/api/instagram/oauth/callback`).trim();
+const instagramOAuthStates = new Map();
+const instagramTokenFromRequest = (req) => {
+  const header = String(req.headers.cookie || '').split(';').map(v => v.trim()).find(v => v.startsWith('ig_access_token='));
+  return header ? decodeURIComponent(header.slice('ig_access_token='.length)) : '';
+};
+
+app.get('/api/instagram/oauth/start', (req, res) => {
+  if (!INSTAGRAM_APP_ID || !INSTAGRAM_APP_SECRET) return res.status(503).send('Instagram OAuth غير مفعّل بعد على الخادم.');
+  const state = crypto.randomBytes(24).toString('hex');
+  instagramOAuthStates.set(state, Date.now());
+  const authorizeUrl = new URL('https://www.instagram.com/oauth/authorize');
+  authorizeUrl.searchParams.set('client_id', INSTAGRAM_APP_ID);
+  authorizeUrl.searchParams.set('redirect_uri', INSTAGRAM_REDIRECT_URI);
+  authorizeUrl.searchParams.set('response_type', 'code');
+  authorizeUrl.searchParams.set('scope', 'instagram_business_basic');
+  res.redirect(authorizeUrl.toString());
+});
+
+app.get('/api/instagram/oauth/callback', async (req, res) => {
+  const { code, state, error } = req.query;
+  const returnUrl = `${FRONTEND_URL}/?instagram=${error ? 'cancelled' : 'connected'}`;
+  if (error || !code || !state || !instagramOAuthStates.has(String(state))) return res.redirect(returnUrl);
+  instagramOAuthStates.delete(String(state));
+  try {
+    const form = new URLSearchParams({ client_id: INSTAGRAM_APP_ID, client_secret: INSTAGRAM_APP_SECRET, grant_type: 'authorization_code', redirect_uri: INSTAGRAM_REDIRECT_URI, code: String(code) });
+    const tokenResponse = await fetch('https://api.instagram.com/oauth/access_token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form });
+    if (!tokenResponse.ok) throw new Error(`Instagram token exchange failed: ${tokenResponse.status}`);
+    const tokenData = await tokenResponse.json();
+    const longLivedUrl = new URL('https://graph.instagram.com/access_token');
+    longLivedUrl.searchParams.set('grant_type', 'ig_exchange_token');
+    longLivedUrl.searchParams.set('client_secret', INSTAGRAM_APP_SECRET);
+    longLivedUrl.searchParams.set('access_token', tokenData.access_token);
+    const longLivedResponse = await fetch(longLivedUrl);
+    const longLivedData = longLivedResponse.ok ? await longLivedResponse.json() : tokenData;
+    const maxAge = Number(longLivedData.expires_in || 60 * 24 * 60 * 60);
+    res.setHeader('Set-Cookie', `ig_access_token=${encodeURIComponent(longLivedData.access_token)}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`);
+    return res.redirect(returnUrl);
+  } catch (oauthError) {
+    console.error('Instagram OAuth callback failed:', oauthError.message || oauthError);
+    return res.redirect(`${FRONTEND_URL}/?instagram=error`);
+  }
+});
+
+app.get('/api/instagram/status', async (req, res) => {
+  const token = instagramTokenFromRequest(req);
+  if (!token) return res.json({ connected: false });
+  try {
+    const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type&access_token=${encodeURIComponent(token)}`);
+    if (!profileResponse.ok) throw new Error('Instagram token is not valid');
+    res.json({ connected: true, profile: await profileResponse.json() });
+  } catch (statusError) {
+    res.setHeader('Set-Cookie', 'ig_access_token=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax');
+    res.json({ connected: false, error: statusError.message });
+  }
+});
+
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(s => s.trim())
