@@ -228,7 +228,7 @@ app.get('/api/instagram/status', async (req, res) => {
     const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,name,biography,profile_picture_url,followers_count,follows_count,media_count&access_token=${encodeURIComponent(token)}`);
     if (!profileResponse.ok) throw new Error('Instagram token is not valid');
     const profile = await profileResponse.json();
-    res.json({ connected: true, profile: { ...profile, profile_picture_url: instagramProxyUrl(profile.profile_picture_url) } });
+    res.json({ connected: true, profile: { ...profile, profile_picture_url_original: profile.profile_picture_url, profile_picture_url: instagramProxyUrl(profile.profile_picture_url) } });
   } catch (statusError) {
     res.setHeader('Set-Cookie', 'ig_access_token=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax');
     res.json({ connected: false, error: statusError.message });
@@ -242,7 +242,7 @@ app.get('/api/instagram/media', async (req, res) => {
     const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,name,biography,profile_picture_url,followers_count,follows_count,media_count&access_token=${encodeURIComponent(token)}`);
     if (!profileResponse.ok) throw new Error('Instagram profile request failed');
     const rawProfile = await profileResponse.json();
-    const profile = { ...rawProfile, profile_picture_url: instagramProxyUrl(rawProfile.profile_picture_url) };
+    const profile = { ...rawProfile, profile_picture_url_original: rawProfile.profile_picture_url, profile_picture_url: instagramProxyUrl(rawProfile.profile_picture_url) };
     const mediaUrl = new URL(`https://graph.instagram.com/${profile.id}/media`);
     mediaUrl.searchParams.set('fields', 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp');
     mediaUrl.searchParams.set('limit', '6');
@@ -263,10 +263,10 @@ app.get('/api/instagram/media-file', async (req, res) => {
   if (!token || !mediaUrl) return res.status(401).end();
   try {
     const parsedUrl = new URL(mediaUrl);
-    const allowedHost = parsedUrl.hostname === 'graph.instagram.com' || parsedUrl.hostname.endsWith('.cdninstagram.com') || parsedUrl.hostname.endsWith('.fbcdn.net');
+    const allowedHost = parsedUrl.hostname === 'graph.instagram.com' || parsedUrl.hostname.endsWith('.cdninstagram.com') || parsedUrl.hostname.endsWith('.fbcdn.net') || parsedUrl.hostname === 'fbsbx.com' || parsedUrl.hostname.endsWith('.fbsbx.com');
     if (!allowedHost) return res.status(400).send('Invalid Instagram media URL');
     parsedUrl.searchParams.set('access_token', token);
-    const mediaResponse = await fetch(parsedUrl);
+    const mediaResponse = await fetch(parsedUrl, { headers: { Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*;q=0.8,*/*;q=0.5' } });
     if (!mediaResponse.ok) return res.status(mediaResponse.status).end();
     res.setHeader('Cache-Control', 'private, max-age=300');
     res.setHeader('Content-Type', mediaResponse.headers.get('content-type') || 'application/octet-stream');
