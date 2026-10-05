@@ -293,11 +293,20 @@ const notificationSchema = new mongoose.Schema({
 });
 const Notification = mongoose.model('Notification', notificationSchema);
 
+const visitorEventSchema = new mongoose.Schema({
+  sessionId: { type: String, required: true, index: true },
+  path: { type: String, default: '/' },
+  referrer: { type: String, default: '' },
+  date: { type: Date, default: Date.now, index: true }
+});
+const VisitorEvent = mongoose.model('VisitorEvent', visitorEventSchema);
+
 const customerSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String },
   image: { type: String },
+  status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   storeBalance: { type: Number, default: 0, min: 0 },
   loyaltyPoints: { type: Number, default: 0, min: 0 },
   loyaltyThreshold: { type: Number, default: 100, min: 1 }
@@ -753,7 +762,7 @@ app.post('/api/notifyManagerFromCustomer', publicActionLimiter, async (req, res)
 setupRealtime({
   io, mongoose, jwt, jwtSecret: JWT_SECRET,
   models: {
-    Product, Order, Support, Mail, Notification, Customer, Transaction, Ticket, Sale,
+    Product, Order, Support, Mail, Notification, VisitorEvent, Customer, Transaction, Ticket, Sale,
     Employee, Achievement, Announcement, WorkHour, AttendanceLog, AppState, Settings, Salary, Task,
     DocumentModel, Coupon, StoreCreditCard, User // User للمصادقة فقط، غير مراقب
   }
@@ -763,7 +772,7 @@ setupRealtime({
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use('/api', buildStoreRouter({
-  Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification,
+  Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification, VisitorEvent,
   Customer, Transaction, Ticket, Sale, Employee, Achievement, Announcement,
   WorkHour, AttendanceLog, AppState,
   Settings, Salary, Task, DocumentModel, Coupon, StoreCreditCard,
@@ -791,9 +800,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
-// تقرير يومي مملوك للتطبيق: يعمل مرة واحدة في اليوم من نفس الخادم،
-// ويُرسل فقط بعد نجاح الإرسال حتى لا تضيع التقارير أو تتكرر عند إعادة التشغيل.
-const DAILY_REPORT_TIME = String(process.env.DAILY_REPORT_TIME || '23:55');
+// تقارير تشغيلية آلية ثلاث مرات يومياً: 09:00، 17:00، 23:00 بتوقيت عمّان.
+// يمكن تخصيصها عبر DAILY_REPORT_TIMES=09:00,17:00,23:00.
+const DAILY_REPORT_TIMES = String(process.env.DAILY_REPORT_TIMES || '09:00,17:00,23:00').split(',').map((value) => value.trim()).filter(Boolean);
 const DAILY_REPORT_TZ = process.env.DAILY_REPORT_TZ || 'Asia/Amman';
 let lastDailyReportAttempt = '';
 const jordanDateParts = () => {
@@ -805,30 +814,43 @@ const sendDailyReport = async () => {
     if (!Array.isArray(NOTIFY_EMAILS) || NOTIFY_EMAILS.length === 0) return;
     const now = jordanDateParts();
     const today = `${now.year}-${now.month}-${now.day}`;
-    if (`${now.hour}:${now.minute}` !== DAILY_REPORT_TIME || lastDailyReportAttempt === today) return;
-    lastDailyReportAttempt = today;
+    const currentTime = `${now.hour}:${now.minute}`;
+    const reportTime = DAILY_REPORT_TIMES.find((time) => time === currentTime);
+    if (!reportTime) return;
+    const reportKey = `${today}_${reportTime}`;
+    if (lastDailyReportAttempt === reportKey) return;
+    lastDailyReportAttempt = reportKey;
     const start = new Date(`${today}T00:00:00+03:00`);
     const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-    const [orders, transactions, hours, salaries] = await Promise.all([
+    const [orders, transactions, hours, salaries, products, visitors] = await Promise.all([
       Order.find({ date: { $gte: start, $lt: end } }).lean(),
       Transaction.find({ date: { $gte: start, $lt: end } }).lean(),
       WorkHour.find({ createdAt: { $gte: start, $lt: end } }).lean(),
-      Salary.find({ date: { $gte: start, $lt: end } }).lean()
+      Salary.find({ date: { $gte: start, $lt: end } }).lean(),
+      Product.find().lean(),
+      VisitorEvent ? VisitorEvent.find({ date: { $gte: start, $lt: end } }).lean() : []
     ]);
-    const alreadySent = await AppState.findOne({ key: `daily_report_sent_${today}` }).lean();
+    const alreadySent = await AppState.findOne({ key: `daily_report_sent_${reportKey}` }).lean();
     if (alreadySent) return;
-    const revenue = orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+    const validOrders = orders.filter((order) => order.status !== 'ملغي');
+    const revenue = validOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
     const income = transactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + Number(t.amount || 0), 0);
     const expenses = transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const inventoryQty = products.reduce((sum, product) => sum + (product.deliveryType === 'store_credit' ? 0 : Array.isArray(product.codes) ? product.codes.length : Number(product.stock || 0)), 0);
+    const lowStock = products.filter((product) => product.deliveryType !== 'store_credit' && (Array.isArray(product.codes) ? product.codes.length : Number(product.stock || 0)) <= Number(product.lowStockThreshold ?? 3));
+    const outOfStock = products.filter((product) => product.deliveryType !== 'store_credit' && (Array.isArray(product.codes) ? product.codes.length : Number(product.stock || 0)) <= 0);
+    const uniqueVisitors = new Set(visitors.map((visitor) => visitor.sessionId).filter(Boolean)).size;
     const hoursTotal = hours.reduce((sum, h) => {
       const parse = (v) => { const m = String(v || '').match(/(\d{1,2}):(\d{2})/); return m ? Number(m[1]) + Number(m[2]) / 60 : 0; };
       const value = Math.max(0, parse(h.end) - parse(h.start));
       return sum + value;
     }, 0);
-    const orderRows = orders.slice(0, 30).map((o) => `<tr><td>${String(o.orderNumber || o._id)}</td><td>${String(o.customerName || '')}</td><td>${Number(o.totalAmount || 0).toFixed(2)} JOD</td></tr>`).join('');
-    const reportHtml = `<div dir="rtl" style="margin:0;background:#07111f;padding:24px 10px;font-family:Arial,Tahoma,sans-serif;color:#e5e7eb"><div style="max-width:780px;margin:auto;background:linear-gradient(145deg,#111c32,#0b1220);border:1px solid #334155;border-radius:24px;overflow:hidden"><div style="padding:30px;background:linear-gradient(135deg,#0ea5e9,#2563eb 55%,#7c3aed);color:#fff"><div style="font-size:13px;opacity:.85">HAMZA STORE · لوحة الإدارة</div><h1 style="margin:9px 0 0;font-size:27px">التقرير اليومي الشامل</h1><p style="margin:8px 0 0;opacity:.9">${today} · المنطقة الزمنية ${DAILY_REPORT_TZ}</p></div><div style="padding:28px"><p style="font-size:16px;color:#cbd5e1">صباح الخير، هذا ملخص أداء المتجر الآلي بكل تفاصيله المالية والتشغيلية.</p><div style="display:flex;flex-wrap:wrap;gap:10px;margin:22px 0"><div style="flex:1;min-width:145px;background:#172554;border-radius:14px;padding:15px;color:#bfdbfe">📦 الطلبات<br><b style="font-size:24px;color:#fff">${orders.length}</b></div><div style="flex:1;min-width:145px;background:#064e3b;border-radius:14px;padding:15px;color:#a7f3d0">💰 المبيعات<br><b style="font-size:22px;color:#fff">${revenue.toFixed(2)} JOD</b></div><div style="flex:1;min-width:145px;background:#3b1f5c;border-radius:14px;padding:15px;color:#e9d5ff">📈 الصافي<br><b style="font-size:22px;color:#fff">${(income - expenses).toFixed(2)} JOD</b></div></div><div style="background:#0f1b30;border:1px solid #334155;border-radius:16px;padding:18px;line-height:2"><b style="color:#67e8f9">البيانات المالية والتشغيلية</b><br>إيرادات المحاسبة: <b>${income.toFixed(2)} JOD</b><br>المصروفات: <b>${expenses.toFixed(2)} JOD</b><br>ساعات العمل المسجلة: <b>${hoursTotal.toFixed(2)} ساعة</b><br>سجلات الرواتب: <b>${salaries.length}</b></div><h2 style="color:#fbbf24;font-size:19px;margin-top:28px">آخر الطلبات</h2><table style="width:100%;border-collapse:collapse;background:#f8fafc;color:#172033;border-radius:14px;overflow:hidden"><thead><tr style="background:#dbeafe"><th style="padding:12px;text-align:right">رقم الطلب</th><th style="padding:12px;text-align:right">العميل</th><th style="padding:12px;text-align:left">الإجمالي</th></tr></thead><tbody>${orderRows || '<tr><td colspan="3" style="padding:15px;text-align:center">لا توجد طلبات في هذا التقرير</td></tr>'}</tbody></table><p style="color:#94a3b8;font-size:12px;line-height:1.8;margin-top:24px">تم إنشاء هذا التقرير تلقائياً. راجع لوحة التحكم لمتابعة التفاصيل الكاملة والمبيعات والموظفين.</p><div style="border-top:1px solid #334155;margin-top:22px;padding-top:16px;text-align:center;color:#94a3b8;font-size:12px">متجر حمزة · تقرير سري للإدارة</div></div></div></div>`;
-    const results = await Promise.all(NOTIFY_EMAILS.map((email) => sendStoreEmail(email, `التقرير اليومي ${today} - متجر حمزة`, reportHtml)));
-    if (results.every(Boolean)) await AppState.create({ key: `daily_report_sent_${today}`, value: { sentAt: new Date(), recipients: NOTIFY_EMAILS } });
+    const reportLabel = reportTime === '09:00' ? 'الصباحي' : reportTime === '17:00' ? 'العصري' : 'الليلي';
+    const escapeHtml = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    const orderRows = validOrders.slice(0, 30).map((o) => `<tr><td>${escapeHtml(o.orderNumber || o._id)}</td><td>${escapeHtml(o.customerName || '')}</td><td>${Number(o.totalAmount || 0).toFixed(2)} JOD</td></tr>`).join('');
+    const reportHtml = `<div dir="rtl" style="margin:0;background:#07111f;padding:24px 10px;font-family:Arial,Tahoma,sans-serif;color:#e5e7eb"><div style="max-width:820px;margin:auto;background:linear-gradient(145deg,#111c32,#0b1220);border:1px solid #334155;border-radius:24px;overflow:hidden"><div style="padding:30px;background:linear-gradient(135deg,#0ea5e9,#2563eb 55%,#7c3aed);color:#fff"><div style="font-size:13px;opacity:.85">HAMZA STORE · لوحة الإدارة</div><h1 style="margin:9px 0 0;font-size:27px">التقرير ${reportLabel} الشامل</h1><p style="margin:8px 0 0;opacity:.9">${today} · ${reportTime} · ${DAILY_REPORT_TZ}</p></div><div style="padding:28px"><div style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 22px"><div style="flex:1;min-width:135px;background:#172554;border-radius:14px;padding:15px;color:#bfdbfe">👁️ الزوار<br><b style="font-size:24px;color:#fff">${uniqueVisitors}</b></div><div style="flex:1;min-width:135px;background:#172554;border-radius:14px;padding:15px;color:#bfdbfe">📦 المبيعات<br><b style="font-size:22px;color:#fff">${validOrders.length}</b></div><div style="flex:1;min-width:135px;background:#064e3b;border-radius:14px;padding:15px;color:#a7f3d0">💰 الإيرادات<br><b style="font-size:22px;color:#fff">${revenue.toFixed(2)} JOD</b></div><div style="flex:1;min-width:135px;background:#7f1d1d;border-radius:14px;padding:15px;color:#fecaca">📉 الخسائر<br><b style="font-size:22px;color:#fff">${expenses.toFixed(2)} JOD</b></div><div style="flex:1;min-width:135px;background:#3b1f5c;border-radius:14px;padding:15px;color:#e9d5ff">📈 الأرباح<br><b style="font-size:22px;color:#fff">${(income - expenses).toFixed(2)} JOD</b></div></div><div style="background:#0f1b30;border:1px solid #334155;border-radius:16px;padding:18px;line-height:2"><b style="color:#67e8f9">المخزون وحالة التشغيل</b><br>إجمالي كمية المخزون: <b>${inventoryQty}</b><br>منتجات منخفضة المخزون: <b style="color:#fbbf24">${lowStock.length}</b><br>منتجات نافدة: <b style="color:#f87171">${outOfStock.length}</b><br>عدد المنتجات: <b>${products.length}</b><br>ساعات العمل: <b>${hoursTotal.toFixed(2)} ساعة</b><br>سجلات الرواتب: <b>${salaries.length}</b></div><h2 style="color:#fbbf24;font-size:19px;margin-top:28px">آخر الطلبات</h2><table style="width:100%;border-collapse:collapse;background:#f8fafc;color:#172033;border-radius:14px;overflow:hidden"><thead><tr style="background:#dbeafe"><th style="padding:12px;text-align:right">رقم الطلب</th><th style="padding:12px;text-align:right">العميل</th><th style="padding:12px;text-align:left">الإجمالي</th></tr></thead><tbody>${orderRows || '<tr><td colspan="3" style="padding:15px;text-align:center">لا توجد طلبات في هذا التقرير</td></tr>'}</tbody></table><p style="color:#94a3b8;font-size:12px;line-height:1.8;margin-top:24px">تم إنشاء هذا التقرير تلقائياً ثلاث مرات يومياً، وهو تراكمي لليوم الحالي حتى وقت الإرسال.</p><div style="border-top:1px solid #334155;margin-top:22px;padding-top:16px;text-align:center;color:#94a3b8;font-size:12px">متجر حمزة · تقرير سري للإدارة</div></div></div></div>`;
+    const results = await Promise.all(NOTIFY_EMAILS.map((email) => sendStoreEmail(email, `التقرير ${reportLabel} ${today} - متجر حمزة`, reportHtml)));
+    if (results.every(Boolean)) await AppState.create({ key: `daily_report_sent_${reportKey}`, value: { sentAt: new Date(), recipients: NOTIFY_EMAILS, reportTime } });
   } catch (error) {
     console.error('daily report error:', error);
     lastDailyReportAttempt = '';

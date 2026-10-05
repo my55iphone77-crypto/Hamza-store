@@ -205,6 +205,18 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
   const { products: localProducts, loading, searchTerm, setSearchTerm, fetchProducts } = useProducts({ api, setError });
 
+  useEffect(() => {
+    try {
+      const key = 'hamza_visitor_session';
+      let sessionId = sessionStorage.getItem(key);
+      if (!sessionId) {
+        sessionId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        sessionStorage.setItem(key, sessionId);
+      }
+      fetch(`${API_BASE_URL}/analytics/visit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId, path: window.location.pathname, referrer: document.referrer }) }).catch(() => {});
+    } catch { /* عداد الزيارات لا يجب أن يعطل واجهة المتجر */ }
+  }, []);
+
   const products = useMemo(() => {
     return (globalProducts && globalProducts.length > 0) ? globalProducts : localProducts;
   }, [globalProducts, localProducts]);

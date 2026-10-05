@@ -7,6 +7,8 @@ function canManageCustomers(role) {
   return ["admin", "manager", "sales", "owner"].includes(role);
 }
 
+const isCustomerActive = (customer) => ['active', 'نشط'].includes(String(customer?.status || '').toLowerCase()) || customer?.status === true || customer?.status === undefined || customer?.status === null;
+
 function Customers({ inputStyle = {} }) {
   const contextData = useApp() || {};
   const fullBleedStyle = useFullBleedStyle();
@@ -194,8 +196,8 @@ function Customers({ inputStyle = {} }) {
     const matchesSearch = nameMatch || emailMatch || phoneMatch || addressMatch;
     if (!matchesSearch) return false;
     if (filterType === "all") return true;
-    if (filterType === "active") return c.status === 'active';
-    if (filterType === "inactive") return c.status !== 'active';
+    if (filterType === "active") return isCustomerActive(c);
+    if (filterType === "inactive") return !isCustomerActive(c);
     return true;
   });
 
@@ -204,8 +206,8 @@ function Customers({ inputStyle = {} }) {
   const stats = useMemo(() => {
     return {
       total: safeCustomers.length,
-      active: safeCustomers.filter(c => c?.status === 'active').length,
-      inactive: safeCustomers.filter(c => c?.status !== 'active').length
+      active: safeCustomers.filter(isCustomerActive).length,
+      inactive: safeCustomers.filter((c) => !isCustomerActive(c)).length
     };
   }, [safeCustomers]);
 
@@ -416,11 +418,11 @@ function Customers({ inputStyle = {} }) {
                     <div>
                       <h4 style={{ margin: '0 0 4px 0', color: '#fff', fontSize: '16px', fontWeight: 'bold' }}>{c.name}</h4>
                       <span style={{
-                        fontSize: '11px', color: c.status === 'active' ? '#10b981' : '#ef4444',
+                        fontSize: '11px', color: isCustomerActive(c) ? '#10b981' : '#ef4444',
                         fontWeight: 'bold', background: 'rgba(15, 23, 42, 0.6)', padding: '4px 10px',
                         borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.1)', display: 'inline-block'
                       }}>
-                        {c.status === 'active' ? '✅ نشط' : '❌ غير نشط'}
+                        {isCustomerActive(c) ? '✅ نشط' : '❌ غير نشط'}
                       </span>
                     </div>
                     <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.6' }}>
@@ -474,7 +476,7 @@ function Customers({ inputStyle = {} }) {
               <div style={{ textAlign: 'center' }}>
                 <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '20px' }}>{selectedCustomer.name}</h3>
                 <span style={{ fontSize: '12px', color: '#22c55e', fontWeight: 'bold' }}>
-                  {selectedCustomer.status === 'active' ? '✅ عميل نشط' : '❌ غير نشط'}
+                  {isCustomerActive(selectedCustomer) ? '✅ عميل نشط' : '❌ غير نشط'}
                 </span>
               </div>
             </div>
@@ -507,6 +509,13 @@ function Customers({ inputStyle = {} }) {
               <div>
                 <label style={{ fontSize: '12px', color: '#c4b5fd', display: 'block', marginBottom: '4px' }}>نقاط الولاء:</label>
                 <input type="number" min="0" step="1" defaultValue={Number(selectedCustomer.loyaltyPoints || 0)} onBlur={(e) => handleUpdateCustomer(selectedCustomer._id || selectedCustomer.id, "loyaltyPoints", Math.max(0, Math.floor(Number(e.target.value) || 0)))} style={glassInputStyle} disabled={!canManage} dir="ltr" />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: '#38bdf8', display: 'block', marginBottom: '4px' }}>حالة العميل:</label>
+                <select value={isCustomerActive(selectedCustomer) ? 'active' : 'inactive'} onChange={(e) => handleUpdateCustomer(selectedCustomer._id || selectedCustomer.id, 'status', e.target.value)} style={glassInputStyle} disabled={!canManage}>
+                  <option value="active">✅ نشط</option>
+                  <option value="inactive">❌ غير نشط</option>
+                </select>
               </div>
             </div>
 

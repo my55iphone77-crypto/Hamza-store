@@ -2,7 +2,7 @@ const express = require('express');
 
 module.exports = function buildStoreRouter(deps) {
   const {
-    Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification,
+    Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification, VisitorEvent,
     Customer, Transaction, Ticket, Sale, Employee, Achievement, Announcement,
     WorkHour, AttendanceLog, AppState,
     Settings, Salary, Task, DocumentModel, Coupon, StoreCreditCard,
@@ -362,6 +362,13 @@ module.exports = function buildStoreRouter(deps) {
           });
           return res.json(unique);
         }
+        if (path === '/customers') {
+          return res.json(rows.map((row) => {
+            const item = toObj(row);
+            item.status = ['inactive', 'غير نشط'].includes(String(item.status || '').toLowerCase()) ? 'inactive' : 'active';
+            return item;
+          }));
+        }
         res.json(rows);
       }
       catch (e) { res.status(500).json({ error: 'خطأ في جلب البيانات' }); }
@@ -369,7 +376,7 @@ module.exports = function buildStoreRouter(deps) {
     router.post(path, routeGuard(create), async (req, res) => {
       try {
         const payload = path === '/customers'
-          ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), name: String(req.body?.name || '').trim() }
+          ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), name: String(req.body?.name || '').trim(), status: ['inactive', 'غير نشط'].includes(String(req.body?.status || '').toLowerCase()) ? 'inactive' : 'active' }
           : req.body;
         // حماية idempotency للإعلانات: إعادة إرسال نفس الطلب خلال ثوانٍ لا تنشئ إعلاناً ثانياً.
         if (path === '/announcements' && payload?.title && payload?.message) {
@@ -395,8 +402,8 @@ module.exports = function buildStoreRouter(deps) {
     router.put(`${path}/:id`, routeGuard(update), async (req, res) => {
       try {
         const before = path === '/customers' ? await Model.findById(req.params.id) : null;
-        const payload = path === '/customers' && req.body?.email !== undefined
-          ? { ...req.body, email: String(req.body.email || '').trim().toLowerCase() }
+        const payload = path === '/customers'
+          ? { ...req.body, email: String(req.body?.email || '').trim().toLowerCase(), status: ['inactive', 'غير نشط'].includes(String(req.body?.status || '').toLowerCase()) ? 'inactive' : 'active' }
           : req.body;
         if (path === '/customers' && payload.email && await Model.exists({ email: payload.email, _id: { $ne: req.params.id } })) return res.status(409).json({ error: 'هذا البريد الإلكتروني مرتبط بعميل آخر.' });
         const d = await Model.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
@@ -1135,6 +1142,17 @@ module.exports = function buildStoreRouter(deps) {
   crud('/announcements', Announcement, { list: 'manage_announcements', create: 'manage_announcements', update: 'manage_announcements', remove: 'manager' });
   crud('/achievements', Achievement, { remove: 'manager' });
   crud('/mails', Mail, { sort: { date: -1 } });
+
+  router.post('/analytics/visit', publicActionLimiter, async (req, res) => {
+    try {
+      const sessionId = String(req.body?.sessionId || '').trim().slice(0, 120);
+      if (!sessionId || !VisitorEvent) return res.status(400).json({ error: 'جلسة الزيارة غير صالحة.' });
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const existing = await VisitorEvent.findOne({ sessionId, date: { $gte: start } }).select('_id').lean();
+      if (!existing) await VisitorEvent.create({ sessionId, path: String(req.body?.path || '/').slice(0, 200), referrer: String(req.body?.referrer || '').slice(0, 300) });
+      res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: 'تعذر تسجيل الزيارة.' }); }
+  });
 
   router.get('/notifications', permissionGuard('view_dashboard'), async (req, res) => {
     try { res.json(await Notification.find().sort({ date: -1 }).limit(200)); }
