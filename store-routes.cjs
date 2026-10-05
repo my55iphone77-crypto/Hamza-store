@@ -39,6 +39,7 @@ module.exports = function buildStoreRouter(deps) {
     if (Object.prototype.hasOwnProperty.call(normalized, 'loyaltyPrice')) normalized.loyaltyPrice = normalizeLoyaltyValue(normalized.loyaltyPrice, 'سعر النقاط');
     return normalized;
   };
+  const LOYALTY_POINTS_PER_DINAR = 0.25;
 
   // رفع الملفات (اختياري): npm i multer  +  app.use('/uploads', express.static('uploads'))
   let upload = { single: () => (req, res, next) => next() };
@@ -665,7 +666,9 @@ module.exports = function buildStoreRouter(deps) {
           loyaltyPointsCost += loyaltyPrice * qty;
         }
         total += price * qty;
-        earnedPoints += itemPoints * qty;
+        const calculatedItemPoints = loyaltyOnly ? 0 : Math.max(0, Math.round(price * LOYALTY_POINTS_PER_DINAR * 100) / 100);
+        itemPoints = calculatedItemPoints;
+        earnedPoints += price * qty * LOYALTY_POINTS_PER_DINAR;
         const deliveredCodes = [];
         if (deliveryType === 'store_credit' || storeCreditAmount > 0) {
           const amount = storeCreditAmount > 0 ? storeCreditAmount : price;
