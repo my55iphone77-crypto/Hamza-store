@@ -177,6 +177,7 @@ const instagramTokenFromRequest = (req) => {
   const header = String(req.headers.cookie || '').split(';').map(v => v.trim()).find(v => v.startsWith('ig_access_token='));
   return header ? decodeURIComponent(header.slice('ig_access_token='.length)) : '';
 };
+const instagramProxyUrl = (url) => url ? `/api/instagram/media-file?url=${encodeURIComponent(url)}` : '';
 
 app.get('/api/instagram/oauth/start', (req, res) => {
   if (!INSTAGRAM_APP_ID || !INSTAGRAM_APP_SECRET) return res.status(503).send('Instagram OAuth غير مفعّل بعد على الخادم.');
@@ -226,7 +227,8 @@ app.get('/api/instagram/status', async (req, res) => {
   try {
     const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,name,biography,profile_picture_url,followers_count,follows_count,media_count&access_token=${encodeURIComponent(token)}`);
     if (!profileResponse.ok) throw new Error('Instagram token is not valid');
-    res.json({ connected: true, profile: await profileResponse.json() });
+    const profile = await profileResponse.json();
+    res.json({ connected: true, profile: { ...profile, profile_picture_url: instagramProxyUrl(profile.profile_picture_url) } });
   } catch (statusError) {
     res.setHeader('Set-Cookie', 'ig_access_token=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax');
     res.json({ connected: false, error: statusError.message });
@@ -239,7 +241,8 @@ app.get('/api/instagram/media', async (req, res) => {
   try {
     const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,name,biography,profile_picture_url,followers_count,follows_count,media_count&access_token=${encodeURIComponent(token)}`);
     if (!profileResponse.ok) throw new Error('Instagram profile request failed');
-    const profile = await profileResponse.json();
+    const rawProfile = await profileResponse.json();
+    const profile = { ...rawProfile, profile_picture_url: instagramProxyUrl(rawProfile.profile_picture_url) };
     const mediaUrl = new URL(`https://graph.instagram.com/${profile.id}/media`);
     mediaUrl.searchParams.set('fields', 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp');
     mediaUrl.searchParams.set('limit', '6');
@@ -247,7 +250,7 @@ app.get('/api/instagram/media', async (req, res) => {
     const mediaResponse = await fetch(mediaUrl);
     if (!mediaResponse.ok) throw new Error('Instagram media request failed');
     const mediaData = await mediaResponse.json();
-    const media = Array.isArray(mediaData.data) ? mediaData.data.map((item) => ({ ...item, playable_url: `/api/instagram/media-file?url=${encodeURIComponent(item.media_url || '')}`, playable_thumbnail_url: item.thumbnail_url ? `/api/instagram/media-file?url=${encodeURIComponent(item.thumbnail_url)}` : '' })) : [];
+    const media = Array.isArray(mediaData.data) ? mediaData.data.map((item) => ({ ...item, playable_url: instagramProxyUrl(item.media_url), playable_thumbnail_url: instagramProxyUrl(item.thumbnail_url) })) : [];
     res.json({ connected: true, profile, media });
   } catch (mediaError) {
     res.status(502).json({ connected: false, media: [], error: mediaError.message || 'Instagram media unavailable' });

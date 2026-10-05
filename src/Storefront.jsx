@@ -160,6 +160,8 @@ const GLASS_STYLE = `
   .hz-instagram-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
   .hz-instagram-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: #475569; cursor: pointer; }
   .hz-instagram-dots button.active { width: 20px; border-radius: 99px; background: #f472b6; }
+  .hz-instagram-featured-actions { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 8px; }
+  .hz-instagram-featured-actions > button { padding: 6px 10px; border: 1px solid rgba(244,114,182,0.35); border-radius: 9px; color: #fbcfe8; background: rgba(244,114,182,0.1); font-size: 11px; cursor: pointer; }
   .hz-social-arrow { margin-right: auto; color: var(--social-color); font-size: 20px; }
   .hz-store-intro { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin: 0 0 18px; padding: 0 4px; }
   .hz-store-intro-copy { min-width: 0; }
