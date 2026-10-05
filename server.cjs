@@ -213,7 +213,7 @@ app.get('/api/instagram/oauth/callback', async (req, res) => {
     const longLivedData = longLivedResponse.ok ? await longLivedResponse.json() : tokenData;
     const maxAge = Number(longLivedData.expires_in || 60 * 24 * 60 * 60);
     res.setHeader('Set-Cookie', `ig_access_token=${encodeURIComponent(longLivedData.access_token)}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`);
-    return res.redirect(returnUrl);
+    return res.status(200).send('<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>تم ربط Instagram</title><body style="font-family:Arial;background:#07111f;color:#f8fafc;display:grid;place-items:center;min-height:100vh;margin:0"><main style="max-width:560px;padding:32px;border:1px solid #334155;border-radius:20px;background:#111c32;text-align:center"><h2 style="color:#34d399">تم ربط حساب Instagram بنجاح</h2><p>تم حفظ التصريح بأمان على الخادم. اضغط الزر للعودة إلى المتجر.</p><a href="' + returnUrl + '" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none">العودة إلى المتجر</a></main></body></html>');
   } catch (oauthError) {
     console.error('Instagram OAuth callback failed:', oauthError.message || oauthError);
     return res.status(502).send(`<h2>Instagram login failed</h2><p>${String(oauthError.message || oauthError).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]))}</p><p>Check the Instagram App Secret and the exact OAuth Redirect URI in Meta, then try again.</p>`);
