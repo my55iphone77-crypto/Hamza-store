@@ -239,6 +239,19 @@ const GLASS_STYLE = `
   .hz-app-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; padding: 0 4px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
   .hz-app-group-heading h2 { margin: 0; color: #bae6fd; font-size: 18px; }
   .hz-app-group-heading span { color: #64748b; font-size: 12px; }
+  .hz-app-grid { gap: 14px !important; }
+  .hz-app-tile { min-height: 126px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 18px !important; border-radius: 20px !important; cursor: pointer; }
+  .hz-app-tile:hover { transform: translateY(-5px) !important; }
+  .hz-app-tile > div:last-child { line-height: 1.45; }
+  .hz-section-shell > * h1, .hz-section-shell > * h2 { letter-spacing: -0.3px; }
+  .hz-section-shell > * h2:first-child, .hz-section-shell > * h3:first-child { color: #67e8f9 !important; }
+  .hz-section-shell > * input, .hz-section-shell > * select, .hz-section-shell > * textarea { border-radius: 12px !important; border-color: rgba(148,163,184,0.28) !important; background: rgba(15,23,42,0.72) !important; color: #f8fafc !important; }
+  .hz-section-shell > * button { border-radius: 12px !important; transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease; }
+  .hz-section-shell > * button:hover { filter: brightness(1.12); box-shadow: 0 8px 18px rgba(0,0,0,0.2); }
+  .hz-section-shell > * table { border-radius: 16px; overflow: hidden; border: 1px solid rgba(148,163,184,0.16); }
+  .hz-section-shell > * th { background: rgba(30,41,59,0.8) !important; color: #bae6fd !important; }
+  .hz-section-shell > * td { border-color: rgba(148,163,184,0.12) !important; }
+  .hz-section-shell > * [style*="grid-template-columns"] { gap: 14px !important; }
   @media (max-width: 640px) { .hz-dashboard-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hz-dashboard-summary > div { padding: 12px; } }
   .hz-orders-panel { padding: 4px; color: #e2e8f0; }
   .hz-orders-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -471,12 +484,12 @@ function MainContent() {
                 {Object.entries(groupedApps).map(([groupName, groupApps]) => (
                   <section key={groupName} className="hz-app-group">
                     <div className="hz-app-group-heading"><h2>{groupName}</h2><span>{groupApps.length} أقسام</span></div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '20px', width: '100%' }}>
+                    <div className="hz-app-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '20px', width: '100%' }}>
                       {groupApps.map((app, index) => {
                         if (!app) return null;
                         const glow = app.borderColor || '#38bdf8';
                         return (
-                          <div key={app.id || index} onClick={() => setActiveApp(app.id)} className="hz-glass-card" style={{ '--glow': glow, textAlign: 'center' }}>
+                          <div key={app.id || index} onClick={() => setActiveApp(app.id)} className="hz-glass-card hz-app-tile" style={{ '--glow': glow, textAlign: 'center' }}>
                             <div className="hz-glass-icon" style={{ margin: '0 auto 12px auto' }}>{app.icon || '📌'}</div>
                             <div style={{ fontSize: '13px', fontWeight: '700', color: '#f1f5f9' }}>{app.name || 'تطبيق'}</div>
                           </div>
