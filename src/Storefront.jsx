@@ -407,7 +407,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
   }
 
   return (
-    <div className="hz-atmosphere hz-root" style={{
+    <div className="hz-root" style={{
       width: '100%',
       minHeight: '100dvh',
       padding: 'clamp(12px, 2vw, 24px)',
