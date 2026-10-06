@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { getActivePaymentMethods } from './paymentMethods';
 
 const glassBtn = {
@@ -48,7 +49,7 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
           🛒 السلة <span style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#fff', fontSize: '11px', padding: '2px 8px', borderRadius: '50%', boxShadow: '0 0 10px rgba(2, 132, 199, 0.5)' }}>{Number(totalItemsCount) || 0}</span>
         </button>
 
-        {showCartDropdown && (
+        {showCartDropdown && createPortal((
           <div className="hz-cart-menu" style={{ position: 'fixed', right: '12px', top: '76px', width: 'min(360px, calc(100vw - 24px))', maxHeight: 'calc(100vh - 92px)', overflowY: 'auto', boxSizing: 'border-box', background: 'rgba(15, 23, 42, 0.98)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56,189,248,0.55)', borderTop: '2px solid rgba(56,189,248,0.8)', borderRadius: '16px', padding: '16px', zIndex: 1000, boxShadow: '0 18px 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
             <h4 style={{ margin: '0 0 12px 0', color: '#38bdf8', fontSize: '14px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>محتويات سلة المشتريات</h4>
 
@@ -100,7 +101,7 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
               </div>
             )}
           </div>
-        )}
+        ), document.body)}
       </div>
 
       {currentUser && (
