@@ -850,12 +850,14 @@ const buildPublicBotContext = async (req = null) => {
   };
   const publicSettings = Object.fromEntries(Object.entries(settings || {}).filter(([key, value]) => publicSettingKey.test(key) && !sensitiveKey.test(key) && value !== undefined && value !== null && value !== '').map(([key, value]) => [key, cleanPublicValue(value)]));
   const publicAnnouncements = announcements.map((item) => ({ title: String(item.title || ''), message: String(item.message || ''), date: item.date || item.createdAt || null })).filter((item) => item.title || item.message);
+  const storeProfile = 'متجر حمزة متجر ألعاب رقمي شامل لكل ما يخص الألعاب والبطاقات. يبيع بطاقات الألعاب والشحن، بطاقات رصيد المتجر، الاشتراكات، الشحن الفوري، وكل المنتجات والخدمات الرقمية المتعلقة بالألعاب حسب الكتالوج الحالي. بطاقات رصيد المتجر فئة من فئات المتجر وليست تخصص المتجر الوحيد.';
   let developmentUpdates = { generatedAt: null, updates: [] };
   try {
     developmentUpdates = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'bot-updates.json'), 'utf8'));
   } catch (_) {}
   return {
     generatedAt: new Date().toISOString(),
+    storeProfile,
     catalog,
     storeInfo: Object.fromEntries(['storeName', 'storeTagline', 'welcomeText', 'contactEmail', 'contactPhone', 'footerText'].filter((key) => settings?.[key]).map((key) => [key, settings[key]])),
     publicStore: {
@@ -925,6 +927,7 @@ app.post('/api/customerAiChat', publicActionLimiter, async (req, res) => {
 7. **مراجعة إلزامية قبل الإرسال:** قبل ما تسلّم ردك، راجعه ذهنياً كلمة كلمة: هل كل جملة كاملة ومفهومة 100%؟ هل في كلمة ناقصة، مكررة، أو غير موجودة أصلاً باللغة العربية؟ هل المعنى واضح من أول قراءة بدون لبس؟ لو في أي شك ولو بسيط، أعد صياغة الجملة كاملة بدل ما تسلّمها كما هي.
 8. **واقعية بشرية حقيقية:** اقرأ محادثة الزبون كاملة (conversationHistory) وابني ردك على السياق الفعلي، لا تتجاهل شو قاله قبل شوي. لا تبدأ كل رد بنفس العبارة الافتتاحية، ولا تكرر نفس الجمل بين ردودك المتتالية - تكلم متل موظف حقيقي بيتابع الحديث، مش متل قالب رد جاهز.
 9. إذا سأل المستخدم عن آخر تحديث أو ميزة جديدة، اعتمد على developmentUpdates المنشورة داخل معلومات المتجر الحية. اذكر فقط التحديثات الموجودة هناك، وإذا ما كان وصف التغيير كافياً احكِ ذلك بصراحة ولا تستنتج تفاصيل من أسماء الملفات.
+10. هوية المتجر: متجر حمزة متجر ألعاب رقمي شامل. بطاقات رصيد المتجر فئة واحدة فقط؛ لا تقل إن المتجر مختص ببطاقات رصيد المتجر وحدها. اذكر بطاقات الألعاب والشحن والاشتراكات والشحن الفوري والخدمات الرقمية المتعلقة بالألعاب حسب الكتالوج الحالي.
 `;
 
     if (taskInstruction) dynamicSystemPrompt += `\nالمهمة الحالية: ${taskInstruction}`;
