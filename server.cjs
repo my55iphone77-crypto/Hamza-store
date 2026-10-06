@@ -824,27 +824,37 @@ app.get('/api/customerAiMetrics', verifyOwnerMiddleware, async (req, res) => {
 // ------------------------------------------------------------------
 // 🤖 مسارات روبوت خدمة العملاء باستخدام Groq SDK
 // ------------------------------------------------------------------
-const buildPublicBotContext = async () => {
+const buildPublicBotContext = async (req = null) => {
   const [products, settings, featureNotes] = await Promise.all([
-    Product.find({ status: { $nin: ['inactive', 'غير نشط', 'deleted'] } }).select('name price discountPrice description category deliveryType stock codes').lean(),
+    Product.find({ status: { $nin: ['inactive', 'غير نشط', 'deleted'] } }).select('name price discountPrice description category deliveryType stock codes loyaltyPoints loyaltyPrice').lean(),
     Settings.findOne().lean(),
     AppState.findOne({ key: 'store_feature_manifest' }).lean()
   ]);
   const catalog = products.map((product) => {
     const stock = product.deliveryType === 'store_credit' ? 'متوفر تلقائياً' : (Array.isArray(product.codes) ? product.codes.length : Number(product.stock || 0));
-    return { name: String(product.name || ''), price: product.discountPrice ?? product.price ?? null, description: String(product.description || '').slice(0, 500), category: String(product.category || ''), deliveryType: String(product.deliveryType || ''), stock };
+    return { name: String(product.name || ''), price: product.discountPrice ?? product.price ?? null, description: String(product.description || '').slice(0, 500), category: String(product.category || ''), deliveryType: String(product.deliveryType || ''), stock, pointsEarned: Number(product.loyaltyPoints || 0), pointsPrice: Number(product.loyaltyPrice || 0) };
   });
+  const user = req?.headers?.authorization ? await getUserFromAuthHeader(req.headers.authorization).catch(() => null) : null;
+  const pointsProducts = catalog.filter((item) => item.pointsEarned > 0 || item.pointsPrice > 0);
   return {
     generatedAt: new Date().toISOString(),
     catalog,
     storeInfo: Object.fromEntries(['storeName', 'storeTagline', 'welcomeText', 'contactEmail', 'contactPhone', 'footerText'].filter((key) => settings?.[key]).map((key) => [key, settings[key]])),
     publicFeatures: featureNotes?.value?.public || [],
-    counters: { products: catalog.length, availableProducts: catalog.filter((item) => item.stock === 'متوفر تلقائياً' || Number(item.stock) > 0).length }
+    loyaltyProgram: {
+      active: pointsProducts.length > 0,
+      earning: pointsProducts.filter((item) => item.pointsEarned > 0).map(({ name, pointsEarned }) => ({ name, pointsEarned })),
+      redemption: pointsProducts.filter((item) => item.pointsPrice > 0).map(({ name, pointsPrice }) => ({ name, pointsPrice })),
+      rewardThreshold: Number(user?.loyaltyThreshold || 100),
+      note: 'النقاط تُستخدم داخل المتجر فقط، والمنتجات المتاحة بالنقاط تظهر بسعر النقاط على بطاقة المنتج.'
+    },
+    account: user ? { loyaltyPoints: Number(user.loyaltyPoints || 0), loyaltyThreshold: Number(user.loyaltyThreshold || 100) } : null,
+    counters: { products: catalog.length, availableProducts: catalog.filter((item) => item.stock === 'متوفر تلقائياً' || Number(item.stock) > 0).length, loyaltyProducts: pointsProducts.length }
   };
 };
 
 app.get('/api/customerAiContext', async (req, res) => {
-  try { res.json(await buildPublicBotContext()); }
+  try { res.json(await buildPublicBotContext(req)); }
   catch (error) { res.status(503).json({ error: 'تعذر تحديث معلومات المتجر حالياً.' }); }
 });
 
@@ -865,7 +875,7 @@ app.post('/api/customerAiChat', publicActionLimiter, async (req, res) => {
 
     const groq = new Groq({ apiKey });
     const modelName = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
-    const liveContext = await buildPublicBotContext();
+    const liveContext = await buildPublicBotContext(req);
 
     let dynamicSystemPrompt = `
 أنت ${persona?.name || 'حمزة'}, مساعد ذكي وودود جداً لمتجر إلكتروني.

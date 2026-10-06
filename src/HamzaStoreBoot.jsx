@@ -152,6 +152,7 @@ export function HamzaStoreBoot({
   const ENDPOINTS = {
     customerAiChat: `${apiUrl}/customerAiChat`,
     products: `${apiUrl}/products`,
+    context: `${apiUrl}/customerAiContext`,
   };
 
   const fetchPublicProductsOnly = useCallback(async () => {
@@ -300,6 +301,30 @@ export function HamzaStoreBoot({
     const justFetched = await fetchPublicProductsOnly();
     liveDataRef.current = justFetched;
     const { freshProducts } = liveDataRef.current;
+    let liveContext = null;
+    try {
+      const contextResponse = await fetch(ENDPOINTS.context, { headers: getAuthHeaders() });
+      if (contextResponse.ok) liveContext = await contextResponse.json();
+    } catch (e) {}
+
+    const normalizedMessage = normalizeAr(textToSend);
+    if (/(نقاط|نقط|ولاء|نجوم|رصيد النقاط)/.test(normalizedMessage)) {
+      const account = liveContext?.account || (contextData.currentUser ? {
+        loyaltyPoints: Number(contextData.currentUser.loyaltyPoints || 0),
+        loyaltyThreshold: Number(contextData.currentUser.loyaltyThreshold || 100)
+      } : null);
+      const program = liveContext?.loyaltyProgram;
+      const asksBalance = /(كم|رصيدي|نقاطي|عندي)/.test(normalizedMessage);
+      if (asksBalance && account) {
+        return `معك حالياً ${account.loyaltyPoints} نقطة ولاء ⭐\nوالحد الأساسي للمكافأة عندك ${account.loyaltyThreshold} نقطة. بتقدر تستخدم النقاط على المنتجات اللي عليها سعر نقاط داخل المتجر.`;
+      }
+      if (program?.active) {
+        const earning = (program.earning || []).map((item) => `• ${item.name}: بتكسب ${item.pointsEarned} نقطة`).join('\n');
+        const redemption = (program.redemption || []).map((item) => `• ${item.name}: سعره ${item.pointsPrice} نقطة`).join('\n');
+        return `هاي معلومات نقاط الولاء الحالية من المتجر ⭐\n${earning ? `النقاط المكتسبة:\n${earning}\n` : ''}${redemption ? `الشراء بالنقاط:\n${redemption}\n` : ''}${program.note || ''}`;
+      }
+      return 'ما في منتجات أو تفاصيل نقاط ولاء مفعّلة حالياً حسب بيانات المتجر. إذا كنت تقصد نقاط حسابك، سجّل دخولك وبقدر أطلعلك رصيدك بدقة 🙏';
+    }
 
     // رسالة المساعدة: ثابتة وصادقة
     if (/^\s*(مساعد|مساعده|help|شو بتقدر|شو تقدر|ايش تقدر)\s*[؟?!.]*\s*$/i.test(String(textToSend).replace(/[\u064B-\u0652]/g, ''))) {
@@ -334,6 +359,8 @@ export function HamzaStoreBoot({
       name: p.name,
       price: p.price,
       stock: p.stock,
+      loyaltyPoints: p.loyaltyPoints,
+      loyaltyPrice: p.loyaltyPrice,
       description: String(p.description || '').slice(0, 150),
       category: p.category || '',
       deliveryType: p.deliveryType || ''
@@ -370,6 +397,8 @@ export function HamzaStoreBoot({
           data: {
             // 🛡️ آمن تماماً: لا يرسل سوى بيانات المنتجات العامة
             catalogSample,
+            loyaltyProgram: liveContext?.loyaltyProgram || null,
+            account: liveContext?.account || null,
             storeProfile: STORE_PROFILE,
             storeInfo: Object.fromEntries(Object.entries(STORE_INFO).filter(([, v]) => String(v || '').trim()))
           },
