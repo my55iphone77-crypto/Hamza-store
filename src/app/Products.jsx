@@ -253,7 +253,7 @@ export default function Products() {
       lowStockThreshold: parseInt(lowStockThreshold) || 3,
       maxStockThreshold: parseInt(maxStockThreshold) || 50,
       ...(deliveryType === "id_topup" ? { shop2topupCategoryId: Number(shop2topupCategoryId) || undefined, shop2topupItemId: Number(shop2topupItemId) || undefined } : {}),
-      codes: codesArray, stock: deliveryType === "id_topup" ? parseInt(manualStock) || 0 : codesArray.length,
+      codes: codesArray, stock: deliveryType === "id_topup" ? 1 : codesArray.length,
     };
 
     try {
@@ -305,7 +305,7 @@ export default function Products() {
       maxStockThreshold: parseInt(editMaxStockThreshold) || 50,
       ...(selectedProduct.deliveryType === "id_topup" ? { shop2topupCategoryId: Number(shop2topupCategoryId) || undefined, shop2topupItemId: Number(shop2topupItemId) || undefined } : {}),
     };
-    if (selectedProduct.deliveryType === "id_topup") payload.stock = parseInt(editManualStock) || 0;
+    if (selectedProduct.deliveryType === "id_topup") payload.stock = 1;
 
     try {
       const updated = await apiFetch(`/products/${selectedProduct._id}`, { method: "PUT", body: JSON.stringify(payload) });
@@ -424,7 +424,7 @@ export default function Products() {
     }
   };
 
-  const stockOf = (prod) => (prod.deliveryType === "store_credit" ? "مفتوح" : prod.deliveryType === "id_topup" ? (prod.stock || 0) : (prod.codes?.length || 0));
+  const stockOf = (prod) => (prod.deliveryType === "store_credit" ? "مفتوح" : prod.deliveryType === "id_topup" ? "ديناميكي" : (prod.codes?.length || 0));
   const deliveryLabel = (type) => DELIVERY_TYPES.find((d) => d.value === type)?.label || type;
   const fmtJOD = (n) => `${n} د.أ`;
   const safeProducts = Array.isArray(products) ? products : [];
@@ -432,11 +432,11 @@ export default function Products() {
     const query = searchTerm.toLowerCase();
     const matchesSearch = !query || String(prod?.name || '').toLowerCase().includes(query) || String(prod?.category || '').toLowerCase().includes(query);
     const matchesCat = selectedCategoryFilter === "الكل" || prod.category === selectedCategoryFilter;
-    const isLow = prod.deliveryType !== "store_credit" && Number(stockOf(prod)) <= Number(prod.lowStockThreshold ?? 3);
+    const isLow = !["store_credit", "id_topup"].includes(prod.deliveryType) && Number(stockOf(prod)) <= Number(prod.lowStockThreshold ?? 3);
     const matchesStatus = statusFilter === "الكل" || (statusFilter === "منخفض" ? isLow : prod.status === statusFilter);
     return matchesSearch && matchesCat && matchesStatus;
   });
-  const lowStockCount = safeProducts.filter((prod) => prod.deliveryType !== "store_credit" && Number(stockOf(prod)) <= Number(prod.lowStockThreshold ?? 3)).length;
+  const lowStockCount = safeProducts.filter((prod) => !["store_credit", "id_topup"].includes(prod.deliveryType) && Number(stockOf(prod)) <= Number(prod.lowStockThreshold ?? 3)).length;
   const unpublishedCount = safeProducts.filter((prod) => prod.status !== "منشور").length;
 
   if (isLoading) {
@@ -616,7 +616,7 @@ export default function Products() {
               {deliveryType === "id_topup" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", padding: "10px", borderRadius: "10px", background: "rgba(14,165,233,0.08)", border: "1px solid rgba(56,189,248,0.25)" }}>
                 <input type="number" placeholder="Shop2Topup Category ID" value={shop2topupCategoryId} onChange={(e) => setShop2topupCategoryId(e.target.value)} style={glassInputStyle} />
                 <input type="number" placeholder="Shop2Topup Item ID" value={shop2topupItemId} onChange={(e) => setShop2topupItemId(e.target.value)} style={glassInputStyle} />
-                <span style={{ gridColumn: "1 / -1", color: "#7dd3fc", fontSize: "11px" }}>استخدم Category ID من Catalog و Item ID من Subcategories. لا تضع أرقام الأمثلة.</span>
+                <span style={{ gridColumn: "1 / -1", color: "#7dd3fc", fontSize: "11px" }}>Category ID من Catalog → Categories، وItem ID من Catalog → Subcategories. لا تستخدم أرقاماً عشوائية.</span>
               </div>}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <input type="file" accept="image/*" onChange={(e) => handleImageFileSelect(e, false)} style={{ color: "#94a3b8", fontSize: "12px" }} />
@@ -626,7 +626,7 @@ export default function Products() {
               {deliveryType === "store_credit" ? (
                 <div style={{ color: "#facc15", fontSize: "12px", padding: "10px", background: "rgba(250,204,21,0.08)", borderRadius: "8px" }}>🪙 بطاقة رصيد المتجر مفتوحة: لا تحدد مخزوناً ولا تضف أكواداً. يتم توليد كود فريد تلقائياً عند كل شراء.</div>
               ) : deliveryType === "id_topup" ? (
-                <input type="number" placeholder="الكمية المتوفرة يدوياً" value={manualStock} onChange={(e) => setManualStock(e.target.value)} style={glassInputStyle} />
+                <div style={{ color: "#7dd3fc", fontSize: "12px", padding: "10px", background: "rgba(14,165,233,0.08)", borderRadius: "8px" }}>📡 التوفر ديناميكي من Shop2Topup — لا تدخل كمية يدوية.</div>
               ) : (
                 <textarea placeholder="الأكواد أو الاشتراكات (كل كود في سطر)..." value={newCodeText} onChange={(e) => setNewCodeText(e.target.value)} rows={3} style={{ ...glassInputStyle, fontFamily: "monospace" }} />
               )}
@@ -668,7 +668,7 @@ export default function Products() {
                 <div style={{ display: "flex", gap: "10px", background: "rgba(15,23,42,0.6)", padding: "6px", borderRadius: "10px", marginTop: "12px" }}>
                   <button onClick={() => setActiveTab("details")} style={tabButtonStyle(activeTab === "details", "#facc15")}>📋 التفاصيل</button>
                   <button onClick={() => setActiveTab("stock")} style={tabButtonStyle(activeTab === "stock", "#38bdf8")}>
-                    {selectedProduct.deliveryType === "id_topup" ? "📦 الكمية" : selectedProduct.deliveryType === "store_credit" ? "🪙 بطاقات الرصيد" : "🔑 الأكواد"} ({stockOf(selectedProduct)})
+                    {selectedProduct.deliveryType === "id_topup" ? "📡 التوفر" : selectedProduct.deliveryType === "store_credit" ? "🪙 بطاقات الرصيد" : "🔑 الأكواد"} ({stockOf(selectedProduct)})
                   </button>
                 </div>
 
@@ -697,19 +697,9 @@ export default function Products() {
                     <span style={{ fontSize: "12px" }}>الكود يولد تلقائياً عند كل عملية شراء، ولا تحتاج لإضافة مخزون أو أكواد يدوياً.</span>
                   </div>
                 ) : selectedProduct.deliveryType === "id_topup" ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "15px" }}>
-                    <div style={{ fontSize: "12px", color: "#94a3b8" }}>تعديل الكمية اليدوية المتوفرة للآيدي:</div>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center", justifyContent: "center" }}>
-                      <button onClick={() => handleUpdateManualStock(Math.max(0, (selectedProduct.stock || 0) - 1))} style={stockBtnStyle}>-</button>
-                      <input
-                        type="number"
-                        value={selectedProduct.stock || 0}
-                        onChange={(e) => setSelectedProduct({ ...selectedProduct, stock: parseInt(e.target.value) || 0 })}
-                        onBlur={(e) => handleUpdateManualStock(parseInt(e.target.value) || 0)}
-                        style={{ ...glassInputStyle, textAlign: "center", width: "90px" }}
-                      />
-                      <button onClick={() => handleUpdateManualStock((selectedProduct.stock || 0) + 1)} style={stockBtnStyle}>+</button>
-                    </div>
+                  <div style={{ marginTop: "15px", padding: "18px", borderRadius: "12px", background: "rgba(14,165,233,0.08)", border: "1px solid rgba(56,189,248,0.35)", color: "#bae6fd", textAlign: "center" }}>
+                    <strong style={{ display: "block", fontSize: "16px", marginBottom: "8px" }}>📡 توفر ديناميكي</strong>
+                    <span style={{ fontSize: "12px" }}>التوفر والسعر يتم التحقق منهما مباشرة من Shop2Topup عند الشراء. لا يوجد مخزون يدوي.</span>
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "15px" }}>
@@ -763,7 +753,7 @@ export default function Products() {
                 {editImage && <img src={editImage} alt="معاينة" style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />}
                 {selectedProduct.deliveryType === "id_topup" && (
                   <>
-                    <input type="number" placeholder="الكمية..." value={editManualStock} onChange={(e) => setEditManualStock(e.target.value)} style={glassInputStyle} />
+                    <div style={{ color: "#7dd3fc", fontSize: "12px", padding: "10px", background: "rgba(14,165,233,0.08)", borderRadius: "8px" }}>📡 التوفر ديناميكي من Shop2Topup — لا تدخل كمية يدوية.</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", padding: "10px", borderRadius: "10px", background: "rgba(14,165,233,0.08)" }}>
                       <input type="number" placeholder="Shop2Topup Category ID" value={shop2topupCategoryId} onChange={(e) => setShop2topupCategoryId(e.target.value)} style={glassInputStyle} />
                       <input type="number" placeholder="Shop2Topup Item ID" value={shop2topupItemId} onChange={(e) => setShop2topupItemId(e.target.value)} style={glassInputStyle} />
