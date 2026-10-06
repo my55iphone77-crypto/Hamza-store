@@ -308,6 +308,13 @@ export function HamzaStoreBoot({
     } catch (e) {}
 
     const normalizedMessage = normalizeAr(textToSend);
+    if (/(رصيد المتجر|بطاقه رصيد|بطاقة رصيد|رصيدي بالمتجر|رصيد حسابي)/.test(normalizedMessage)) {
+      const account = liveContext?.account || (contextData.currentUser ? { storeBalance: Number(contextData.currentUser.storeBalance || 0) } : null);
+      const asksBalance = /(كم|رصيدي|رصيد حسابي|عندي)/.test(normalizedMessage);
+      if (asksBalance && account) return `رصيدك الحالي بالمتجر هو ${Number(account.storeBalance || 0).toFixed(2)} دينار 👛\nبتقدر تستخدمه للشراء من داخل المتجر، وما بنقدر نسحبه كاش.`;
+      if (liveContext?.storeBalanceProgram?.active) return `رصيد المتجر شغال حالياً 👛\n${liveContext.storeBalanceProgram.note}\nالبطاقات المتاحة للرصيد موجودة ضمن منتجات المتجر، والكود بينولد تلقائياً بعد إتمام الشراء.`;
+      return 'ما عندي تفاصيل مؤكدة عن رصيد المتجر حالياً. سجّل دخولك إذا بدك تعرف رصيد حسابك، أو تواصل مع الدعم الفني 🙏';
+    }
     if (/(نقاط|نقط|ولاء|نجوم|رصيد النقاط)/.test(normalizedMessage)) {
       const account = liveContext?.account || (contextData.currentUser ? {
         loyaltyPoints: Number(contextData.currentUser.loyaltyPoints || 0),
@@ -403,6 +410,7 @@ export function HamzaStoreBoot({
             // 🛡️ آمن تماماً: لا يرسل سوى بيانات المنتجات العامة
             catalogSample,
             loyaltyProgram: liveContext?.loyaltyProgram || null,
+            storeBalanceProgram: liveContext?.storeBalanceProgram || null,
             account: liveContext?.account || null,
             developmentUpdates: liveContext?.developmentUpdates || null,
             storeProfile: STORE_PROFILE,

@@ -827,7 +827,7 @@ app.get('/api/customerAiMetrics', verifyOwnerMiddleware, async (req, res) => {
 // ------------------------------------------------------------------
 const buildPublicBotContext = async (req = null) => {
   const [products, settings, featureNotes, categories, announcements] = await Promise.all([
-    Product.find({ status: { $nin: ['inactive', 'غير نشط', 'deleted'] } }).select('name price discountPrice description category deliveryType stock codes loyaltyPoints loyaltyPrice').lean(),
+    Product.find({ status: { $nin: ['inactive', 'غير نشط', 'deleted'] } }).select('name price discountPrice description category deliveryType stock codes loyaltyPoints loyaltyPrice storeCreditAmount').lean(),
     Settings.findOne().lean(),
     AppState.findOne({ key: 'store_feature_manifest' }).lean(),
     Category.find().select('name description image').sort({ name: 1 }).lean(),
@@ -835,10 +835,11 @@ const buildPublicBotContext = async (req = null) => {
   ]);
   const catalog = products.map((product) => {
     const stock = product.deliveryType === 'store_credit' ? 'متوفر تلقائياً' : (Array.isArray(product.codes) ? product.codes.length : Number(product.stock || 0));
-    return { name: String(product.name || ''), price: product.discountPrice ?? product.price ?? null, description: String(product.description || '').slice(0, 500), category: String(product.category || ''), deliveryType: String(product.deliveryType || ''), stock, pointsEarned: Number(product.loyaltyPoints || 0), pointsPrice: Number(product.loyaltyPrice || 0) };
+    return { name: String(product.name || ''), price: product.discountPrice ?? product.price ?? null, description: String(product.description || '').slice(0, 500), category: String(product.category || ''), deliveryType: String(product.deliveryType || ''), stock, pointsEarned: Number(product.loyaltyPoints || 0), pointsPrice: Number(product.loyaltyPrice || 0), storeCreditAmount: Number(product.storeCreditAmount || 0) };
   });
   const user = req?.headers?.authorization ? await getUserFromAuthHeader(req.headers.authorization).catch(() => null) : null;
   const pointsProducts = catalog.filter((item) => item.pointsEarned > 0 || item.pointsPrice > 0);
+  const storeCreditProducts = catalog.filter((item) => item.deliveryType === 'store_credit' || item.storeCreditAmount > 0);
   const sensitiveKey = /(password|secret|token|api|key|oauth|jwt|smtp|bank|account|credential|hash|private|access)/i;
   const publicSettingKey = /^(store|currency|contact|phone|email|website|tagline|welcome|hero|footer|social|language|theme|payment|shipping|delivery|working|hours|return|refund|faq|support|announcement|maintenanceMessage)/i;
   const cleanPublicValue = (value, depth = 0) => {
@@ -871,7 +872,12 @@ const buildPublicBotContext = async (req = null) => {
       rewardThreshold: Number(user?.loyaltyThreshold || 100),
       note: 'النقاط تُستخدم داخل المتجر فقط، والمنتجات المتاحة بالنقاط تظهر بسعر النقاط على بطاقة المنتج.'
     },
-    account: user ? { loyaltyPoints: Number(user.loyaltyPoints || 0), loyaltyThreshold: Number(user.loyaltyThreshold || 100) } : null,
+    storeBalanceProgram: {
+      active: storeCreditProducts.length > 0,
+      products: storeCreditProducts.map(({ name, price, storeCreditAmount }) => ({ name, price, amount: storeCreditAmount || price })),
+      note: 'بطاقة رصيد المتجر تُصدر كوداً تلقائياً بعد الشراء، وبعد استبدال الكود ينضاف الرصيد للحساب ويُستخدم للشراء داخل المتجر فقط وغير قابل للسحب.'
+    },
+    account: user ? { loyaltyPoints: Number(user.loyaltyPoints || 0), loyaltyThreshold: Number(user.loyaltyThreshold || 100), storeBalance: Number(user.storeBalance || 0) } : null,
     developmentUpdates: {
       generatedAt: developmentUpdates.generatedAt || null,
       updates: Array.isArray(developmentUpdates.updates) ? developmentUpdates.updates.slice(0, 20).map(({ id, date, title, areas }) => ({ id, date, title, areas })) : []
