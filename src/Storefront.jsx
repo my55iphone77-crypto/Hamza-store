@@ -98,6 +98,12 @@ const GLASS_STYLE = `
   .hz-redeem-form { display: flex; align-items: center; gap: 5px; }
   .hz-redeem-form input { width: 130px; background: rgba(11,15,25,0.7); border: 1px solid rgba(250,204,21,0.35); border-radius: 8px; padding: 6px 8px; color: #fff; font-size: 11px; }
   .hz-redeem-form button { background: #a16207; color: #fff; border: none; border-radius: 8px; padding: 6px 8px; cursor: pointer; font-size: 11px; }
+  .hz-store-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: nowrap; min-width: 0; }
+  .hz-store-brand { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto; }
+  .hz-store-brand img { flex: 0 0 auto; }
+  .hz-store-brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hz-header-controls { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; flex-wrap: nowrap; min-width: max-content; }
+  .hz-header-controls > div { flex: 0 0 auto; }
 
   .hz-glass-card {
     position: relative;
@@ -232,10 +238,16 @@ const GLASS_STYLE = `
     .hz-price-row { flex-wrap: wrap; gap: 8px !important; margin-top: 8px !important; padding-top: 10px !important; }
     .hz-price-row .hz-add-btn { width: 100%; padding: 8px 6px !important; font-size: 12px !important; }
     .hz-root input, .hz-root textarea, .hz-root select { font-size: 16px !important; }
-    .hz-header-wallet { width: 100%; justify-content: center; order: 3; }
+    .hz-header-wallet { width: auto; justify-content: center; order: initial; }
     .hz-redeem-form input { width: 120px; }
     .hz-social-grid { grid-template-columns: minmax(0, 1fr); }
     .hz-social-heading { align-items: start; flex-direction: column; }
+    .hz-store-header { padding: 8px 10px !important; gap: 6px; overflow-x: auto; }
+    .hz-store-brand { gap: 6px; flex: 0 1 auto; }
+    .hz-store-brand img { width: 88px !important; max-height: 42px !important; }
+    .hz-store-brand span { font-size: 12px !important; max-width: 80px; }
+    .hz-header-controls { gap: 5px; }
+    .hz-header-controls .hz-admin-btn { padding: 8px 10px !important; font-size: 12px !important; }
   }
   /* تابلت / آيباد */
   @media (min-width: 560px) and (max-width: 1023px) { .hz-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -491,8 +503,8 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
       <div className="hz-container">
 
-      <div className="hz-glass-btn hz-store-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', marginBottom: '20px', borderRadius: '18px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="hz-glass-btn hz-store-header" style={{ padding: '12px 18px', marginBottom: '20px', borderRadius: '18px' }}>
+        <div className="hz-store-brand">
           <img src="/logo.png" alt="Hamza Store" style={{ width: '118px', height: 'auto', maxHeight: '52px', objectFit: 'contain', objectPosition: 'left center', display: 'block' }} />
           <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '14px' }}>{settings.storeName || 'HAMZA STORE'}</span>
           <span style={{ fontSize: '11px', padding: '3px 10px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
@@ -500,7 +512,9 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
           </span>
         </div>
 
-        <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
+        <div className="hz-header-controls">
+          <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
+        </div>
       </div>
 
       {!settings.hideHero && <div className="hz-hero-frame">
