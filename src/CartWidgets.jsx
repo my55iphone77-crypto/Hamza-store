@@ -47,7 +47,7 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
         </button>
 
         {showCartDropdown && (
-          <div className="hz-cart-menu" style={{ position: 'absolute', right: '0', top: 'calc(100% + 8px)', width: 'min(360px, calc(100vw - 24px))', boxSizing: 'border-box', background: 'rgba(15, 23, 42, 0.98)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56,189,248,0.55)', borderTop: '2px solid rgba(56,189,248,0.8)', borderRadius: '16px', padding: '16px', zIndex: 100, boxShadow: '0 18px 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
+          <div className="hz-cart-menu" style={{ position: 'fixed', right: '12px', top: '76px', width: 'min(360px, calc(100vw - 24px))', maxHeight: 'calc(100vh - 92px)', overflowY: 'auto', boxSizing: 'border-box', background: 'rgba(15, 23, 42, 0.98)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56,189,248,0.55)', borderTop: '2px solid rgba(56,189,248,0.8)', borderRadius: '16px', padding: '16px', zIndex: 1000, boxShadow: '0 18px 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
             <h4 style={{ margin: '0 0 12px 0', color: '#38bdf8', fontSize: '14px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>محتويات سلة المشتريات</h4>
 
             {safeCart.length === 0 ? (
