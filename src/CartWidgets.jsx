@@ -35,6 +35,14 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
 
   const safeCart = Array.isArray(cart) ? cart : [];
   const safeUserRoleInfo = userRoleInfo && typeof userRoleInfo === 'object' ? userRoleInfo : { label: 'ضيف', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: '#64748b' };
+  const cartButtonRef = useRef(null);
+  const [cartPanelPosition, setCartPanelPosition] = useState({ top: 76, right: 12 });
+
+  useEffect(() => {
+    if (!showCartDropdown || !cartButtonRef.current || typeof window === 'undefined') return;
+    const rect = cartButtonRef.current.getBoundingClientRect();
+    setCartPanelPosition({ top: rect.bottom + window.scrollY + 8, right: Math.max(12, window.innerWidth - rect.right) });
+  }, [showCartDropdown]);
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative', flexWrap: 'wrap' }}>
@@ -42,6 +50,7 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
       <div className="hz-cart-shell" style={{ position: 'relative' }}>
         <button
           type="button"
+          ref={cartButtonRef}
           onClick={() => setShowCartDropdown(!showCartDropdown)}
           style={{ ...glassBtn, color: '#38bdf8', padding: '10px 18px', borderRadius: '14px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
           className="hz-admin-btn"
@@ -50,7 +59,7 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
         </button>
 
         {showCartDropdown && createPortal((
-          <div className="hz-cart-menu" style={{ position: 'fixed', right: '12px', top: '76px', bottom: '16px', width: 'min(360px, calc(100vw - 24px))', maxHeight: 'none', overflowY: 'auto', overscrollBehavior: 'contain', boxSizing: 'border-box', background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56,189,248,0.55)', borderTop: '2px solid rgba(56,189,248,0.8)', borderRadius: '16px', padding: '16px', zIndex: 1000, boxShadow: '0 18px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
+          <div className="hz-cart-menu" style={{ position: 'absolute', right: `${cartPanelPosition.right}px`, top: `${cartPanelPosition.top}px`, width: 'min(360px, calc(100vw - 24px))', maxHeight: 'calc(100vh - 92px)', overflowY: 'auto', overscrollBehavior: 'contain', boxSizing: 'border-box', background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56,189,248,0.55)', borderTop: '2px solid rgba(56,189,248,0.8)', borderRadius: '16px', padding: '16px', zIndex: 1000, boxShadow: '0 18px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
             <h4 style={{ margin: '0 0 12px 0', color: '#38bdf8', fontSize: '14px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>محتويات سلة المشتريات</h4>
 
             {safeCart.length === 0 ? (
