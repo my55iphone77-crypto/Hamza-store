@@ -120,6 +120,7 @@ export default function Products() {
   const [shop2Categories, setShop2Categories] = useState([]);
   const [shop2Items, setShop2Items] = useState([]);
   const [shop2CatalogLoading, setShop2CatalogLoading] = useState(false);
+  const [shop2GameSearch, setShop2GameSearch] = useState("");
   const [lowStockThreshold, setLowStockThreshold] = useState(3);
   const [maxStockThreshold, setMaxStockThreshold] = useState(50);
   const [newCodeText, setNewCodeText] = useState("");
@@ -656,10 +657,13 @@ export default function Products() {
                 <div style={{ color: "#facc15", fontSize: "12px" }}>هذه البطاقة تُسلّم كوداً للعميل، والرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط.</div>
               </>}
               {deliveryType === "id_topup" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", padding: "10px", borderRadius: "10px", background: "rgba(14,165,233,0.08)", border: "1px solid rgba(56,189,248,0.25)" }}>
-                <select value={shop2BigCategoryId} onChange={(e) => handleShop2BigCategoryChange(e.target.value)} style={glassInputStyle}>
-                  <option value="">{shop2CatalogLoading ? "جاري التحميل..." : "اختر اللعبة"}</option>
-                  {shop2BigCategories.map((item) => <option key={item.id} value={item.id}>{item.name} (ID: {item.id})</option>)}
-                </select>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <input type="search" value={shop2GameSearch} onChange={(e) => setShop2GameSearch(e.target.value)} placeholder="🔎 ابحث عن اسم اللعبة..." style={glassInputStyle} />
+                  <select value={shop2BigCategoryId} onChange={(e) => handleShop2BigCategoryChange(e.target.value)} style={glassInputStyle}>
+                    <option value="">{shop2CatalogLoading ? "جاري التحميل..." : "اختر اللعبة"}</option>
+                    {shop2BigCategories.filter((item) => !shop2GameSearch.trim() || String(item.name || "").toLowerCase().includes(shop2GameSearch.trim().toLowerCase())).map((item) => <option key={item.id} value={item.id}>{item.name} (ID: {item.id})</option>)}
+                  </select>
+                </div>
                 <select value={shop2topupCategoryId} onChange={(e) => handleShop2CategoryChange(e.target.value)} style={glassInputStyle} disabled={!shop2BigCategoryId}>
                   <option value="">اختر نوع التعبئة</option>
                   {shop2Categories.map((item) => <option key={item.id} value={item.id}>{item.name} (ID: {item.id})</option>)}
