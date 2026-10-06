@@ -43,13 +43,16 @@ app.set('io', io);
 const JWT_SECRET = process.env.JWT_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 const OWNER_EMAIL = (process.env.OWNER_EMAIL || '').trim();
-
 const APP_NAME = process.env.APP_NAME || 'متجر حمزة';
 const BRAND_LOGO_URL = process.env.BRAND_LOGO_URL || `${FRONTEND_URL || ''}/logo.png`;
+const SHOP2TOPUP_WEBHOOK_SECRET = String(process.env.SHOP2TOPUP_WEBHOOK_SECRET || '').trim();
 
 app.use(helmet());
 // صور المنتجات تُرسل مضغوطة داخل JSON بصيغة base64؛ نحتاج حداً أكبر من 1MB حتى لا يفشل نشر بطاقة مع صورة.
-app.use(express.json({ limit: '8mb' }));
+app.use(express.json({
+  limit: '8mb',
+  verify: (req, res, buffer) => { req.rawBody = Buffer.from(buffer); }
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 
@@ -365,6 +368,11 @@ const Product = mongoose.model('Product', productSchema);
 
 const orderSchema = new mongoose.Schema({
   orderNumber: { type: String, unique: true, index: true },
+  provider: { type: String, default: '' },
+  providerOrderId: { type: String, default: '', index: true },
+  providerStatus: { type: String, default: '' },
+  providerLastEventId: { type: String, default: '' },
+  providerUpdatedAt: { type: Date },
   customerName: { type: String, required: true },
   customerEmail: { type: String, required: true },
   customerAddress: { type: String, required: true },
@@ -1003,7 +1011,7 @@ app.use('/api', buildStoreRouter({
   WorkHour, AttendanceLog, AppState,
   Settings, Salary, Task, DocumentModel, Coupon, Commission, CommissionLog, StoreCreditCard,
   mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
-  io, User, getUserFromAuthHeader, publicActionLimiter
+  io, User, getUserFromAuthHeader, publicActionLimiter, SHOP2TOPUP_WEBHOOK_SECRET
 }));
 
 const distIndex = path.join(__dirname, 'dist', 'index.html');

@@ -7,10 +7,44 @@ module.exports = function buildStoreRouter(deps) {
     WorkHour, AttendanceLog, AppState,
     Settings, Salary, Task, DocumentModel, Coupon, Commission, CommissionLog, StoreCreditCard,
     mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
-    io, User, getUserFromAuthHeader, publicActionLimiter
+    io, User, getUserFromAuthHeader, publicActionLimiter, SHOP2TOPUP_WEBHOOK_SECRET
   } = deps;
 
   const router = express.Router();
+  // Webhook عام لكن موقّع: لا نستخدم guard لأنه يُستدعى من Shop2Topup، ونرفض أي طلب غير موقّع.
+  router.post('/shop2topup/webhook', async (req, res) => {
+    try {
+      if (!SHOP2TOPUP_WEBHOOK_SECRET) return res.status(503).json({ error: 'Webhook secret is not configured.' });
+      const received = String(req.headers['x-shop2topup-signature'] || '').trim().toLowerCase().replace(/^sha256=/, '');
+      const raw = Buffer.isBuffer(req.rawBody) ? req.rawBody : Buffer.from(JSON.stringify(req.body || {}));
+      const expected = crypto.createHmac('sha256', SHOP2TOPUP_WEBHOOK_SECRET).update(raw).digest('hex');
+      if (!received || received.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(received), Buffer.from(expected))) {
+        return res.status(401).json({ error: 'Invalid webhook signature.' });
+      }
+      const payload = req.body && typeof req.body === 'object' ? req.body : {};
+      const event = String(payload.event || payload.type || '').trim().toLowerCase();
+      if (event === 'webhook.test' || payload.type === 'webhook.test') return res.status(200).json({ received: true, test: true });
+      if (!['order.completed', 'order.refunded'].includes(event)) return res.status(200).json({ received: true, ignored: true });
+      const data = payload.data && typeof payload.data === 'object' ? payload.data : payload;
+      const externalId = String(data.order_id || data.orderId || data.external_order_id || data.id || '').trim();
+      const eventId = String(payload.id || payload.event_id || payload.eventId || `${event}:${externalId}:${String(data.unit_id || data.unitId || '')}:${String(data.status || '')}`).trim();
+      if (!externalId) return res.status(400).json({ error: 'Webhook order id is missing.' });
+      const order = await Order.findOne({ provider: 'shop2topup', providerOrderId: externalId });
+      if (!order) return res.status(200).json({ received: true, unmatched: true });
+      if (order.providerLastEventId === eventId) return res.status(200).json({ received: true, duplicate: true });
+      order.providerLastEventId = eventId;
+      order.providerStatus = String(data.status || (event === 'order.refunded' ? 'refunded' : 'completed')).toLowerCase();
+      order.providerUpdatedAt = new Date();
+      if (event === 'order.completed' && ['completed', 'complete', 'success', 'succeeded'].includes(order.providerStatus)) order.status = 'مكتمل';
+      if (event === 'order.refunded' && order.providerStatus === 'refunded') order.status = 'مسترد';
+      await order.save();
+      broadcast('ORDERS', order);
+      return res.status(200).json({ received: true, updated: true });
+    } catch (error) {
+      console.error('[shop2topup webhook]', error.message || error);
+      return res.status(500).json({ error: 'Webhook processing failed.' });
+    }
+  });
 
   // ── بث التحديثات لكل العملاء عبر Socket.IO (هذا كان مفقود: الواجهة تنتظر UPDATE_DATA ولا أحد يرسلها) ──
   const broadcast = (type, payload) => {
