@@ -485,6 +485,30 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
     );
   }
 
+  if (authCart && authCart.checkoutMode) {
+    return (
+      <div className="hz-root" style={{ width: '100%', minHeight: '100dvh', padding: 'clamp(12px, 2vw, 24px)', boxSizing: 'border-box', color: '#f8fafc', fontFamily: 'Tajawal, sans-serif', background: '#05060a' }} dir="rtl">
+        <style>{GLASS_STYLE}</style>
+        <div className="hz-container" style={{ maxWidth: '1100px' }}>
+          <div className="hz-glass-btn hz-store-header" style={{ padding: '12px 18px', marginBottom: '24px', borderRadius: '18px' }}>
+            <div className="hz-store-brand">
+              <img src="/logo.png" alt="Hamza Store" style={{ width: '118px', height: 'auto', maxHeight: '52px', objectFit: 'contain', display: 'block' }} />
+              <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '14px' }}>{settings.storeName || 'HAMZA STORE'}</span>
+            </div>
+            <div className="hz-header-controls">
+              <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
+            </div>
+          </div>
+          <div className="hz-glass-card" style={{ maxWidth: '980px', margin: '0 auto', padding: 'clamp(14px, 3vw, 30px)', borderColor: 'rgba(16,185,129,0.45)', boxShadow: '0 20px 60px rgba(0,0,0,0.45), 0 0 35px rgba(16,185,129,0.08)' }}>
+            <button type="button" onClick={() => authCart.setCheckoutMode(false)} style={{ background: 'rgba(51,65,85,0.7)', color: '#fff', border: '1px solid rgba(255,255,255,0.16)', padding: '9px 14px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '16px' }}>← العودة للمتجر</button>
+            <CheckoutForm authCart={authCart} inputStyle={inputStyle} />
+            <OrderConfirmation authCart={authCart} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="hz-root" style={{
       width: '100%',

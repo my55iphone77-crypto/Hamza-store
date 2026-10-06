@@ -195,13 +195,6 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     setCheckoutMode(true);
   };
 
-  useEffect(() => {
-    if (currentUser && !showLoginPage && safeCart.length > 0 && !checkoutMode && !lastOrder) {
-      setCheckoutMode(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, showLoginPage, safeCart.length]);
-
   const handleCheckout = useCallback(async (e) => {
     if (e && typeof e.preventDefault === 'function') {
       e.preventDefault();
