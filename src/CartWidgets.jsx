@@ -201,8 +201,6 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
     setCheckoutMode = () => {},
     paymentMethod = '',
     setPaymentMethod = () => {},
-    redeemPoints = false,
-    setRedeemPoints = () => {},
     couponCode = '',
     setCouponCode = () => {},
     appliedCoupon = null,
@@ -325,13 +323,6 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
         <button type="button" onClick={() => setPaymentMethod(paymentMethod === 'store_balance' ? '' : 'store_balance')} style={{ padding: '12px', borderRadius: '12px', textAlign: 'right', color: '#f8fafc', cursor: 'pointer', background: paymentMethod === 'store_balance' ? 'rgba(250,204,21,0.18)' : 'rgba(11,15,25,0.75)', border: paymentMethod === 'store_balance' ? '2px solid #facc15' : '1px solid rgba(250,204,21,0.35)' }}>
           🪙 الدفع بالدينار من رصيد المتجر — {Number(finalTotal).toFixed(2)} د.أ <small style={{ color: '#fde68a' }}>(1 رصيد = 1 دينار للشراء)</small>
         </button>
-      )}
-
-      {Number(currentUser?.loyaltyPoints || 0) >= Number(currentUser?.loyaltyThreshold || 100) && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', borderRadius: '12px', color: '#ddd6fe', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.35)', cursor: 'pointer', fontSize: '13px' }}>
-          <input type="checkbox" checked={redeemPoints} onChange={(e) => setRedeemPoints(e.target.checked)} />
-          استبدال {Number(currentUser.loyaltyThreshold || 100)} نقطة بمنتج مجاني من المتجر
-        </label>
       )}
 
       {Number(finalTotal || 0) > 0 && activeMethods.length === 0 && paymentMethod !== 'store_balance' && (
