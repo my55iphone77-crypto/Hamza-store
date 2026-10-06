@@ -500,7 +500,8 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
             </div>
           </div>
           <div className="hz-glass-card" style={{ maxWidth: '980px', margin: '0 auto', padding: 'clamp(14px, 3vw, 30px)', borderColor: 'rgba(16,185,129,0.45)', boxShadow: '0 20px 60px rgba(0,0,0,0.45), 0 0 35px rgba(16,185,129,0.08)' }}>
-            <button type="button" onClick={() => authCart.setCheckoutMode(false)} style={{ background: 'rgba(51,65,85,0.7)', color: '#fff', border: '1px solid rgba(255,255,255,0.16)', padding: '9px 14px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '16px' }}>← العودة للمتجر</button>
+            <button type="button" onClick={() => { setError(''); authCart.setCheckoutMode(false); }} style={{ background: 'rgba(51,65,85,0.7)', color: '#fff', border: '1px solid rgba(255,255,255,0.16)', padding: '9px 14px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '16px' }}>← العودة للمتجر</button>
+            {error && <div role="alert" style={{ marginBottom: '16px', padding: '14px 16px', borderRadius: '14px', color: '#fecaca', background: 'rgba(127,29,29,0.72)', border: '1px solid rgba(248,113,113,0.65)', boxShadow: '0 8px 24px rgba(127,29,29,0.18)', lineHeight: 1.8, fontSize: '13px' }}>⚠️ {error}</div>}
             <CheckoutForm authCart={authCart} inputStyle={inputStyle} />
             <OrderConfirmation authCart={authCart} />
           </div>

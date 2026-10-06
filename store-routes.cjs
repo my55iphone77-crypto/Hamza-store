@@ -762,7 +762,7 @@ module.exports = function buildStoreRouter(deps) {
             }
             const priceData = await shop2topup.getPrice(item.shop2topupItemId);
             const livePrice = priceData?.price?.unit_price;
-            if (livePrice === undefined) throw new Error(`منتج ${item.name} غير موجود في كتالوج Shop2Topup.`);
+            if (livePrice === undefined) throw new Error(`منتج ${item.name} غير موجود في كتالوج Shop2Topup. احذف المنتج من السلة أو حدّث ربطه من لوحة المنتجات بمعرّف موجود في الكتالوج.`);
             await shop2topup.validatePlayer({ sub_category_id: item.shop2topupItemId, ...item.topupRequirements, player_id: playerId });
             providerPrices.set(Number(item.shop2topupItemId), livePrice);
           }
