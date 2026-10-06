@@ -826,10 +826,12 @@ app.get('/api/customerAiMetrics', verifyOwnerMiddleware, async (req, res) => {
 // 🤖 مسارات روبوت خدمة العملاء باستخدام Groq SDK
 // ------------------------------------------------------------------
 const buildPublicBotContext = async (req = null) => {
-  const [products, settings, featureNotes] = await Promise.all([
+  const [products, settings, featureNotes, categories, announcements] = await Promise.all([
     Product.find({ status: { $nin: ['inactive', 'غير نشط', 'deleted'] } }).select('name price discountPrice description category deliveryType stock codes loyaltyPoints loyaltyPrice').lean(),
     Settings.findOne().lean(),
-    AppState.findOne({ key: 'store_feature_manifest' }).lean()
+    AppState.findOne({ key: 'store_feature_manifest' }).lean(),
+    Category.find().select('name description image').sort({ name: 1 }).lean(),
+    Announcement.find({ audience: { $in: ['customers', 'customer', 'public', 'all', 'everyone', 'العملاء', 'الزبائن'] } }).select('title message audience date createdAt').sort({ createdAt: -1, date: -1 }).limit(30).lean()
   ]);
   const catalog = products.map((product) => {
     const stock = product.deliveryType === 'store_credit' ? 'متوفر تلقائياً' : (Array.isArray(product.codes) ? product.codes.length : Number(product.stock || 0));
@@ -837,6 +839,16 @@ const buildPublicBotContext = async (req = null) => {
   });
   const user = req?.headers?.authorization ? await getUserFromAuthHeader(req.headers.authorization).catch(() => null) : null;
   const pointsProducts = catalog.filter((item) => item.pointsEarned > 0 || item.pointsPrice > 0);
+  const sensitiveKey = /(password|secret|token|api|key|oauth|jwt|smtp|bank|account|credential|hash|private|access)/i;
+  const publicSettingKey = /^(store|currency|contact|phone|email|website|tagline|welcome|hero|footer|social|language|theme|payment|shipping|delivery|working|hours|return|refund|faq|support|announcement|maintenanceMessage)/i;
+  const cleanPublicValue = (value, depth = 0) => {
+    if (depth > 3 || value === null || value === undefined) return value;
+    if (Array.isArray(value)) return value.slice(0, 30).map((item) => cleanPublicValue(item, depth + 1));
+    if (typeof value !== 'object') return typeof value === 'string' ? value.slice(0, 1000) : value;
+    return Object.fromEntries(Object.entries(value).filter(([key]) => !sensitiveKey.test(key) && !['_id', '__v', 'createdAt', 'updatedAt'].includes(key)).slice(0, 50).map(([key, item]) => [key, cleanPublicValue(item, depth + 1)]));
+  };
+  const publicSettings = Object.fromEntries(Object.entries(settings || {}).filter(([key, value]) => publicSettingKey.test(key) && !sensitiveKey.test(key) && value !== undefined && value !== null && value !== '').map(([key, value]) => [key, cleanPublicValue(value)]));
+  const publicAnnouncements = announcements.map((item) => ({ title: String(item.title || ''), message: String(item.message || ''), date: item.date || item.createdAt || null })).filter((item) => item.title || item.message);
   let developmentUpdates = { generatedAt: null, updates: [] };
   try {
     developmentUpdates = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'bot-updates.json'), 'utf8'));
@@ -845,6 +857,12 @@ const buildPublicBotContext = async (req = null) => {
     generatedAt: new Date().toISOString(),
     catalog,
     storeInfo: Object.fromEntries(['storeName', 'storeTagline', 'welcomeText', 'contactEmail', 'contactPhone', 'footerText'].filter((key) => settings?.[key]).map((key) => [key, settings[key]])),
+    publicStore: {
+      settings: publicSettings,
+      categories: categories.map((item) => ({ name: String(item.name || ''), description: String(item.description || ''), image: String(item.image || '') })).filter((item) => item.name),
+      announcements: publicAnnouncements,
+      socialCards: Array.isArray(settings?.socialCards) ? settings.socialCards.filter((card) => card?.enabled !== false).map((card) => ({ platform: card.platform || '', account: card.account || '', title: card.title || '' })) : []
+    },
     publicFeatures: featureNotes?.value?.public || [],
     loyaltyProgram: {
       active: pointsProducts.length > 0,
