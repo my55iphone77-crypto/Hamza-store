@@ -487,7 +487,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
   if (authCart && authCart.checkoutMode) {
     return (
-      <div className="hz-root" style={{ width: '100%', minHeight: '100dvh', padding: 'clamp(12px, 2vw, 24px)', boxSizing: 'border-box', color: '#f8fafc', fontFamily: 'Tajawal, sans-serif', background: '#05060a' }} dir="rtl">
+      <div className="hz-root" style={{ width: '100%', minHeight: '100dvh', padding: 'clamp(12px, 2vw, 24px)', boxSizing: 'border-box', color: '#f8fafc', fontFamily: 'Tajawal, sans-serif', background: 'transparent' }} dir="rtl">
         <style>{GLASS_STYLE}</style>
         <div className="hz-container" style={{ maxWidth: '1100px' }}>
           <div className="hz-glass-btn hz-store-header" style={{ padding: '12px 18px', marginBottom: '24px', borderRadius: '18px' }}>
