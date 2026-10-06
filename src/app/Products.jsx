@@ -670,7 +670,7 @@ export default function Products() {
                 </select>
                 <select value={shop2topupItemId} onChange={(e) => setShop2topupItemId(e.target.value)} style={glassInputStyle} disabled={!shop2topupCategoryId}>
                   <option value="">اختر الباقة</option>
-                  {shop2Items.map((item) => <option key={item.item_id || item.id} value={item.item_id || item.id}>{item.name} (ID: {item.item_id || item.id})</option>)}
+                  {shop2Items.map((item) => <option key={item.id} value={item.id}>{item.name} (ID: {item.id})</option>)}
                 </select>
                 <span style={{ gridColumn: "1 / -1", color: "#7dd3fc", fontSize: "11px" }}>اختر اللعبة ثم نوع التعبئة ثم الباقة؛ التطبيق يضع Category ID وItem ID تلقائياً.</span>
               </div>}
