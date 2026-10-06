@@ -115,6 +115,11 @@ export default function Products() {
   const [manualStock, setManualStock] = useState("");
   const [shop2topupCategoryId, setShop2topupCategoryId] = useState("");
   const [shop2topupItemId, setShop2topupItemId] = useState("");
+  const [shop2BigCategoryId, setShop2BigCategoryId] = useState("");
+  const [shop2BigCategories, setShop2BigCategories] = useState([]);
+  const [shop2Categories, setShop2Categories] = useState([]);
+  const [shop2Items, setShop2Items] = useState([]);
+  const [shop2CatalogLoading, setShop2CatalogLoading] = useState(false);
   const [lowStockThreshold, setLowStockThreshold] = useState(3);
   const [maxStockThreshold, setMaxStockThreshold] = useState(50);
   const [newCodeText, setNewCodeText] = useState("");
@@ -177,6 +182,43 @@ export default function Products() {
       loadAll();
     }
   }, [globalBus]);
+
+  useEffect(() => {
+    if (deliveryType !== "id_topup" || shop2BigCategories.length > 0) return;
+    setShop2CatalogLoading(true);
+    apiFetch("/shop2topup/catalog/big-categories?for_ui=false")
+      .then((response) => setShop2BigCategories(response?.data || response?.big_categories || []))
+      .catch((err) => alert(`تعذر تحميل كتالوج Shop2Topup: ${err.message}`))
+      .finally(() => setShop2CatalogLoading(false));
+  }, [deliveryType]);
+
+  const handleShop2BigCategoryChange = async (value) => {
+    setShop2BigCategoryId(value);
+    setShop2topupCategoryId("");
+    setShop2topupItemId("");
+    setShop2Categories([]);
+    setShop2Items([]);
+    if (!value) return;
+    setShop2CatalogLoading(true);
+    try {
+      const response = await apiFetch(`/shop2topup/catalog/categories?bigCategoryId=${encodeURIComponent(value)}&for_ui=false`);
+      setShop2Categories(response?.data || response?.categories || []);
+    } catch (err) { alert(`تعذر تحميل الفئات: ${err.message}`); }
+    finally { setShop2CatalogLoading(false); }
+  };
+
+  const handleShop2CategoryChange = async (value) => {
+    setShop2topupCategoryId(value);
+    setShop2topupItemId("");
+    setShop2Items([]);
+    if (!value) return;
+    setShop2CatalogLoading(true);
+    try {
+      const response = await apiFetch(`/shop2topup/catalog/subcategories?categoryId=${encodeURIComponent(value)}`);
+      setShop2Items(response?.data || response?.subcategories || []);
+    } catch (err) { alert(`تعذر تحميل الباقات: ${err.message}`); }
+    finally { setShop2CatalogLoading(false); }
+  };
 
   const flashSaving = (msg, syncType = "PRODUCT_SYNC") => {
     setSavingState(msg);
@@ -613,10 +655,20 @@ export default function Products() {
                 <input type="number" min="0.01" step="0.01" placeholder="قيمة الرصيد داخل البطاقة (دينار)" value={storeCreditAmount} onChange={(e) => setStoreCreditAmount(e.target.value)} style={glassInputStyle} />
                 <div style={{ color: "#facc15", fontSize: "12px" }}>هذه البطاقة تُسلّم كوداً للعميل، والرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط.</div>
               </>}
-              {deliveryType === "id_topup" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", padding: "10px", borderRadius: "10px", background: "rgba(14,165,233,0.08)", border: "1px solid rgba(56,189,248,0.25)" }}>
-                <input type="number" placeholder="Shop2Topup Category ID" value={shop2topupCategoryId} onChange={(e) => setShop2topupCategoryId(e.target.value)} style={glassInputStyle} />
-                <input type="number" placeholder="Shop2Topup Item ID" value={shop2topupItemId} onChange={(e) => setShop2topupItemId(e.target.value)} style={glassInputStyle} />
-                <span style={{ gridColumn: "1 / -1", color: "#7dd3fc", fontSize: "11px" }}>Category ID من Catalog → Categories، وItem ID من Catalog → Subcategories. لا تستخدم أرقاماً عشوائية.</span>
+              {deliveryType === "id_topup" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", padding: "10px", borderRadius: "10px", background: "rgba(14,165,233,0.08)", border: "1px solid rgba(56,189,248,0.25)" }}>
+                <select value={shop2BigCategoryId} onChange={(e) => handleShop2BigCategoryChange(e.target.value)} style={glassInputStyle}>
+                  <option value="">{shop2CatalogLoading ? "جاري التحميل..." : "اختر اللعبة"}</option>
+                  {shop2BigCategories.map((item) => <option key={item.id} value={item.id}>{item.name} (ID: {item.id})</option>)}
+                </select>
+                <select value={shop2topupCategoryId} onChange={(e) => handleShop2CategoryChange(e.target.value)} style={glassInputStyle} disabled={!shop2BigCategoryId}>
+                  <option value="">اختر نوع التعبئة</option>
+                  {shop2Categories.map((item) => <option key={item.id} value={item.id}>{item.name} (ID: {item.id})</option>)}
+                </select>
+                <select value={shop2topupItemId} onChange={(e) => setShop2topupItemId(e.target.value)} style={glassInputStyle} disabled={!shop2topupCategoryId}>
+                  <option value="">اختر الباقة</option>
+                  {shop2Items.map((item) => <option key={item.item_id || item.id} value={item.item_id || item.id}>{item.name} (ID: {item.item_id || item.id})</option>)}
+                </select>
+                <span style={{ gridColumn: "1 / -1", color: "#7dd3fc", fontSize: "11px" }}>اختر اللعبة ثم نوع التعبئة ثم الباقة؛ التطبيق يضع Category ID وItem ID تلقائياً.</span>
               </div>}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <input type="file" accept="image/*" onChange={(e) => handleImageFileSelect(e, false)} style={{ color: "#94a3b8", fontSize: "12px" }} />
