@@ -14,7 +14,12 @@ module.exports = function buildStoreRouter(deps) {
   // Webhook عام لكن موقّع: لا نستخدم guard لأنه يُستدعى من Shop2Topup، ونرفض أي طلب غير موقّع.
   router.post('/shop2topup/webhook', async (req, res) => {
     try {
-      if (!SHOP2TOPUP_WEBHOOK_SECRET) return res.status(503).json({ error: 'Webhook secret is not configured.' });
+      // أثناء التسجيل الأولي ترسل Shop2Topup طلب تحقق قبل عرض السر؛ نقبله فقط كإشارة إعداد
+      // مؤقتة، وبعد حفظ SHOP2TOPUP_WEBHOOK_SECRET تصبح كل الأحداث موقعة وإجبارية.
+      if (!SHOP2TOPUP_WEBHOOK_SECRET) {
+        console.warn('[shop2topup webhook] initial validation received; configure SHOP2TOPUP_WEBHOOK_SECRET now');
+        return res.status(200).json({ received: true, setup: true });
+      }
       const received = String(req.headers['x-shop2topup-signature'] || '').trim().toLowerCase().replace(/^sha256=/, '');
       const raw = Buffer.isBuffer(req.rawBody) ? req.rawBody : Buffer.from(JSON.stringify(req.body || {}));
       const expected = crypto.createHmac('sha256', SHOP2TOPUP_WEBHOOK_SECRET).update(raw).digest('hex');
