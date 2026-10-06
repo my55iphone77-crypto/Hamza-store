@@ -748,6 +748,28 @@ module.exports = function buildStoreRouter(deps) {
           codeStockNeeds.push({ productId: String(it.id), quantity: qty, itemIndex: items.length - 1, productName: name });
         }
       }
+      const providerItems = items.filter((item) => item.deliveryType === 'id_topup' && Number(item.shop2topupItemId || 0) > 0);
+      const providerPrices = new Map();
+      if (providerItems.length > 0) {
+        try {
+          if (!shop2topup.configured()) throw new Error('Shop2Topup غير مهيأ في إعدادات الخادم.');
+          for (const item of providerItems) {
+            const playerId = String(item.playerId || item.topupRequirements?.player_id || '').trim();
+            if (!playerId) {
+              const error = new Error(`آيدي اللاعب مطلوب لمنتج ${item.name}.`);
+              error.status = 422;
+              throw error;
+            }
+            const priceData = await shop2topup.getPrice(item.shop2topupItemId);
+            const livePrice = priceData?.price?.unit_price;
+            if (livePrice === undefined) throw new Error(`منتج ${item.name} غير موجود في كتالوج Shop2Topup.`);
+            await shop2topup.validatePlayer({ sub_category_id: item.shop2topupItemId, ...item.topupRequirements, player_id: playerId });
+            providerPrices.set(Number(item.shop2topupItemId), livePrice);
+          }
+        } catch (providerValidationError) {
+          return res.status(Number(providerValidationError.status) === 422 ? 422 : 400).json({ error: providerValidationError.message || 'تعذر التحقق من منتج التعبئة أو آيدي اللاعب.' });
+        }
+      }
       const subtotal = total;
       let couponDiscount = 0;
       let appliedCouponCode = '';
@@ -830,16 +852,11 @@ module.exports = function buildStoreRouter(deps) {
         paymentMethod: String(paymentMethod || ''), couponCode: appliedCouponCode, couponDiscount, walletAmount,
         loyaltyPointsEarned: pointsEarned, loyaltyPointsRedeemed, loyaltyRewardItem
       }).save();
-      const providerItems = items.filter((item) => item.deliveryType === 'id_topup' && Number(item.shop2topupItemId || 0) > 0);
       if (providerItems.length > 0) {
         try {
           if (!shop2topup.configured()) throw new Error('Shop2Topup غير مهيأ في إعدادات الخادم.');
-          // نتحقق من كل لاعب والسعر الحالي قبل تنفيذ أي طلب خارجي.
           for (const item of providerItems) {
-            const priceData = await shop2topup.getPrice(item.shop2topupItemId);
-            const livePrice = priceData?.price?.unit_price;
-            if (livePrice === undefined) throw new Error(`تعذر جلب سعر ${item.name} من Shop2Topup.`);
-            await shop2topup.validatePlayer({ sub_category_id: item.shop2topupItemId, ...item.topupRequirements });
+            const livePrice = providerPrices.get(Number(item.shop2topupItemId));
             const created = await shop2topup.createOrder({
               orderId: crypto.randomUUID(),
               subCategoryId: item.shop2topupItemId,
@@ -856,7 +873,8 @@ module.exports = function buildStoreRouter(deps) {
           }
           await order.save();
         } catch (providerError) {
-          if (authUser) {
+          const externalOrderCreated = Boolean(order.providerOrderId);
+          if (authUser && !externalOrderCreated) {
             const refund = { $inc: { storeBalance: walletAmount || 0, loyaltyPoints: loyaltyPointsRedeemed - pointsEarned } };
             await User.updateOne({ _id: authUser._id }, refund).catch(() => {});
             await Customer.updateOne({ email: String(authUser.email).trim().toLowerCase() }, refund).catch(() => {});
@@ -867,6 +885,13 @@ module.exports = function buildStoreRouter(deps) {
           order.status = 'تعبئة معلقة';
           await order.save();
           console.error('[orders] Shop2Topup failure:', providerError.message || providerError);
+          if (!externalOrderCreated) {
+            const message = /balance|رصيد|insufficient|غير كاف/i.test(String(providerError.message || ''))
+              ? 'رصيد Shop2Topup غير كافٍ لإتمام العملية، ولم يتم تأكيد الطلب.'
+              : `تعذر تنفيذ التعبئة: ${providerError.message || 'رفض مزود الخدمة الطلب.'}`;
+            return res.status(Number(providerError.status) === 402 ? 402 : 502).json({ error: message });
+          }
+          return res.status(409).json({ error: 'تم إرسال الطلب إلى Shop2Topup لكنه ما زال قيد المعالجة. لا تعِد المحاولة قبل ظهور حالته.' });
         }
       }
       if (Sale) {
