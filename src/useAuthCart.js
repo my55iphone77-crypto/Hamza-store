@@ -241,7 +241,10 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
           quantity: item.quantity || 1,
           loyaltyOnly: Boolean(item.loyaltyOnly),
           loyaltyPrice: Number(item.loyaltyPrice || 0),
-          playerId: item.deliveryType === 'id_topup' ? String(item.playerId || '').trim() : undefined
+          playerId: item.deliveryType === 'id_topup' ? String(item.playerId || '').trim() : undefined,
+          shop2topupCategoryId: item.deliveryType === 'id_topup' ? Number(item.shop2topupCategoryId || 0) || undefined : undefined,
+          shop2topupItemId: item.deliveryType === 'id_topup' ? Number(item.shop2topupItemId || 0) || undefined : undefined,
+          topupRequirements: item.deliveryType === 'id_topup' ? { ...(item.topupRequirements || {}), player_id: String(item.playerId || '').trim() } : undefined
         })),
         totalAmount: finalTotal,
         paymentMethod: paymentMethod || undefined,

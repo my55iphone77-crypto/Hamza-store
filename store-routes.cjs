@@ -1,5 +1,5 @@
 const express = require('express');
-
+const shop2topup = require('./shop2topup-client.cjs');
 module.exports = function buildStoreRouter(deps) {
   const {
     Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification, VisitorEvent,
@@ -11,6 +11,29 @@ module.exports = function buildStoreRouter(deps) {
   } = deps;
 
   const router = express.Router();
+  // مسارات داخلية محمية: مفتاح Shop2Topup لا يصل أبداً إلى الواجهة.
+  router.get('/shop2topup/catalog/big-categories', permissionGuard('manage_products', 'manager'), async (req, res) => {
+    try { res.json(await shop2topup.listBigCategories(true)); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
+  });
+  router.get('/shop2topup/catalog/categories', permissionGuard('manage_products', 'manager'), async (req, res) => {
+    try { res.json(await shop2topup.listCategories({ bigCategoryId: req.query.bigCategoryId, forUi: true })); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
+  });
+  router.get('/shop2topup/catalog/subcategories', permissionGuard('manage_products', 'manager'), async (req, res) => {
+    try { res.json(await shop2topup.listSubcategories({ categoryId: req.query.categoryId })); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
+  });
+  router.get('/shop2topup/catalog/items/:itemId/price', permissionGuard('manage_products', 'manager'), async (req, res) => {
+    try { res.json(await shop2topup.getPrice(req.params.itemId)); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
+  });
+  router.get('/shop2topup/catalog/category/:categoryId/requirements', publicActionLimiter, async (req, res) => {
+    try { res.json(await shop2topup.getRequirements(req.params.categoryId)); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
+  });
+  router.post('/shop2topup/player/validate', publicActionLimiter, async (req, res) => {
+    try {
+      const body = req.body || {};
+      if (!body.sub_category_id || !body.player_id) return res.status(400).json({ error: 'معرف الباقة وآيدي اللاعب مطلوبان.' });
+      res.json(await shop2topup.validatePlayer(body));
+    } catch (e) { res.status(e.status === 503 ? 503 : 502).json({ error: e.message, provider: e.provider }); }
+  });
   // Webhook عام لكن موقّع: لا نستخدم guard لأنه يُستدعى من Shop2Topup، ونرفض أي طلب غير موقّع.
   router.post('/shop2topup/webhook', async (req, res) => {
     try {
@@ -682,6 +705,9 @@ module.exports = function buildStoreRouter(deps) {
       for (const it of rawItems.slice(0, 50)) {
         const qty = Math.max(1, Math.min(100, Number(it.quantity) || 1));
         let name = it.name, price = Number(it.price) || 0, deliveryType = String(it.deliveryType || ''), storeCreditAmount = Number(it.storeCreditAmount || 0), itemPoints = Math.max(0, Number(it.loyaltyPoints || 0));
+        let shop2topupCategoryId = Number(it.shop2topupCategoryId || 0) || 0;
+        let shop2topupItemId = Number(it.shop2topupItemId || 0) || 0;
+        let topupRequirements = it.topupRequirements && typeof it.topupRequirements === 'object' ? { ...it.topupRequirements } : {};
         let loyaltyOnly = Boolean(it.loyaltyOnly);
         let loyaltyPrice = Math.max(0, Number(it.loyaltyPrice || 0));
         if (it.id && mongoose.isValidObjectId(it.id)) {
@@ -693,6 +719,8 @@ module.exports = function buildStoreRouter(deps) {
           storeCreditAmount = Number(prod.storeCreditAmount || 0);
           itemPoints = Math.max(0, Number(prod.loyaltyPoints || 0));
           loyaltyPrice = Math.max(0, Number(prod.loyaltyPrice || 0));
+          shop2topupCategoryId = Number(prod.shop2topupCategoryId || shop2topupCategoryId) || 0;
+          shop2topupItemId = Number(prod.shop2topupItemId || shop2topupItemId) || 0;
           if (loyaltyOnly && loyaltyPrice <= 0) loyaltyOnly = false;
           if (['code', 'subscription'].includes(deliveryType) && (!Array.isArray(prod.codes) || prod.codes.length < qty)) {
             return res.status(409).json({ error: `لا يوجد عدد كافٍ من الأكواد للمنتج: ${prod.name}.` });
@@ -714,7 +742,8 @@ module.exports = function buildStoreRouter(deps) {
             creditCardsToIssue.push({ codeHash: creditCodeHash(code), amount });
           }
         }
-        items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, loyaltyOnly, loyaltyPrice, playerId: it.playerId ? String(it.playerId) : undefined, deliveredCodes });
+        if (deliveryType === 'id_topup' && shop2topupItemId > 0) topupRequirements = { ...topupRequirements, player_id: String(it.playerId || '').trim() };
+        items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, loyaltyOnly, loyaltyPrice, playerId: it.playerId ? String(it.playerId) : undefined, shop2topupCategoryId, shop2topupItemId, topupRequirements, deliveredCodes });
         if (it.id && mongoose.isValidObjectId(it.id) && ['code', 'subscription'].includes(deliveryType)) {
           codeStockNeeds.push({ productId: String(it.id), quantity: qty, itemIndex: items.length - 1, productName: name });
         }
@@ -801,6 +830,45 @@ module.exports = function buildStoreRouter(deps) {
         paymentMethod: String(paymentMethod || ''), couponCode: appliedCouponCode, couponDiscount, walletAmount,
         loyaltyPointsEarned: pointsEarned, loyaltyPointsRedeemed, loyaltyRewardItem
       }).save();
+      const providerItems = items.filter((item) => item.deliveryType === 'id_topup' && Number(item.shop2topupItemId || 0) > 0);
+      if (providerItems.length > 0) {
+        try {
+          if (!shop2topup.configured()) throw new Error('Shop2Topup غير مهيأ في إعدادات الخادم.');
+          // نتحقق من كل لاعب والسعر الحالي قبل تنفيذ أي طلب خارجي.
+          for (const item of providerItems) {
+            const priceData = await shop2topup.getPrice(item.shop2topupItemId);
+            const livePrice = priceData?.price?.unit_price;
+            if (livePrice === undefined) throw new Error(`تعذر جلب سعر ${item.name} من Shop2Topup.`);
+            await shop2topup.validatePlayer({ sub_category_id: item.shop2topupItemId, ...item.topupRequirements });
+            const created = await shop2topup.createOrder({
+              orderId: crypto.randomUUID(),
+              subCategoryId: item.shop2topupItemId,
+              quantity: item.quantity,
+              requirements: item.topupRequirements,
+              expectedUnitPrice: livePrice
+            });
+            const external = created?.order || created;
+            order.provider = 'shop2topup';
+            order.providerOrderId = String(external?.order_id || external?.id || '').trim();
+            order.providerStatus = String(external?.status || 'pending').toLowerCase();
+            order.providerUpdatedAt = new Date();
+            if (!order.providerOrderId) throw new Error('Shop2Topup لم يرجع رقم الطلب الخارجي.');
+          }
+          await order.save();
+        } catch (providerError) {
+          if (authUser) {
+            const refund = { $inc: { storeBalance: walletAmount || 0, loyaltyPoints: loyaltyPointsRedeemed - pointsEarned } };
+            await User.updateOne({ _id: authUser._id }, refund).catch(() => {});
+            await Customer.updateOne({ email: String(authUser.email).trim().toLowerCase() }, refund).catch(() => {});
+          }
+          order.provider = 'shop2topup';
+          order.providerStatus = 'failed';
+          order.providerUpdatedAt = new Date();
+          order.status = 'تعبئة معلقة';
+          await order.save();
+          console.error('[orders] Shop2Topup failure:', providerError.message || providerError);
+        }
+      }
       if (Sale) {
         try {
           await Sale.insertMany(items.map((item) => ({

@@ -113,6 +113,8 @@ export default function Products() {
   const [scheduledDate, setScheduledDate] = useState("");
   const [unpublishDate, setUnpublishDate] = useState("");
   const [manualStock, setManualStock] = useState("");
+  const [shop2topupCategoryId, setShop2topupCategoryId] = useState("");
+  const [shop2topupItemId, setShop2topupItemId] = useState("");
   const [lowStockThreshold, setLowStockThreshold] = useState(3);
   const [maxStockThreshold, setMaxStockThreshold] = useState(50);
   const [newCodeText, setNewCodeText] = useState("");
@@ -250,6 +252,7 @@ export default function Products() {
       status, scheduledDate: toISOStringOrNull(scheduledDate) || undefined, unpublishDate: toISOStringOrNull(unpublishDate) || undefined,
       lowStockThreshold: parseInt(lowStockThreshold) || 3,
       maxStockThreshold: parseInt(maxStockThreshold) || 50,
+      ...(deliveryType === "id_topup" ? { shop2topupCategoryId: Number(shop2topupCategoryId) || undefined, shop2topupItemId: Number(shop2topupItemId) || undefined } : {}),
       codes: codesArray, stock: deliveryType === "id_topup" ? parseInt(manualStock) || 0 : codesArray.length,
     };
 
@@ -258,7 +261,7 @@ export default function Products() {
       setProducts((prev) => [newProduct, ...prev]);
       flashSaving("✅ تم حفظ وإضافة المنتج بنجاح");
       setIsAddModalOpen(false);
-      setName(""); setDescription(""); setPrice(""); setDiscountPrice(""); setImage(""); setNewCodeText(""); setManualStock(""); setLoyaltyPoints("0"); setLoyaltyPrice(""); setScheduledDate(""); setUnpublishDate("");
+      setName(""); setDescription(""); setPrice(""); setDiscountPrice(""); setImage(""); setNewCodeText(""); setManualStock(""); setShop2topupCategoryId(""); setShop2topupItemId(""); setLoyaltyPoints("0"); setLoyaltyPrice(""); setScheduledDate(""); setUnpublishDate("");
     } catch (err) {
       alert(err.message);
     }
@@ -280,6 +283,8 @@ export default function Products() {
     setEditLowStockThreshold(prod.lowStockThreshold ?? 3);
     setEditMaxStockThreshold(prod.maxStockThreshold ?? 50);
     setEditManualStock(prod.stock ?? 0);
+    setShop2topupCategoryId(prod.shop2topupCategoryId ?? "");
+    setShop2topupItemId(prod.shop2topupItemId ?? "");
     setIsEditing(true);
     setActiveTab("details");
   };
@@ -298,6 +303,7 @@ export default function Products() {
       scheduledDate: toISOStringOrNull(editScheduledDate), unpublishDate: toISOStringOrNull(editUnpublishDate),
       lowStockThreshold: parseInt(editLowStockThreshold) || 3,
       maxStockThreshold: parseInt(editMaxStockThreshold) || 50,
+      ...(selectedProduct.deliveryType === "id_topup" ? { shop2topupCategoryId: Number(shop2topupCategoryId) || undefined, shop2topupItemId: Number(shop2topupItemId) || undefined } : {}),
     };
     if (selectedProduct.deliveryType === "id_topup") payload.stock = parseInt(editManualStock) || 0;
 
@@ -607,6 +613,11 @@ export default function Products() {
                 <input type="number" min="0.01" step="0.01" placeholder="قيمة الرصيد داخل البطاقة (دينار)" value={storeCreditAmount} onChange={(e) => setStoreCreditAmount(e.target.value)} style={glassInputStyle} />
                 <div style={{ color: "#facc15", fontSize: "12px" }}>هذه البطاقة تُسلّم كوداً للعميل، والرصيد غير قابل للسحب ويُستخدم للشراء داخل المتجر فقط.</div>
               </>}
+              {deliveryType === "id_topup" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", padding: "10px", borderRadius: "10px", background: "rgba(14,165,233,0.08)", border: "1px solid rgba(56,189,248,0.25)" }}>
+                <input type="number" placeholder="Shop2Topup Category ID" value={shop2topupCategoryId} onChange={(e) => setShop2topupCategoryId(e.target.value)} style={glassInputStyle} />
+                <input type="number" placeholder="Shop2Topup Item ID" value={shop2topupItemId} onChange={(e) => setShop2topupItemId(e.target.value)} style={glassInputStyle} />
+                <span style={{ gridColumn: "1 / -1", color: "#7dd3fc", fontSize: "11px" }}>استخدم Category ID من Catalog و Item ID من Subcategories. لا تضع أرقام الأمثلة.</span>
+              </div>}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <input type="file" accept="image/*" onChange={(e) => handleImageFileSelect(e, false)} style={{ color: "#94a3b8", fontSize: "12px" }} />
                 {isUploadingImage && <span style={{ color: "#38bdf8", fontSize: "11px" }}>⏳ جاري معالجة وضغط الصورة...</span>}
@@ -751,7 +762,13 @@ export default function Products() {
                 </div>
                 {editImage && <img src={editImage} alt="معاينة" style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />}
                 {selectedProduct.deliveryType === "id_topup" && (
-                  <input type="number" placeholder="الكمية..." value={editManualStock} onChange={(e) => setEditManualStock(e.target.value)} style={glassInputStyle} />
+                  <>
+                    <input type="number" placeholder="الكمية..." value={editManualStock} onChange={(e) => setEditManualStock(e.target.value)} style={glassInputStyle} />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", padding: "10px", borderRadius: "10px", background: "rgba(14,165,233,0.08)" }}>
+                      <input type="number" placeholder="Shop2Topup Category ID" value={shop2topupCategoryId} onChange={(e) => setShop2topupCategoryId(e.target.value)} style={glassInputStyle} />
+                      <input type="number" placeholder="Shop2Topup Item ID" value={shop2topupItemId} onChange={(e) => setShop2topupItemId(e.target.value)} style={glassInputStyle} />
+                    </div>
+                  </>
                 )}
                 <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} style={glassInputStyle}>
                   <option value="منشور" style={{ background: "#1e293b" }}>🟢 منشور</option>
