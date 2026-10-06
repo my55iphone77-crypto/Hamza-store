@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -836,6 +837,10 @@ const buildPublicBotContext = async (req = null) => {
   });
   const user = req?.headers?.authorization ? await getUserFromAuthHeader(req.headers.authorization).catch(() => null) : null;
   const pointsProducts = catalog.filter((item) => item.pointsEarned > 0 || item.pointsPrice > 0);
+  let developmentUpdates = { generatedAt: null, updates: [] };
+  try {
+    developmentUpdates = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'bot-updates.json'), 'utf8'));
+  } catch (_) {}
   return {
     generatedAt: new Date().toISOString(),
     catalog,
@@ -849,6 +854,10 @@ const buildPublicBotContext = async (req = null) => {
       note: 'النقاط تُستخدم داخل المتجر فقط، والمنتجات المتاحة بالنقاط تظهر بسعر النقاط على بطاقة المنتج.'
     },
     account: user ? { loyaltyPoints: Number(user.loyaltyPoints || 0), loyaltyThreshold: Number(user.loyaltyThreshold || 100) } : null,
+    developmentUpdates: {
+      generatedAt: developmentUpdates.generatedAt || null,
+      updates: Array.isArray(developmentUpdates.updates) ? developmentUpdates.updates.slice(0, 20).map(({ id, date, title, areas }) => ({ id, date, title, areas })) : []
+    },
     counters: { products: catalog.length, availableProducts: catalog.filter((item) => item.stock === 'متوفر تلقائياً' || Number(item.stock) > 0).length, loyaltyProducts: pointsProducts.length }
   };
 };
@@ -891,6 +900,7 @@ app.post('/api/customerAiChat', publicActionLimiter, async (req, res) => {
 6. ممنوع نجوم الماركداون (**) بأي رد.
 7. **مراجعة إلزامية قبل الإرسال:** قبل ما تسلّم ردك، راجعه ذهنياً كلمة كلمة: هل كل جملة كاملة ومفهومة 100%؟ هل في كلمة ناقصة، مكررة، أو غير موجودة أصلاً باللغة العربية؟ هل المعنى واضح من أول قراءة بدون لبس؟ لو في أي شك ولو بسيط، أعد صياغة الجملة كاملة بدل ما تسلّمها كما هي.
 8. **واقعية بشرية حقيقية:** اقرأ محادثة الزبون كاملة (conversationHistory) وابني ردك على السياق الفعلي، لا تتجاهل شو قاله قبل شوي. لا تبدأ كل رد بنفس العبارة الافتتاحية، ولا تكرر نفس الجمل بين ردودك المتتالية - تكلم متل موظف حقيقي بيتابع الحديث، مش متل قالب رد جاهز.
+9. إذا سأل المستخدم عن آخر تحديث أو ميزة جديدة، اعتمد على developmentUpdates المنشورة داخل معلومات المتجر الحية. اذكر فقط التحديثات الموجودة هناك، وإذا ما كان وصف التغيير كافياً احكِ ذلك بصراحة ولا تستنتج تفاصيل من أسماء الملفات.
 `;
 
     if (taskInstruction) dynamicSystemPrompt += `\nالمهمة الحالية: ${taskInstruction}`;
@@ -969,7 +979,6 @@ app.use('/api', buildStoreRouter({
   io, User, getUserFromAuthHeader, publicActionLimiter
 }));
 
-const fs = require('fs');
 const distIndex = path.join(__dirname, 'dist', 'index.html');
 
 if (fs.existsSync(distIndex)) {

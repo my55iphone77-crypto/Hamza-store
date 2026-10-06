@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/sync-bot-knowledge.cjs",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",

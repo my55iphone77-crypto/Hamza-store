@@ -1,0 +1,180 @@
+{
+  "generatedAt": "2026-10-06T05:49:36.880Z",
+  "source": "deployment-git-history",
+  "purpose": "ملخص آمن لتحديثات المتجر البرمجية حتى يفهم روبوت المتجر آخر ما تغيّر دون الاطلاع على الكود أو الأسرار.",
+  "updates": [
+    {
+      "id": "8f69370266",
+      "date": "2026-10-06T05:46:21+00:00",
+      "title": "fix: expose live loyalty knowledge to store bot",
+      "areas": [
+        "الخادم والوظائف الداخلية",
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "0584a535cb",
+      "date": "2026-10-05T22:55:53+00:00",
+      "title": "feat: live bot knowledge and read-only metrics",
+      "areas": [
+        "الخادم والوظائف الداخلية",
+        "لوحة الإدارة"
+      ]
+    },
+    {
+      "id": "8506639e68",
+      "date": "2026-10-05T22:04:35+00:00",
+      "title": "security: lock Instagram to store owner",
+      "areas": [
+        "الخادم والوظائف الداخلية",
+        "واجهة المتجر وروبوت العملاء",
+        "لوحة الإدارة"
+      ]
+    },
+    {
+      "id": "f2bdef850d",
+      "date": "2026-10-05T21:47:51+00:00",
+      "title": "fix: preserve signed Instagram image URLs",
+      "areas": [
+        "الخادم والوظائف الداخلية"
+      ]
+    },
+    {
+      "id": "6e6332f883",
+      "date": "2026-10-05T21:45:29+00:00",
+      "title": "fix: restore Instagram profile image proxy",
+      "areas": [
+        "الخادم والوظائف الداخلية",
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "241ad293ec",
+      "date": "2026-10-05T21:41:38+00:00",
+      "title": "style: remove overlay post label",
+      "areas": [
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "d62a9cdb0b",
+      "date": "2026-10-05T21:39:00+00:00",
+      "title": "style: restore Instagram action placement",
+      "areas": [
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "0d7cd66721",
+      "date": "2026-10-05T21:34:55+00:00",
+      "title": "style: full-width Instagram media card",
+      "areas": [
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "6f42cf70ec",
+      "date": "2026-10-05T21:30:54+00:00",
+      "title": "fix: proxy Instagram profile image and enable audio",
+      "areas": [
+        "الخادم والوظائف الداخلية",
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "489cf5e350",
+      "date": "2026-10-05T21:28:58+00:00",
+      "title": "style: compact Instagram profile panel",
+      "areas": [
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "c72829d939",
+      "date": "2026-10-05T21:24:28+00:00",
+      "title": "fix: play Instagram videos in compact card",
+      "areas": [
+        "الخادم والوظائف الداخلية",
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "cc3b37df1b",
+      "date": "2026-10-05T21:20:09+00:00",
+      "title": "feat: add Instagram profile-style live viewer",
+      "areas": [
+        "الخادم والوظائف الداخلية",
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "47365b5794",
+      "date": "2026-10-05T21:15:08+00:00",
+      "title": "feat: show live Instagram media feed",
+      "areas": [
+        "الخادم والوظائف الداخلية",
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "9ac2250fd1",
+      "date": "2026-10-05T21:11:37+00:00",
+      "title": "fix: show Instagram connection result",
+      "areas": [
+        "الخادم والوظائف الداخلية"
+      ]
+    },
+    {
+      "id": "4b1d02f466",
+      "date": "2026-10-05T21:00:46+00:00",
+      "title": "fix: show Instagram OAuth errors",
+      "areas": [
+        "الخادم والوظائف الداخلية"
+      ]
+    },
+    {
+      "id": "3e66fc7fdc",
+      "date": "2026-10-05T20:54:15+00:00",
+      "title": "fix: parse Instagram token response",
+      "areas": [
+        "الخادم والوظائف الداخلية"
+      ]
+    },
+    {
+      "id": "5d5a91012c",
+      "date": "2026-10-05T20:51:05+00:00",
+      "title": "fix: preserve Instagram OAuth state",
+      "areas": [
+        "الخادم والوظائف الداخلية"
+      ]
+    },
+    {
+      "id": "913c53d916",
+      "date": "2026-10-05T20:30:26+00:00",
+      "title": "feat: add Instagram OAuth login card",
+      "areas": [
+        "الخادم والوظائف الداخلية",
+        "واجهة المتجر وروبوت العملاء"
+      ]
+    },
+    {
+      "id": "3059fb4268",
+      "date": "2026-10-05T19:43:20+00:00",
+      "title": "fix: show social cards and improve email receipt responsiveness",
+      "areas": [
+        "تحديث برمجي",
+        "واجهة المتجر وروبوت العملاء",
+        "لوحة الإدارة"
+      ]
+    },
+    {
+      "id": "125133eb46",
+      "date": "2026-10-05T19:38:18+00:00",
+      "title": "feat: add configurable social platform cards",
+      "areas": [
+        "واجهة المتجر وروبوت العملاء",
+        "لوحة الإدارة"
+      ]
+    }
+  ]
+}

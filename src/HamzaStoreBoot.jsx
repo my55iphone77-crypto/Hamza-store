@@ -325,6 +325,11 @@ export function HamzaStoreBoot({
       }
       return 'ما في منتجات أو تفاصيل نقاط ولاء مفعّلة حالياً حسب بيانات المتجر. إذا كنت تقصد نقاط حسابك، سجّل دخولك وبقدر أطلعلك رصيدك بدقة 🙏';
     }
+    if (/(شو انضاف|ايش انضاف|اخر تحديث|آخر تحديث|التحديثات|الميزة الجديدة|الميزات الجديدة|شو تغير|ايش تغير|التطويرات|شو صار بالموقع)/.test(normalizedMessage)) {
+      const updates = Array.isArray(liveContext?.developmentUpdates?.updates) ? liveContext.developmentUpdates.updates.slice(0, 8) : [];
+      if (updates.length === 0) return 'ما عندي سجل تحديثات منشور حالياً، وما بدي أخمّن عليك 🙏';
+      return `هاي آخر التحديثات المنشورة حسب سجل التطوير 🔄:\n${updates.map((item) => `• ${item.title}${item.areas?.length ? ` — ${item.areas.join('، ')}` : ''}`).join('\n')}`;
+    }
 
     // رسالة المساعدة: ثابتة وصادقة
     if (/^\s*(مساعد|مساعده|help|شو بتقدر|شو تقدر|ايش تقدر)\s*[؟?!.]*\s*$/i.test(String(textToSend).replace(/[\u064B-\u0652]/g, ''))) {
@@ -399,6 +404,7 @@ export function HamzaStoreBoot({
             catalogSample,
             loyaltyProgram: liveContext?.loyaltyProgram || null,
             account: liveContext?.account || null,
+            developmentUpdates: liveContext?.developmentUpdates || null,
             storeProfile: STORE_PROFILE,
             storeInfo: Object.fromEntries(Object.entries(STORE_INFO).filter(([, v]) => String(v || '').trim()))
           },
