@@ -118,6 +118,21 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     setCart(prev => (Array.isArray(prev) ? prev.filter(item => item && item.id !== id && item._id !== id) : []));
   };
 
+  const updateCartItemQuantity = (id, quantity, loyaltyOnly = false) => {
+    if (!id) return;
+    const requestedQuantity = Math.max(1, Math.floor(Number(quantity) || 1));
+    setCart(prev => (Array.isArray(prev)
+      ? prev.map(item => {
+        if (!item || !(item.id === id || item._id === id) || Boolean(item.loyaltyOnly) !== Boolean(loyaltyOnly)) return item;
+        const isOpenStoreCredit = item.deliveryType === 'store_credit';
+        const isDynamicTopup = item.deliveryType === 'id_topup' && Number(item.shop2topupItemId || 0) > 0;
+        const stockCount = Number(item.stock || 0);
+        const maxQuantity = !isOpenStoreCredit && !isDynamicTopup && stockCount > 0 ? stockCount : requestedQuantity;
+        return { ...item, quantity: Math.min(requestedQuantity, maxQuantity) };
+      })
+      : []));
+  };
+
   // 🆕 تحديث آيدي اللاعب لعنصر معيّن بالسلة (لمنتجات تعبئة الآيدي فقط)
   const updateCartItemPlayerId = (id, playerId) => {
     if (!id) return;
@@ -129,6 +144,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   const safeCart = Array.isArray(cart) ? cart : [];
   const totalPrice = safeCart.reduce((sum, item) => sum + (Number(item?.price) || 0) * (Number(item?.quantity) || 1), 0);
   const loyaltyPointsCost = safeCart.reduce((sum, item) => sum + (item?.loyaltyOnly ? Number(item.loyaltyPrice || 0) * (Number(item.quantity) || 1) : 0), 0);
+  const totalPoints = loyaltyPointsCost;
   const finalTotal = Math.max(0, totalPrice - Number(appliedCoupon?.discount || 0));
   const totalItemsCount = safeCart.reduce((acc, item) => acc + (Number(item?.quantity) || 1), 0);
   const isStoreBalancePayment = ['balance', 'store_balance'].includes(String(paymentMethod || '').trim().toLowerCase());
@@ -317,8 +333,8 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
 
   return {
     currentUser, isAdminUser, isStaffUser, userRoleInfo,
-    cart, setCart, addToCart, removeFromCart, updateCartItemPlayerId, requiresPlayerId,
-    totalPrice, finalTotal, loyaltyPointsCost, totalItemsCount,
+    cart, setCart, addToCart, removeFromCart, updateCartItemQuantity, updateCartItemPlayerId, requiresPlayerId,
+    totalPrice, finalTotal, loyaltyPointsCost, totalPoints, totalItemsCount,
     showCartDropdown, setShowCartDropdown,
     checkoutMode, setCheckoutMode,
     submittingCheckout, lastOrder, setLastOrder,

@@ -17,7 +17,9 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
     userRoleInfo = { label: 'ضيف', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: '#64748b' },
     cart = [],
     removeFromCart = () => {},
+    updateCartItemQuantity = () => {},
     totalPrice = 0,
+    totalPoints = 0,
     totalItemsCount = 0,
     showCartDropdown = false,
     setShowCartDropdown = () => {},
@@ -62,10 +64,13 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
                   const itemPrice = Number(item.price) || 0;
 
                   return (
-                    <div key={itemId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(11,15,25,0.7)', border: '1px solid rgba(255,255,255,0.06)', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>
-                      <span style={{ color: '#f8fafc' }}>{itemName} (×{itemQty}) {item.loyaltyOnly && <small style={{ color: '#e9d5ff' }}>⭐ {Number(item.loyaltyPrice || 0) * itemQty} نقطة</small>}</span>
+                    <div key={`${itemId}-${item.loyaltyOnly ? 'points' : 'cash'}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', background: 'rgba(11,15,25,0.7)', border: '1px solid rgba(255,255,255,0.06)', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>
+                      <span style={{ color: '#f8fafc', minWidth: 0 }}>{itemName} <small style={{ color: '#94a3b8' }}>×{itemQty}</small> {item.loyaltyOnly && <small style={{ color: '#e9d5ff' }}>⭐ {Number(item.loyaltyPrice || 0) * itemQty} نقطة</small>}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {!item.loyaltyOnly && <span style={{ color: '#facc15', fontWeight: 'bold' }}>{itemPrice * itemQty} دينار</span>}
+                        {item.loyaltyOnly && <span style={{ color: '#e9d5ff', fontWeight: 'bold' }}>{Number(item.loyaltyPrice || 0) * itemQty} نقطة</span>}
+                        <button type="button" onClick={() => updateCartItemQuantity(item.id || item._id, itemQty + 1, item.loyaltyOnly)} aria-label="زيادة الكمية" style={{ background: '#166534', color: '#fff', border: 'none', width: '22px', height: '22px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>+</button>
+                        <button type="button" onClick={() => updateCartItemQuantity(item.id || item._id, itemQty - 1, item.loyaltyOnly)} aria-label="تقليل الكمية" style={{ background: '#92400e', color: '#fff', border: 'none', width: '22px', height: '22px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>−</button>
                         <button
                           type="button"
                           onClick={() => removeFromCart(item.id || item._id)}
@@ -78,8 +83,10 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
                     </div>
                   );
                 })}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', fontWeight: 'bold', fontSize: '13px' }}>
-                  <span style={{ color: '#f8fafc' }}>الإجمالي: <span style={{ color: '#facc15' }}>{Number(totalPrice) || 0} دينار</span></span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', fontWeight: 'bold', fontSize: '13px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}><span style={{ color: '#f8fafc' }}>إجمالي الدينار</span><span style={{ color: '#facc15' }}>{Number(totalPrice).toFixed(2)} دينار</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}><span style={{ color: '#f8fafc' }}>إجمالي النقاط</span><span style={{ color: '#e9d5ff' }}>{Number(totalPoints).toFixed(2)} نقطة</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <button
                     type="button"
                     onClick={() => { setShowCartDropdown(false); handleInitiateCheckout(); }}
@@ -88,6 +95,7 @@ export function HeaderControls({ authCart, onOpenDashboard }) {
                   >
                     إتمام الشراء
                   </button>
+                  </div>
                 </div>
               </div>
             )}
