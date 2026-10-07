@@ -222,7 +222,7 @@ const GLASS_STYLE = `
     box-shadow: 0 16px 40px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12);
     backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%);
   }
-  .hz-admin-main { max-width: 1500px; margin: 0 auto; }
+  .hz-admin-main { width: 100%; max-width: none; margin: 0; }
   .hz-admin-main > .hz-glass-card { border-radius: 26px; box-shadow: 0 18px 50px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.18); }
   .hz-dashboard-summary { gap: 14px; margin-bottom: 30px; }
   .hz-dashboard-summary > div { min-height: 88px; justify-content: center; border-radius: 20px; background: linear-gradient(145deg, rgba(15,23,42,0.86), rgba(30,41,59,0.42)); box-shadow: 0 10px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1); }
