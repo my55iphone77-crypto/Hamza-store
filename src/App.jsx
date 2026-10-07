@@ -53,7 +53,7 @@ const GLASS_STYLE = `
       radial-gradient(ellipse 900px 600px at 50% 105%, rgba(168,85,247,0.30), transparent 55%),
       radial-gradient(ellipse 500px 350px at 25% 55%, rgba(16,185,129,0.20), transparent 60%),
       #05060a;
-    min-height: 100dvh;
+    min-height: 0;
     height: auto;
     width: 100%;
     max-width: 100%;
@@ -135,7 +135,7 @@ const GLASS_STYLE = `
   }
   .hz-app-full-container > div { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
   .hz-section-shell { width: 100%; max-width: 100%; min-width: 0; display: block; overflow: visible; overflow-wrap: anywhere; }
-  .hz-section-shell > * { width: 100%; max-width: 100%; min-width: 0; border-radius: 24px !important; background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+  .hz-section-shell > * { width: 100%; max-width: 100%; min-width: 0; min-height: 0 !important; height: auto !important; border-radius: 24px !important; background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
   .hz-section-shell > [style*="position: fixed"] { width: 100% !important; max-width: 100% !important; min-width: 0 !important; height: 100dvh !important; max-height: none !important; overflow-y: auto !important; align-items: center !important; padding: clamp(12px, 3vw, 24px) !important; background: rgba(15, 23, 42, 0.16) !important; backdrop-filter: blur(4px) !important; touch-action: pan-y; }
   .hz-section-shell > [style*="position: fixed"] > div { width: min(100%, 760px) !important; max-width: min(100%, 760px) !important; height: min(760px, calc(100dvh - clamp(24px, 3vw, 48px))) !important; max-height: calc(100dvh - clamp(24px, 3vw, 48px)) !important; min-height: 0 !important; margin: auto !important; overflow-y: auto !important; overflow-x: hidden !important; flex: 0 1 auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
   .hz-section-shell img, .hz-section-shell video, .hz-section-shell canvas { max-width: 100%; }
