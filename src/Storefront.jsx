@@ -105,6 +105,27 @@ const GLASS_STYLE = `
   .hz-header-controls { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; flex-wrap: nowrap; min-width: max-content; }
   .hz-header-controls > div { flex: 0 0 auto; }
 
+  .hz-social-section { width: 100%; margin: 42px 0 28px; }
+  .hz-social-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+  .hz-social-kicker { display: block; color: #facc15; font-size: 11px; font-weight: 700; margin-bottom: 7px; }
+  .hz-social-heading h2 { margin: 0; color: #f8fafc; font-size: clamp(20px, 3vw, 28px); }
+  .hz-social-line { width: 54%; height: 1px; background: linear-gradient(90deg, transparent, rgba(250,204,21,0.8)); }
+  .hz-social-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .hz-social-card { min-width: 0; border-radius: 20px; padding: 18px; color: #f8fafc; overflow: hidden; }
+  .hz-social-card-top, .hz-social-profile, .hz-social-footer { display: flex; align-items: center; gap: 12px; }
+  .hz-social-card-top { justify-content: space-between; }
+  .hz-social-card-top strong, .hz-social-card-top span, .hz-social-profile-copy strong, .hz-social-profile-copy span { display: block; }
+  .hz-social-card-top strong { font-size: 14px; }
+  .hz-social-card-top span, .hz-social-profile-copy span, .hz-social-footer { color: #94a3b8; font-size: 11px; margin-top: 4px; }
+  .hz-social-icon { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; color: var(--social-color); border: 1px solid color-mix(in srgb, var(--social-color) 65%, white 10%); border-radius: 12px; font-size: 25px; }
+  .hz-social-profile { margin-top: 16px; padding: 12px; border-radius: 14px; background: rgba(5,6,10,0.42); border: 1px solid rgba(255,255,255,0.1); }
+  .hz-social-avatar { width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center; border-radius: 50%; color: #fff; font-weight: 800; background: linear-gradient(135deg, var(--social-color), #7c3aed); }
+  .hz-social-profile-copy { min-width: 0; flex: 1; }
+  .hz-social-profile-copy strong { overflow-wrap: anywhere; font-size: 12px; }
+  .hz-social-open { flex: 0 0 auto; color: #fff; background: linear-gradient(135deg, #c026d3, #7c3aed); border-radius: 9px; padding: 8px 10px; text-decoration: none; font-size: 11px; font-weight: 700; }
+  .hz-social-open-disabled { background: rgba(255,255,255,0.08); color: #cbd5e1; }
+  .hz-social-footer { justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+
   .hz-glass-card {
     position: relative;
     background: radial-gradient(130% 65% at 12% 0%, rgba(255,255,255,0.38), transparent 55%), linear-gradient(155deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 55%);
@@ -247,7 +268,6 @@ const GLASS_STYLE = `
     .hz-social-grid { grid-template-columns: minmax(0, 1fr); }
     .hz-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
     .hz-support-grid .hz-glass-card { padding: 10px !important; }
-    .hz-social-section { display: none !important; }
     .hz-social-heading { align-items: start; flex-direction: column; }
     .hz-store-header { padding: 8px 10px !important; gap: 8px; flex-wrap: wrap; overflow: hidden; width: 100%; box-sizing: border-box; }
     .hz-store-brand { gap: 6px; flex: 1 1 100%; width: 100%; min-width: 0; }
