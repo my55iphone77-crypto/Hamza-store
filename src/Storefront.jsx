@@ -242,12 +242,14 @@ const GLASS_STYLE = `
     .hz-redeem-form input { width: 120px; }
     .hz-social-grid { grid-template-columns: minmax(0, 1fr); }
     .hz-social-heading { align-items: start; flex-direction: column; }
-    .hz-store-header { padding: 8px 10px !important; gap: 6px; overflow-x: auto; }
-    .hz-store-brand { gap: 6px; flex: 0 1 auto; }
+    .hz-store-header { padding: 8px 10px !important; gap: 8px; flex-wrap: wrap; overflow: hidden; width: 100%; box-sizing: border-box; }
+    .hz-store-brand { gap: 6px; flex: 1 1 100%; width: 100%; min-width: 0; }
     .hz-store-brand img { width: 88px !important; max-height: 42px !important; }
     .hz-store-brand span { font-size: 12px !important; max-width: 80px; }
-    .hz-header-controls { gap: 5px; }
-    .hz-header-controls .hz-admin-btn { padding: 8px 10px !important; font-size: 12px !important; }
+    .hz-header-controls { gap: 5px; width: 100%; min-width: 0; max-width: 100%; flex: 1 1 100%; flex-wrap: wrap; overflow: hidden; }
+    .hz-header-controls > div { width: 100%; min-width: 0; flex-wrap: wrap !important; gap: 5px !important; }
+    .hz-header-controls .hz-admin-btn { padding: 7px 8px !important; font-size: 11px !important; max-width: 100%; }
+    .hz-header-controls .hz-header-wallet { max-width: 100%; }
   }
   /* تابلت / آيباد */
   @media (min-width: 560px) and (max-width: 1023px) { .hz-grid { grid-template-columns: repeat(3, 1fr); } }
