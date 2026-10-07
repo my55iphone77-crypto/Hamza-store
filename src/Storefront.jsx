@@ -225,18 +225,22 @@ const GLASS_STYLE = `
     .hz-hero-frame { min-height: 0; border-radius: 18px; }
     .hz-store-intro { display: block; }
     .hz-catalog-count { display: inline-flex; margin-top: 12px; }
-    .hz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
+    .hz-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; width: 100%; }
     .hz-category-glass-bar { padding: 12px; border-radius: 16px; }
+    .hz-category-glass-bar > div:first-child { width: 100%; margin: 0 0 4px !important; }
+    .hz-category-glass-bar > div:last-child { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 2px 1px 5px; }
+    .hz-category-glass-bar > div:last-child::-webkit-scrollbar { display: none; }
+    .hz-category-chip { flex: 0 0 auto; min-height: 42px; padding: 9px 12px; white-space: nowrap; }
     /* بطاقات مضغوطة عشان تكفي عمودين جنب بعض بالموبايل */
     .hz-product-card { border-radius: 18px; }
-    .hz-product-body { padding: 12px !important; min-height: 190px; }
+    .hz-product-body { padding: 14px !important; min-height: 190px; }
     .hz-product-body h3 { font-size: 13px !important; line-height: 1.3; margin-bottom: 6px !important;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .hz-product-body p { font-size: 11px !important; margin-bottom: 8px !important;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .hz-product-glasschip { font-size: 10px !important; padding: 3px 7px !important; }
     .hz-price-row { flex-wrap: wrap; gap: 8px !important; margin-top: 8px !important; padding-top: 10px !important; }
-    .hz-price-row .hz-add-btn { width: 100%; padding: 8px 6px !important; font-size: 12px !important; }
+    .hz-price-row .hz-add-btn { flex: 1 1 calc(50% - 4px); min-width: 0; padding: 9px 6px !important; font-size: 12px !important; }
     .hz-root input, .hz-root textarea, .hz-root select { font-size: 16px !important; }
     .hz-header-wallet { width: auto; justify-content: center; order: initial; }
     .hz-redeem-form input { width: 120px; }
@@ -250,6 +254,41 @@ const GLASS_STYLE = `
     .hz-header-controls > div { width: 100%; min-width: 0; flex-wrap: wrap !important; gap: 5px !important; }
     .hz-header-controls .hz-admin-btn { padding: 7px 8px !important; font-size: 11px !important; max-width: 100%; }
     .hz-header-controls .hz-header-wallet { max-width: 100%; }
+    .hz-header-controls > div { justify-content: stretch; }
+    .hz-header-controls > div > .hz-cart-shell { flex: 1 1 auto; }
+    .hz-header-controls > div > .hz-cart-shell > button { width: 100%; justify-content: center; min-height: 44px; }
+    .hz-header-controls > div > .hz-header-wallet { flex: 1 1 100%; justify-content: center; }
+    .hz-header-controls > div > .hz-header-wallet .hz-header-balances { justify-content: center; }
+    .hz-redeem-form { width: 100%; justify-content: center; }
+    .hz-redeem-form input { flex: 1 1 auto; width: auto; min-width: 0; min-height: 42px; }
+    .hz-redeem-form button { min-height: 42px; }
+    .hz-cart-menu { position: fixed !important; left: 10px !important; right: 10px !important; width: auto !important; max-height: min(72dvh, 560px) !important; padding: 12px !important; }
+    .hz-cart-menu > div > div { align-items: stretch !important; }
+    .hz-cart-menu > div > div > div:last-child { flex-wrap: wrap; }
+    .hz-cart-menu .hz-checkout-btn { min-height: 44px; width: 100%; }
+    .hz-store-intro { margin-bottom: 14px; }
+    .hz-store-intro h2 { font-size: 22px !important; }
+    .hz-store-intro p { font-size: 13px; }
+    .hz-social-card { min-height: 74px; padding: 12px; }
+    .hz-instagram-media-grid { gap: 7px; }
+  }
+  @media (max-width: 380px) {
+    .hz-store-brand span { max-width: 68px; }
+    .hz-product-body { min-height: 178px; }
+    .hz-price-row .hz-add-btn { flex-basis: 100%; }
+  }
+  @media (max-width: 559px) {
+    .hz-checkout-form { padding: 14px !important; border-radius: 16px !important; gap: 14px !important; }
+    .hz-checkout-form > div:first-child { align-items: flex-start !important; gap: 10px !important; }
+    .hz-checkout-form > div:first-child h3 { font-size: 16px !important; line-height: 1.45; }
+    .hz-checkout-form > div:first-child p { font-size: 12px !important; overflow-wrap: anywhere; }
+    .hz-checkout-form > div:nth-child(2) { grid-template-columns: minmax(0, 1fr) !important; }
+    .hz-checkout-form .hz-pay-card { min-height: 58px; }
+    .hz-checkout-form > div:last-child { flex-direction: column; }
+    .hz-checkout-form > div:last-child button { width: 100%; min-height: 46px; }
+    .hz-checkout-form .hz-cancel-btn { width: 100%; }
+    .hz-order-tracker-form { flex-direction: column; }
+    .hz-order-tracker-form input, .hz-order-tracker-form button { width: 100%; min-height: 44px; }
   }
   /* تابلت / آيباد */
   @media (min-width: 560px) and (max-width: 1023px) { .hz-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -504,7 +543,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
           <div className="hz-glass-card" style={{ maxWidth: '980px', margin: '0 auto', padding: 'clamp(14px, 3vw, 30px)', borderColor: 'rgba(16,185,129,0.45)', boxShadow: '0 20px 60px rgba(0,0,0,0.45), 0 0 35px rgba(16,185,129,0.08)' }}>
             <button type="button" onClick={() => { setError(''); authCart.setCheckoutMode(false); }} style={{ background: 'rgba(51,65,85,0.7)', color: '#fff', border: '1px solid rgba(255,255,255,0.16)', padding: '9px 14px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '16px' }}>← العودة للمتجر</button>
             {error && <div role="alert" style={{ marginBottom: '16px', padding: '14px 16px', borderRadius: '14px', color: '#fecaca', background: 'rgba(127,29,29,0.72)', border: '1px solid rgba(248,113,113,0.65)', boxShadow: '0 8px 24px rgba(127,29,29,0.18)', lineHeight: 1.8, fontSize: '13px' }}>⚠️ {error}</div>}
-            <CheckoutForm authCart={authCart} inputStyle={inputStyle} />
+            {!authCart.lastOrder && <CheckoutForm authCart={authCart} inputStyle={inputStyle} />}
             <OrderConfirmation authCart={authCart} />
           </div>
         </div>
@@ -711,7 +750,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
           </div>
           <p style={{ margin: '0 0 15px 0', color: '#94a3b8', fontSize: '12px' }}>أدخل رقم الطلب لجلب حالته من قاعدة البيانات مباشرة:</p>
 
-          <form onSubmit={handleTrackOrder} style={{ display: 'flex', gap: '10px' }}>
+          <form className="hz-order-tracker-form" onSubmit={handleTrackOrder} style={{ display: 'flex', gap: '10px' }}>
             <input
               type="text"
               placeholder="أدخل رقم الطلب هنا..."

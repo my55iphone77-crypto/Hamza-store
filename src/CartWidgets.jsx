@@ -216,7 +216,7 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
   const safeCart = Array.isArray(cart) ? cart : [];
 
   return (
-    <form onSubmit={handleCheckout} style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(11, 15, 25, 0.95))', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', padding: '25px', borderRadius: '20px', border: '1px solid rgba(16, 185, 129, 0.4)', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '18px', boxShadow: '0 25px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
+    <form className="hz-checkout-form" onSubmit={handleCheckout} style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(11, 15, 25, 0.95))', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', padding: '25px', borderRadius: '20px', border: '1px solid rgba(16, 185, 129, 0.4)', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '18px', boxShadow: '0 25px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
         <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', border: '2px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', fontSize: '22px', fontWeight: 'bold', boxShadow: '0 0 15px rgba(16, 185, 129, 0.3)' }}>+</div>
         <div>
@@ -542,11 +542,11 @@ function OrderReceipt({ order, onClose }) {
 
 export function OrderConfirmation({ authCart }) {
   const safeAuthCart = authCart && typeof authCart === 'object' ? authCart : {};
-  const { lastOrder = null, setLastOrder = () => {} } = safeAuthCart;
+  const { lastOrder = null, setLastOrder = () => {}, setCheckoutMode = () => {} } = safeAuthCart;
 
   if (!lastOrder) return null;
 
-  return <OrderReceipt order={lastOrder} onClose={() => setLastOrder(null)} />;
+  return <OrderReceipt order={lastOrder} onClose={() => { setLastOrder(null); setCheckoutMode(false); }} />;
 }
 
 export function EmailVerificationBanner({ authCart }) {

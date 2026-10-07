@@ -270,7 +270,6 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
         setAppliedCoupon(null);
         setRedeemPoints(false);
         try { localStorage.removeItem('hamza_cart'); } catch (err) {}
-        setCheckoutMode(false);
         setShowCartDropdown(false);
       }
 
