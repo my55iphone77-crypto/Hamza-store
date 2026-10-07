@@ -222,7 +222,7 @@ const GLASS_STYLE = `
   /* موبايل */
   @media (max-width: 559px) {
     .hz-store-header { border-radius: 18px; padding: 10px !important; }
-    .hz-hero-frame { height: 220px; min-height: 0; border-radius: 18px; margin-bottom: 14px; }
+    .hz-hero-frame { height: 160px; min-height: 0; border-radius: 18px; margin-bottom: 12px; }
     .hz-store-intro { display: block; }
     .hz-catalog-count { display: inline-flex; margin-top: 12px; }
     .hz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
@@ -233,7 +233,7 @@ const GLASS_STYLE = `
     .hz-category-chip { flex: 0 0 auto; min-height: 42px; padding: 9px 12px; white-space: nowrap; }
     /* بطاقات مضغوطة عشان تكفي عمودين جنب بعض بالموبايل */
     .hz-product-card { border-radius: 18px; padding: 10px; }
-    .hz-product-body { padding: 10px !important; min-height: 155px; }
+    .hz-product-body { padding: 8px !important; min-height: 135px; }
     .hz-product-body h3 { font-size: 13px !important; line-height: 1.3; margin-bottom: 6px !important;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .hz-product-body p { font-size: 11px !important; margin-bottom: 8px !important;
@@ -245,8 +245,9 @@ const GLASS_STYLE = `
     .hz-header-wallet { width: auto; justify-content: center; order: initial; }
     .hz-redeem-form input { width: 120px; }
     .hz-social-grid { grid-template-columns: minmax(0, 1fr); }
-    .hz-social-section { margin-top: 14px; }
-    .hz-instagram-live-panel { max-height: 340px; overflow: hidden; }
+    .hz-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+    .hz-support-grid .hz-glass-card { padding: 10px !important; }
+    .hz-social-section { display: none !important; }
     .hz-social-heading { align-items: start; flex-direction: column; }
     .hz-store-header { padding: 8px 10px !important; gap: 8px; flex-wrap: wrap; overflow: hidden; width: 100%; box-sizing: border-box; }
     .hz-store-brand { gap: 6px; flex: 1 1 100%; width: 100%; min-width: 0; }
