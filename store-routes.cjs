@@ -11,6 +11,16 @@ module.exports = function buildStoreRouter(deps) {
   } = deps;
 
   const router = express.Router();
+  const validateShop2TopupProduct = async (product = {}) => {
+    if (String(product.deliveryType || '') !== 'id_topup') return;
+    const itemId = Number(product.shop2topupItemId || 0) || 0;
+    if (!itemId) throw new Error(`منتج الشحن "${product.name || 'بدون اسم'}" يحتاج معرّفاً صالحاً من كتالوج Shop2Topup قبل الحفظ.`);
+    if (!shop2topup.configured()) throw new Error('لا يمكن حفظ منتج الشحن الآن لأن ربط Shop2Topup غير مهيأ.');
+    const priceData = await shop2topup.getPrice(itemId);
+    if (priceData?.price?.unit_price === undefined) {
+      throw new Error(`منتج الشحن "${product.name || 'بدون اسم'}" غير موجود في كتالوج Shop2Topup. اختر منتجاً من الكتالوج قبل الحفظ.`);
+    }
+  };
   // مسارات داخلية محمية: مفتاح Shop2Topup لا يصل أبداً إلى الواجهة.
   router.get('/shop2topup/catalog/big-categories', permissionGuard('manage_products', 'manager'), async (req, res) => {
     try { res.json(await shop2topup.listBigCategories(true)); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
@@ -563,6 +573,7 @@ module.exports = function buildStoreRouter(deps) {
         payload.codes = normalizeCodes(payload.codes);
         payload.stock = payload.codes.length;
       }
+      await validateShop2TopupProduct(payload);
       const product = await new Product(payload).save();
       await seedStoreCreditCards(product, product.codes || []);
       res.json(product);
@@ -579,6 +590,7 @@ module.exports = function buildStoreRouter(deps) {
         payload.codes = Array.isArray(payload.codes) ? normalizeCodes(payload.codes) : (existing.codes || []);
         payload.stock = payload.codes.length;
       }
+      await validateShop2TopupProduct({ ...existing.toObject(), ...payload, deliveryType });
       const p = await Product.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
       if (!p) return res.status(404).json({ error: 'المنتج غير موجود' });
       res.json(p);
@@ -640,6 +652,9 @@ module.exports = function buildStoreRouter(deps) {
       const requested = String(req.body?.status || '').trim();
       const status = requested === 'منشور' ? 'منشور' : requested === 'غير منشور' ? 'غير منشور' : null;
       if (!status) return res.status(400).json({ error: 'حالة نشر غير صالحة.' });
+      const existing = await Product.findById(req.params.id);
+      if (!existing) return res.status(404).json({ error: 'المنتج غير موجود' });
+      if (status === 'منشور') await validateShop2TopupProduct(existing.toObject());
       const p = await Product.findByIdAndUpdate(req.params.id, { $set: { status } }, { new: true, runValidators: true });
       if (!p) return res.status(404).json({ error: 'المنتج غير موجود' });
       res.json(p);
