@@ -252,6 +252,18 @@ const GLASS_STYLE = `
   @media (min-width: 560px) and (max-width: 1023px) {
     .hz-hero-frame { height: clamp(240px, 42vw, 430px); }
   }
+  /* تجاوب شامل للهواتف الكبيرة والتابلت والشاشات المتوسطة */
+  @media (max-width: 1023px) {
+    .hz-store-header { flex-wrap: wrap; width: 100%; }
+    .hz-store-brand { min-width: 0; }
+    .hz-header-controls { min-width: 0; max-width: 100%; flex: 1 1 100%; flex-wrap: wrap; }
+    .hz-header-controls > div { min-width: 0; max-width: 100%; flex-wrap: wrap; }
+    .hz-store-intro { align-items: stretch; flex-direction: column; }
+    .hz-catalog-count { align-self: flex-start; }
+    .hz-checkout-form, .hz-category-glass-bar, .hz-social-section, .hz-store-footer { max-width: 100%; min-width: 0; }
+    .hz-social-card, .hz-social-profile-copy, .hz-instagram-live-panel { min-width: 0; }
+    .hz-social-card strong, .hz-social-card small { overflow-wrap: anywhere; }
+  }
   /* موبايل */
   @media (max-width: 559px) {
     .hz-store-header { border-radius: 18px; padding: 10px !important; }
