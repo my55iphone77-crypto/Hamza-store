@@ -225,7 +225,7 @@ const GLASS_STYLE = `
     .hz-hero-frame { min-height: 0; border-radius: 18px; }
     .hz-store-intro { display: block; }
     .hz-catalog-count { display: inline-flex; margin-top: 12px; }
-    .hz-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; width: 100%; }
+    .hz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
     .hz-category-glass-bar { padding: 12px; border-radius: 16px; }
     .hz-category-glass-bar > div:first-child { width: 100%; margin: 0 0 4px !important; }
     .hz-category-glass-bar > div:last-child { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 2px 1px 5px; }
