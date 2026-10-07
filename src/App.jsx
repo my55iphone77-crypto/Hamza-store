@@ -313,20 +313,20 @@ const GLASS_STYLE = `
   .hz-product-modal-overlay {
     position: fixed !important; inset: 0 !important; width: 100% !important; height: 100dvh !important; max-width: none !important; max-height: none !important;
     display: flex !important; align-items: center !important; justify-content: center !important;
-    padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
+    padding: 0 !important;
     box-sizing: border-box !important; overflow-x: hidden !important; overflow-y: auto !important; overscroll-behavior: contain !important; touch-action: pan-y !important;
   }
   .hz-product-modal-overlay > div {
-    width: min(100%, 640px) !important; max-width: 640px !important; height: auto !important; min-height: 0 !important;
+    width: 100% !important; max-width: 1500px !important; height: auto !important; min-height: 0 !important;
     max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 24px)) !important;
-    margin: auto !important; padding: clamp(16px, 2.5vw, 28px) !important; box-sizing: border-box !important;
+    margin: auto !important; padding: clamp(16px, 2.5vw, 28px) !important; border-radius: 26px !important; box-sizing: border-box !important;
     overflow-x: hidden !important; overflow-y: auto !important; flex: 0 1 auto !important; -webkit-overflow-scrolling: touch !important;
   }
-  .hz-product-modal-overlay .hz-product-form { min-width: 0 !important; width: 100% !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .hz-product-modal-overlay .hz-product-form { min-width: 0 !important; width: min(100%, 640px) !important; max-width: 640px !important; margin: 0 auto !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .hz-product-modal-overlay .hz-product-form > * { min-width: 0 !important; max-width: 100% !important; }
   .hz-product-modal-overlay input, .hz-product-modal-overlay select, .hz-product-modal-overlay textarea, .hz-product-modal-overlay button { max-width: 100% !important; }
   @media (max-width: 720px) {
-    .hz-product-modal-overlay { padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)) !important; }
+    .hz-product-modal-overlay { padding: 0 !important; }
     .hz-product-modal-overlay > div { width: 100% !important; max-width: 100% !important; border-radius: 16px !important; padding: 14px !important; }
     .hz-product-modal-overlay .hz-product-form { grid-template-columns: minmax(0, 1fr) !important; gap: 9px !important; }
     .hz-product-modal-overlay .hz-schedule-box { grid-template-columns: minmax(0, 1fr) !important; }
