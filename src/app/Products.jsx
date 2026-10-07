@@ -965,14 +965,14 @@ const discountBadgeStyle = {
 const modalOverlayStyle = {
   position: "fixed", inset: 0, width: "100%", height: "100dvh", minHeight: 0,
   background: "rgba(2, 6, 23, 0.86)", backdropFilter: "blur(12px)",
-  display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 1100, padding: "max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))", boxSizing: "border-box", overflowY: "auto", overflowX: "hidden", overscrollBehavior: "contain", touchAction: "pan-y", pointerEvents: "auto", WebkitOverflowScrolling: "touch"
+  display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 1100, padding: "max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))", boxSizing: "border-box", overflowY: "auto", overflowX: "hidden", overscrollBehavior: "auto", touchAction: "pan-y", pointerEvents: "auto", WebkitOverflowScrolling: "touch"
 };
 
 const modalContentStyle = {
   background: "linear-gradient(145deg, rgba(23, 37, 84, 0.97), rgba(15, 23, 42, 0.97))", backdropFilter: "blur(20px)",
   border: "1px solid rgba(56, 189, 248, 0.32)", borderRadius: "22px",
   padding: "clamp(16px, 2.5vw, 28px)", width: "min(100%, 760px)", maxWidth: "760px", maxHeight: "calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 24px))",
-  overflowY: "auto", overflowX: "hidden", position: "relative", boxSizing: "border-box", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", boxShadow: "0 25px 50px -12px rgba(2, 6, 23, 0.72), 0 0 40px rgba(14, 165, 233, 0.12)", margin: "auto", flex: "0 1 auto", minHeight: 0
+  overflowY: "auto", overflowX: "hidden", position: "relative", boxSizing: "border-box", overscrollBehavior: "auto", WebkitOverflowScrolling: "touch", boxShadow: "0 25px 50px -12px rgba(2, 6, 23, 0.72), 0 0 40px rgba(14, 165, 233, 0.12)", margin: "auto", flex: "0 1 auto", minHeight: 0
 };
 
 const closeBtnStyle = {
