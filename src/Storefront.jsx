@@ -147,7 +147,7 @@ const GLASS_STYLE = `
   .hz-store-header::after { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 12% 0%, rgba(56,189,248,0.16), transparent 38%), radial-gradient(circle at 88% 100%, rgba(249,115,22,0.12), transparent 42%); pointer-events: none; }
   .hz-hero-frame { position: relative; width: 100%; max-width: 100%; box-sizing: border-box; height: clamp(240px, 45vw, 680px); margin-bottom: 24px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(240,192,96,0.38); box-shadow: 0 20px 60px rgba(0,0,0,0.42), 0 0 45px rgba(56,189,248,0.08); background: #080b10; }
   .hz-hero-frame::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(2,6,23,0.02), rgba(2,6,23,0.32)); }
-  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: 100% !important; max-height: 100% !important; object-fit: cover !important; object-position: center; background: #080b10; }
+  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: 100% !important; max-height: 100% !important; object-fit: contain !important; object-position: center; background: #080b10; }
   .hz-hero-media { position: absolute; inset: 0; opacity: 0; transition: opacity .55s ease; pointer-events: none; }
   .hz-hero-media.active { opacity: 1; pointer-events: auto; }
   .hz-hero-arrow { position: absolute; z-index: 4; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; color: #fff; background: rgba(8,11,16,.58); backdrop-filter: blur(12px); cursor: pointer; font-size: 22px; }
