@@ -317,7 +317,7 @@ const GLASS_STYLE = `
     box-sizing: border-box !important; overflow-x: hidden !important; overflow-y: auto !important; overscroll-behavior: auto !important; touch-action: pan-y !important;
   }
   .hz-product-modal-overlay > div {
-    width: min(100%, 640px) !important; max-width: 640px !important; height: auto !important; min-height: 0 !important;
+    width: min(92vw, 760px) !important; max-width: 760px !important; height: auto !important; min-height: 0 !important;
     max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 24px)) !important;
     margin: auto !important; padding: clamp(16px, 2.5vw, 28px) !important; border-radius: 22px !important; box-sizing: border-box !important;
     overflow-x: hidden !important; overflow-y: auto !important; overscroll-behavior: auto !important; flex: 0 1 auto !important; -webkit-overflow-scrolling: touch !important;
@@ -340,7 +340,7 @@ const GLASS_STYLE = `
     overscroll-behavior: auto !important; touch-action: pan-y !important;
   }
   .hz-section-shell [style*="position: fixed"] > div {
-    width: min(100%, 640px) !important; max-width: 640px !important; height: auto !important; min-height: 0 !important;
+    width: min(92vw, 760px) !important; max-width: 760px !important; height: auto !important; min-height: 0 !important;
     max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 24px)) !important;
     margin: auto !important; overflow-x: hidden !important; overflow-y: auto !important;
     overscroll-behavior: auto !important; -webkit-overflow-scrolling: touch !important;
