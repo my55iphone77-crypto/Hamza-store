@@ -635,8 +635,9 @@ export default function Products() {
 
       {/* نافذة إضافة منتج جديد */}
       {isAddModalOpen && (
-        <div className="hz-product-modal-overlay" style={modalOverlayStyle} dir="rtl">
-          <div className="hz-product-modal" style={modalContentStyle}>
+        <>
+          <div className="hz-product-backdrop" style={{ ...modalOverlayStyle, display: "block" }} aria-hidden="true" />
+          <div className="hz-product-modal" style={{ ...modalContentStyle, position: "fixed", top: "max(12px, env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", width: "min(calc(100vw - 24px), 1100px)", maxWidth: "calc(100vw - 24px)", zIndex: 1101 }} dir="rtl">
             <button onClick={() => setIsAddModalOpen(false)} style={closeBtnStyle}>✕</button>
             <h3 style={{ color: "#10b981", margin: "0 0 15px 0" }}>+ إضافة بطاقة أو منتج جديد</h3>
             <form className="hz-product-form" onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -710,7 +711,7 @@ export default function Products() {
               <button type="submit" style={primaryButtonStyle}>حفظ وإضافة المنتج 🚀</button>
             </form>
           </div>
-        </div>
+        </>
       )}
 
       {/* نافذة تفاصيل وتعديل المنتج */}
@@ -965,14 +966,14 @@ const discountBadgeStyle = {
 const modalOverlayStyle = {
   position: "fixed", inset: 0, width: "100vw", height: "100dvh", minHeight: "100%", minWidth: 0,
   background: "rgba(2, 6, 23, 0.86)", backdropFilter: "blur(12px)",
-  display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 1100, padding: "max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))", boxSizing: "border-box", overflowY: "auto", overflowX: "hidden", overscrollBehaviorY: "contain", touchAction: "pan-y", WebkitOverflowScrolling: "touch"
+  display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 1100, padding: "max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))", boxSizing: "border-box", overflow: "hidden", overscrollBehavior: "none", touchAction: "none", pointerEvents: "none"
 };
 
 const modalContentStyle = {
   background: "linear-gradient(145deg, rgba(23, 37, 84, 0.97), rgba(15, 23, 42, 0.97))", backdropFilter: "blur(20px)",
   border: "1px solid rgba(56, 189, 248, 0.32)", borderRadius: "22px",
   padding: "clamp(18px, 3vw, 32px)", width: "min(100%, 1100px)", maxWidth: "1100px", maxHeight: "calc(100dvh - clamp(24px, 6vw, 64px))", minHeight: 0,
-  overflowY: "scroll", overflowX: "hidden", position: "relative", boxSizing: "border-box", overscrollBehaviorY: "contain", touchAction: "pan-y", WebkitOverflowScrolling: "touch", scrollbarGutter: "stable", boxShadow: "0 25px 50px -12px rgba(2, 6, 23, 0.72), 0 0 40px rgba(14, 165, 233, 0.12)", margin: "0 auto"
+  overflowY: "auto", overflowX: "hidden", position: "relative", boxSizing: "border-box", overscrollBehaviorY: "contain", touchAction: "pan-y", pointerEvents: "auto", WebkitOverflowScrolling: "touch", scrollbarGutter: "stable", boxShadow: "0 25px 50px -12px rgba(2, 6, 23, 0.72), 0 0 40px rgba(14, 165, 233, 0.12)", margin: "0 auto"
 };
 
 const closeBtnStyle = {
