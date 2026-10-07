@@ -216,7 +216,7 @@ const GLASS_STYLE = `
     box-shadow: 0 10px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
   }
   .hz-admin-header {
-    position: sticky; top: 12px; z-index: 40; max-width: 1500px; margin: 0 auto 18px;
+    position: sticky; top: 12px; z-index: 40; width: 100%; max-width: none; margin: 0 0 18px;
     background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(8,11,16,0.72));
     border: 1px solid rgba(148,163,184,0.2); border-radius: 22px;
     box-shadow: 0 16px 40px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12);
