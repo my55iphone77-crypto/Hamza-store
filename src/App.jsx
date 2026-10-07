@@ -312,12 +312,12 @@ const GLASS_STYLE = `
   /* نافذة المنتجات: قياس واحد متجاوب، بدون 100vw أو ارتفاع ثابت يسبب القصّ على الأجهزة الصغيرة. */
   .hz-product-modal-overlay {
     position: fixed !important; inset: 0 !important; width: 100% !important; height: 100dvh !important; max-width: none !important; max-height: none !important;
-    display: flex !important; align-items: flex-start !important; justify-content: center !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
     padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
     box-sizing: border-box !important; overflow-x: hidden !important; overflow-y: auto !important; overscroll-behavior: contain !important; touch-action: pan-y !important;
   }
   .hz-product-modal-overlay > div {
-    width: min(100%, 760px) !important; max-width: 760px !important; height: auto !important; min-height: 0 !important;
+    width: min(100%, 640px) !important; max-width: 640px !important; height: auto !important; min-height: 0 !important;
     max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 24px)) !important;
     margin: auto !important; padding: clamp(16px, 2.5vw, 28px) !important; box-sizing: border-box !important;
     overflow-x: hidden !important; overflow-y: auto !important; flex: 0 1 auto !important; -webkit-overflow-scrolling: touch !important;
