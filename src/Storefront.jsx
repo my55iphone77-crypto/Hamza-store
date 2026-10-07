@@ -213,7 +213,7 @@ const GLASS_STYLE = `
   }
 
   /* ================= تجاوب الأبعاد مع كل الأجهزة ================= */
-  .hz-container { width: 100%; max-width: 1440px; min-width: 0; margin: 0 auto; }
+  .hz-container { width: 100%; max-width: none; min-width: 0; margin: 0; }
   .hz-grid {
     display: grid; width: 100%; box-sizing: border-box;
     grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
