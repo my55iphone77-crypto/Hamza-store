@@ -332,6 +332,23 @@ const GLASS_STYLE = `
     .hz-product-modal-overlay .hz-schedule-box { grid-template-columns: minmax(0, 1fr) !important; }
     .hz-product-modal .hz-product-form > div[style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
   }
+
+  /* نفس نظام الحجم والتمرير لكل النوافذ المنبثقة في أقسام الإدارة. */
+  .hz-section-shell [style*="position: fixed"] {
+    width: 100vw !important; max-width: none !important; height: 100dvh !important; max-height: none !important;
+    align-items: center !important; overflow-x: hidden !important; overflow-y: auto !important;
+    overscroll-behavior: auto !important; touch-action: pan-y !important;
+  }
+  .hz-section-shell [style*="position: fixed"] > div {
+    width: min(100%, 640px) !important; max-width: 640px !important; height: auto !important; min-height: 0 !important;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 24px)) !important;
+    margin: auto !important; overflow-x: hidden !important; overflow-y: auto !important;
+    overscroll-behavior: auto !important; -webkit-overflow-scrolling: touch !important;
+  }
+  @media (max-width: 720px) {
+    .hz-section-shell [style*="position: fixed"] { padding: 8px !important; }
+    .hz-section-shell [style*="position: fixed"] > div { width: 100% !important; max-width: 100% !important; border-radius: 16px !important; }
+  }
 	`;
 
 function MainContent() {
