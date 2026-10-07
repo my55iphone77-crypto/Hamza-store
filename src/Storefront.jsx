@@ -293,11 +293,11 @@ const GLASS_STYLE = `
   /* تابلت / آيباد */
   @media (min-width: 560px) and (max-width: 1023px) { .hz-grid { grid-template-columns: repeat(3, 1fr); } }
   /* لابتوب */
-  @media (min-width: 1024px) and (max-width: 1439px) { .hz-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 1024px) and (max-width: 1439px) { .hz-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   /* كمبيوتر */
-  @media (min-width: 1440px) and (max-width: 1919px) { .hz-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 1440px) and (max-width: 1919px) { .hz-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
   /* شاشات كبيرة / تلفزيون / بلايستيشن */
-  @media (min-width: 1920px) { .hz-root { zoom: 1; } .hz-grid { grid-template-columns: repeat(5, 1fr); } }
+  @media (min-width: 1920px) { .hz-root { zoom: 1; } .hz-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
   @media (min-width: 2560px) { .hz-root { zoom: 1; } .hz-grid { grid-template-columns: repeat(6, 1fr); } }
   /* أزرار مريحة للمس */
   @media (pointer: coarse) { .hz-category-chip, .hz-add-btn, .hz-root button { min-height: 44px; } }
