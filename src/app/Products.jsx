@@ -710,7 +710,7 @@ export default function Products() {
               <button type="submit" style={primaryButtonStyle}>حفظ وإضافة المنتج 🚀</button>
             </form>
           </div>
-        </>
+        </div>
       )}
 
       {/* نافذة تفاصيل وتعديل المنتج */}
