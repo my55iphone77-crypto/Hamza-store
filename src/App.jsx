@@ -325,11 +325,18 @@ const GLASS_STYLE = `
   .hz-product-modal-overlay .hz-product-form { min-width: 0 !important; width: 100% !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .hz-product-modal-overlay .hz-product-form > * { min-width: 0 !important; max-width: 100% !important; }
   .hz-product-modal-overlay input, .hz-product-modal-overlay select, .hz-product-modal-overlay textarea, .hz-product-modal-overlay button { max-width: 100% !important; }
+  .hz-product-backdrop { position: fixed !important; inset: 0 !important; width: 100% !important; height: 100dvh !important; z-index: 1100 !important; overflow-y: auto !important; overflow-x: hidden !important; background: rgba(2, 6, 23, 0.86) !important; }
+  .hz-product-modal { width: min(calc(100% - 16px), 760px) !important; max-width: calc(100% - 16px) !important; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 16px)) !important; overflow-y: auto !important; overflow-x: hidden !important; box-sizing: border-box !important; -webkit-overflow-scrolling: touch !important; }
+  .hz-product-modal .hz-product-form { min-width: 0 !important; width: 100% !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .hz-product-modal input, .hz-product-modal select, .hz-product-modal textarea, .hz-product-modal button { max-width: 100% !important; }
   @media (max-width: 720px) {
     .hz-product-modal-overlay { padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)) !important; }
     .hz-product-modal-overlay > div { width: 100% !important; max-width: 100% !important; border-radius: 16px !important; padding: 14px !important; }
     .hz-product-modal-overlay .hz-product-form { grid-template-columns: minmax(0, 1fr) !important; gap: 9px !important; }
     .hz-product-modal-overlay .hz-schedule-box { grid-template-columns: minmax(0, 1fr) !important; }
+    .hz-product-modal { width: calc(100% - 16px) !important; max-width: calc(100% - 16px) !important; border-radius: 16px !important; padding: 14px !important; }
+    .hz-product-modal .hz-product-form { grid-template-columns: minmax(0, 1fr) !important; gap: 9px !important; }
+    .hz-product-modal .hz-schedule-box { grid-template-columns: minmax(0, 1fr) !important; }
   }
 	`;
 

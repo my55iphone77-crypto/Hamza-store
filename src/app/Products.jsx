@@ -635,8 +635,9 @@ export default function Products() {
 
       {/* نافذة إضافة منتج جديد */}
       {isAddModalOpen && (
-        <div className="hz-product-modal-overlay" style={modalOverlayStyle} dir="rtl">
-          <div className="hz-product-modal" style={{ ...modalContentStyle, pointerEvents: "auto" }}>
+        <>
+          <div className="hz-product-backdrop" style={{ ...modalOverlayStyle, display: "block", pointerEvents: "none" }} aria-hidden="true" />
+          <div className="hz-product-modal" style={{ ...modalContentStyle, position: "fixed", top: "max(8px, env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", width: "min(calc(100% - 16px), 760px)", maxWidth: "calc(100% - 16px)", zIndex: 1101, pointerEvents: "auto" }} dir="rtl">
             <button onClick={() => setIsAddModalOpen(false)} style={closeBtnStyle}>✕</button>
             <h3 style={{ color: "#10b981", margin: "0 0 15px 0" }}>+ إضافة بطاقة أو منتج جديد</h3>
             <form className="hz-product-form" onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -710,7 +711,7 @@ export default function Products() {
               <button type="submit" style={primaryButtonStyle}>حفظ وإضافة المنتج 🚀</button>
             </form>
           </div>
-        </div>
+        </>
       )}
 
       {/* نافذة تفاصيل وتعديل المنتج */}
