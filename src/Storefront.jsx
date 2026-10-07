@@ -98,33 +98,6 @@ const GLASS_STYLE = `
   .hz-redeem-form { display: flex; align-items: center; gap: 5px; }
   .hz-redeem-form input { width: 130px; background: rgba(11,15,25,0.7); border: 1px solid rgba(250,204,21,0.35); border-radius: 8px; padding: 6px 8px; color: #fff; font-size: 11px; }
   .hz-redeem-form button { background: #a16207; color: #fff; border: none; border-radius: 8px; padding: 6px 8px; cursor: pointer; font-size: 11px; }
-  .hz-store-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: nowrap; min-width: 0; }
-  .hz-store-brand { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto; }
-  .hz-store-brand img { flex: 0 0 auto; }
-  .hz-store-brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hz-header-controls { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; flex-wrap: nowrap; min-width: max-content; }
-  .hz-header-controls > div { flex: 0 0 auto; }
-
-  .hz-social-section { width: 100%; margin: 42px 0 28px; }
-  .hz-social-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
-  .hz-social-kicker { display: block; color: #facc15; font-size: 11px; font-weight: 700; margin-bottom: 7px; }
-  .hz-social-heading h2 { margin: 0; color: #f8fafc; font-size: clamp(20px, 3vw, 28px); }
-  .hz-social-line { width: 54%; height: 1px; background: linear-gradient(90deg, transparent, rgba(250,204,21,0.8)); }
-  .hz-social-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-  .hz-social-card { min-width: 0; border-radius: 20px; padding: 18px; color: #f8fafc; overflow: hidden; }
-  .hz-social-card-top, .hz-social-profile, .hz-social-footer { display: flex; align-items: center; gap: 12px; }
-  .hz-social-card-top { justify-content: space-between; }
-  .hz-social-card-top strong, .hz-social-card-top span, .hz-social-profile-copy strong, .hz-social-profile-copy span { display: block; }
-  .hz-social-card-top strong { font-size: 14px; }
-  .hz-social-card-top span, .hz-social-profile-copy span, .hz-social-footer { color: #94a3b8; font-size: 11px; margin-top: 4px; }
-  .hz-social-icon { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; color: var(--social-color); border: 1px solid color-mix(in srgb, var(--social-color) 65%, white 10%); border-radius: 12px; font-size: 25px; }
-  .hz-social-profile { margin-top: 16px; padding: 12px; border-radius: 14px; background: rgba(5,6,10,0.42); border: 1px solid rgba(255,255,255,0.1); }
-  .hz-social-avatar { width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center; border-radius: 50%; color: #fff; font-weight: 800; background: linear-gradient(135deg, var(--social-color), #7c3aed); }
-  .hz-social-profile-copy { min-width: 0; flex: 1; }
-  .hz-social-profile-copy strong { overflow-wrap: anywhere; font-size: 12px; }
-  .hz-social-open { flex: 0 0 auto; color: #fff; background: linear-gradient(135deg, #c026d3, #7c3aed); border-radius: 9px; padding: 8px 10px; text-decoration: none; font-size: 11px; font-weight: 700; }
-  .hz-social-open-disabled { background: rgba(255,255,255,0.08); color: #cbd5e1; }
-  .hz-social-footer { justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
 
   .hz-glass-card {
     position: relative;
@@ -145,17 +118,9 @@ const GLASS_STYLE = `
     box-shadow: 0 16px 40px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.14);
   }
   .hz-store-header::after { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 12% 0%, rgba(56,189,248,0.16), transparent 38%), radial-gradient(circle at 88% 100%, rgba(249,115,22,0.12), transparent 42%); pointer-events: none; }
-  .hz-hero-frame { position: relative; width: 100%; max-width: 100%; box-sizing: border-box; height: clamp(260px, 50vw, 760px); margin-bottom: 24px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(240,192,96,0.38); box-shadow: 0 20px 60px rgba(0,0,0,0.42), 0 0 45px rgba(56,189,248,0.08); background: #080b10; }
+  .hz-hero-frame { position: relative; width: 100%; height: auto; margin-bottom: 24px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(240,192,96,0.38); box-shadow: 0 20px 60px rgba(0,0,0,0.42), 0 0 45px rgba(56,189,248,0.08); background: #080b10; }
   .hz-hero-frame::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(2,6,23,0.02), rgba(2,6,23,0.32)); }
-  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: 100% !important; max-height: 100% !important; object-fit: cover !important; object-position: center; background: #080b10; }
-  .hz-hero-media { position: absolute; inset: 0; opacity: 0; transition: opacity .55s ease; pointer-events: none; }
-  .hz-hero-media.active { opacity: 1; pointer-events: auto; }
-  .hz-hero-arrow { position: absolute; z-index: 4; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; color: #fff; background: rgba(8,11,16,.58); backdrop-filter: blur(12px); cursor: pointer; font-size: 22px; }
-  .hz-hero-arrow.prev { inset-inline-start: 14px; }
-  .hz-hero-arrow.next { inset-inline-end: 14px; }
-  .hz-hero-dots { position: absolute; z-index: 4; inset: auto 0 12px; display: flex; justify-content: center; gap: 7px; }
-  .hz-hero-dot { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.45); cursor: pointer; }
-  .hz-hero-dot.active { width: 24px; border-radius: 999px; background: #facc15; }
+  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: auto !important; max-height: none !important; object-fit: contain !important; object-position: center; }
   .hz-store-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: 26px 0 4px; padding: 16px 18px; border: 1px solid rgba(148,163,184,0.18); border-radius: 18px; background: linear-gradient(135deg, rgba(15,23,42,0.72), rgba(8,11,16,0.52)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); color: #94a3b8; font-size: 11px; }
   .hz-store-footer strong { color: #bae6fd; font-size: 13px; }
   .hz-social-section { margin-top: 26px; }
@@ -242,112 +207,48 @@ const GLASS_STYLE = `
   }
 
   /* ================= تجاوب الأبعاد مع كل الأجهزة ================= */
-  .hz-container { width: 100%; max-width: none; min-width: 0; margin: 0; }
+  .hz-container { width: 100%; max-width: 1440px; min-width: 0; margin: 0 auto; }
+  /* لا تمدد الأقسام الفارغة إلى طول الشاشة؛ كل قسم يتبع محتواه فقط */
+  .hz-root, .hz-root > .hz-container, .hz-root > .hz-container > * { min-height: 0 !important; }
+  /* لا تمدد الأقسام الفارغة إلى طول الشاشة؛ كل قسم يتبع محتواه فقط */
+  .hz-root, .hz-root > .hz-container, .hz-root > .hz-container > * { min-height: 0 !important; }
   .hz-grid {
     display: grid; width: 100%; box-sizing: border-box;
     grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
     gap: clamp(12px, 2vw, 24px);
   }
-  /* تابلت */
-  @media (min-width: 560px) and (max-width: 1023px) {
-    .hz-hero-frame { height: clamp(280px, 54vw, 560px); }
-  }
-  /* تجاوب شامل للهواتف الكبيرة والتابلت والشاشات المتوسطة */
-  @media (max-width: 1023px) {
-    .hz-store-header { flex-wrap: wrap; width: 100%; }
-    .hz-store-brand { min-width: 0; }
-    .hz-header-controls { min-width: 0; max-width: 100%; flex: 1 1 100%; flex-wrap: wrap; }
-    .hz-header-controls > div { min-width: 0; max-width: 100%; flex-wrap: wrap; }
-    .hz-store-intro { align-items: stretch; flex-direction: column; }
-    .hz-catalog-count { align-self: flex-start; }
-    .hz-checkout-form, .hz-category-glass-bar, .hz-social-section, .hz-store-footer { max-width: 100%; min-width: 0; }
-    .hz-social-card, .hz-social-profile-copy, .hz-instagram-live-panel { min-width: 0; }
-    .hz-social-card strong, .hz-social-card small { overflow-wrap: anywhere; }
-  }
   /* موبايل */
   @media (max-width: 559px) {
     .hz-store-header { border-radius: 18px; padding: 10px !important; }
-    .hz-hero-frame { height: clamp(230px, 66vw, 340px); min-height: 0; border-radius: 18px; margin-bottom: 12px; }
-    .hz-hero-arrow { width: 36px; height: 36px; font-size: 18px; }
-    .hz-hero-arrow.prev { inset-inline-start: 8px; }
-    .hz-hero-arrow.next { inset-inline-end: 8px; }
+    .hz-hero-frame { min-height: 0; border-radius: 18px; }
     .hz-store-intro { display: block; }
     .hz-catalog-count { display: inline-flex; margin-top: 12px; }
     .hz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
     .hz-category-glass-bar { padding: 12px; border-radius: 16px; }
-    .hz-category-glass-bar > div:first-child { width: 100%; margin: 0 0 4px !important; }
-    .hz-category-glass-bar > div:last-child { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 2px 1px 5px; }
-    .hz-category-glass-bar > div:last-child::-webkit-scrollbar { display: none; }
-    .hz-category-chip { flex: 0 0 auto; min-height: 42px; padding: 9px 12px; white-space: nowrap; }
     /* بطاقات مضغوطة عشان تكفي عمودين جنب بعض بالموبايل */
-    .hz-product-card { border-radius: 18px; padding: 10px; }
-    .hz-product-body { padding: 8px !important; min-height: 135px; }
+    .hz-product-card { border-radius: 18px; }
+    .hz-product-body { padding: 12px !important; min-height: 190px; }
     .hz-product-body h3 { font-size: 13px !important; line-height: 1.3; margin-bottom: 6px !important;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .hz-product-body p { font-size: 11px !important; margin-bottom: 8px !important;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .hz-product-glasschip { font-size: 10px !important; padding: 3px 7px !important; }
     .hz-price-row { flex-wrap: wrap; gap: 8px !important; margin-top: 8px !important; padding-top: 10px !important; }
-    .hz-price-row .hz-add-btn { flex: 1 1 calc(50% - 4px); min-width: 0; padding: 9px 6px !important; font-size: 12px !important; }
+    .hz-price-row .hz-add-btn { width: 100%; padding: 8px 6px !important; font-size: 12px !important; }
     .hz-root input, .hz-root textarea, .hz-root select { font-size: 16px !important; }
-    .hz-header-wallet { width: auto; justify-content: center; order: initial; }
+    .hz-header-wallet { width: 100%; justify-content: center; order: 3; }
     .hz-redeem-form input { width: 120px; }
     .hz-social-grid { grid-template-columns: minmax(0, 1fr); }
-    .hz-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
-    .hz-support-grid .hz-glass-card { padding: 10px !important; }
     .hz-social-heading { align-items: start; flex-direction: column; }
-    .hz-store-header { padding: 8px 10px !important; gap: 8px; flex-wrap: wrap; overflow: hidden; width: 100%; box-sizing: border-box; }
-    .hz-store-brand { gap: 6px; flex: 1 1 100%; width: 100%; min-width: 0; }
-    .hz-store-brand img { width: 88px !important; max-height: 42px !important; }
-    .hz-store-brand span { font-size: 12px !important; max-width: 80px; }
-    .hz-header-controls { gap: 5px; width: 100%; min-width: 0; max-width: 100%; flex: 1 1 100%; flex-wrap: wrap; overflow: hidden; }
-    .hz-header-controls > div { width: 100%; min-width: 0; flex-wrap: wrap !important; gap: 5px !important; }
-    .hz-header-controls .hz-admin-btn { padding: 7px 8px !important; font-size: 11px !important; max-width: 100%; }
-    .hz-header-controls .hz-header-wallet { max-width: 100%; }
-    .hz-header-controls > div { justify-content: stretch; }
-    .hz-header-controls > div > .hz-cart-shell { flex: 1 1 auto; }
-    .hz-header-controls > div > .hz-cart-shell > button { width: 100%; justify-content: center; min-height: 44px; }
-    .hz-header-controls > div > .hz-header-wallet { flex: 1 1 100%; justify-content: center; }
-    .hz-header-controls > div > .hz-header-wallet .hz-header-balances { justify-content: center; }
-    .hz-redeem-form { width: 100%; justify-content: center; }
-    .hz-redeem-form input { flex: 1 1 auto; width: auto; min-width: 0; min-height: 42px; }
-    .hz-redeem-form button { min-height: 42px; }
-    .hz-cart-menu { position: fixed !important; left: 10px !important; right: 10px !important; width: auto !important; max-height: min(72dvh, 560px) !important; padding: 12px !important; }
-    .hz-cart-menu > div > div { align-items: stretch !important; }
-    .hz-cart-menu > div > div > div:last-child { flex-wrap: wrap; }
-    .hz-cart-menu .hz-checkout-btn { min-height: 44px; width: 100%; }
-    .hz-store-intro { margin-bottom: 14px; }
-    .hz-store-intro h2 { font-size: 22px !important; }
-    .hz-store-intro p { font-size: 13px; }
-    .hz-social-card { min-height: 74px; padding: 12px; }
-    .hz-instagram-media-grid { gap: 7px; }
-  }
-  @media (max-width: 380px) {
-    .hz-store-brand span { max-width: 68px; }
-    .hz-product-body { min-height: 178px; }
-    .hz-price-row .hz-add-btn { flex-basis: 100%; }
-  }
-  @media (max-width: 559px) {
-    .hz-checkout-form { padding: 14px !important; border-radius: 16px !important; gap: 14px !important; }
-    .hz-checkout-form > div:first-child { align-items: flex-start !important; gap: 10px !important; }
-    .hz-checkout-form > div:first-child h3 { font-size: 16px !important; line-height: 1.45; }
-    .hz-checkout-form > div:first-child p { font-size: 12px !important; overflow-wrap: anywhere; }
-    .hz-checkout-form > div:nth-child(2) { grid-template-columns: minmax(0, 1fr) !important; }
-    .hz-checkout-form .hz-pay-card { min-height: 58px; }
-    .hz-checkout-form > div:last-child { flex-direction: column; }
-    .hz-checkout-form > div:last-child button { width: 100%; min-height: 46px; }
-    .hz-checkout-form .hz-cancel-btn { width: 100%; }
-    .hz-order-tracker-form { flex-direction: column; }
-    .hz-order-tracker-form input, .hz-order-tracker-form button { width: 100%; min-height: 44px; }
   }
   /* تابلت / آيباد */
   @media (min-width: 560px) and (max-width: 1023px) { .hz-grid { grid-template-columns: repeat(3, 1fr); } }
   /* لابتوب */
-  @media (min-width: 1024px) and (max-width: 1439px) { .hz-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) and (max-width: 1439px) { .hz-grid { grid-template-columns: repeat(3, 1fr); } }
   /* كمبيوتر */
-  @media (min-width: 1440px) and (max-width: 1919px) { .hz-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+  @media (min-width: 1440px) and (max-width: 1919px) { .hz-grid { grid-template-columns: repeat(4, 1fr); } }
   /* شاشات كبيرة / تلفزيون / بلايستيشن */
-  @media (min-width: 1920px) { .hz-root { zoom: 1; } .hz-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+  @media (min-width: 1920px) { .hz-root { zoom: 1; } .hz-grid { grid-template-columns: repeat(5, 1fr); } }
   @media (min-width: 2560px) { .hz-root { zoom: 1; } .hz-grid { grid-template-columns: repeat(6, 1fr); } }
   /* أزرار مريحة للمس */
   @media (pointer: coarse) { .hz-category-chip, .hz-add-btn, .hz-root button { min-height: 44px; } }
@@ -365,24 +266,6 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
   const [orderStatusResult, setOrderStatusResult] = useState(null);
   const [trackerLoading, setTrackerLoading] = useState(false);
   const [sensitiveSyncStatus, setSensitiveSyncStatus] = useState('متصل وآمن 🔒');
-
-  const heroMediaItems = useMemo(() => {
-    const configured = Array.isArray(settings.heroMediaItems) ? settings.heroMediaItems : [];
-    const items = configured.map((item) => typeof item === 'string' ? item : item?.url).map((url) => String(url || '').trim()).filter(Boolean);
-    return items.length ? items : [String(settings.heroMediaUrl || '/hero-banner.png').trim() || '/hero-banner.png'];
-  }, [settings.heroMediaItems, settings.heroMediaUrl]);
-  const [heroIndex, setHeroIndex] = useState(0);
-  const heroMedia = heroMediaItems[heroIndex % heroMediaItems.length];
-  const heroIsVideo = /[.]mp4($|[?#])|[.]webm($|[?#])|[.]mov($|[?#])/i.test(heroMedia);
-
-
-  useEffect(() => {
-    if (heroMediaItems.length < 2) return undefined;
-    const timer = window.setInterval(() => setHeroIndex((index) => (index + 1) % heroMediaItems.length), 7000);
-    return () => window.clearInterval(timer);
-  }, [heroMediaItems.length]);
-
-  const moveHero = (direction) => setHeroIndex((index) => (index + direction + heroMediaItems.length) % heroMediaItems.length);
 
   const api = useMemo(() => {
     try {
@@ -594,35 +477,10 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
     );
   }
 
-  if (authCart && authCart.checkoutMode) {
-    return (
-      <div className="hz-root" style={{ width: '100%', minHeight: '100dvh', padding: 'clamp(12px, 2vw, 24px)', boxSizing: 'border-box', color: '#f8fafc', fontFamily: 'Tajawal, sans-serif', background: 'transparent' }} dir="rtl">
-        <style>{GLASS_STYLE}</style>
-        <div className="hz-container" style={{ maxWidth: 'none', width: '100%' }}>
-          <div className="hz-glass-btn hz-store-header" style={{ padding: '12px 18px', marginBottom: '24px', borderRadius: '18px' }}>
-            <div className="hz-store-brand">
-              <img src="/logo.png" alt="Hamza Store" style={{ width: '118px', height: 'auto', maxHeight: '52px', objectFit: 'contain', display: 'block' }} />
-              <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '14px' }}>{settings.storeName || 'HAMZA STORE'}</span>
-            </div>
-            <div className="hz-header-controls">
-              <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
-            </div>
-          </div>
-          <div className="hz-glass-card" style={{ maxWidth: 'none', width: '100%', margin: '0', padding: 'clamp(14px, 3vw, 30px)', borderColor: 'rgba(16,185,129,0.45)', boxShadow: '0 20px 60px rgba(0,0,0,0.45), 0 0 35px rgba(16,185,129,0.08)' }}>
-            <button type="button" onClick={() => { setError(''); authCart.setCheckoutMode(false); }} style={{ background: 'rgba(51,65,85,0.7)', color: '#fff', border: '1px solid rgba(255,255,255,0.16)', padding: '9px 14px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '16px' }}>← العودة للمتجر</button>
-            {error && <div role="alert" style={{ marginBottom: '16px', padding: '14px 16px', borderRadius: '14px', color: '#fecaca', background: 'rgba(127,29,29,0.72)', border: '1px solid rgba(248,113,113,0.65)', boxShadow: '0 8px 24px rgba(127,29,29,0.18)', lineHeight: 1.8, fontSize: '13px' }}>⚠️ {error}</div>}
-            {!authCart.lastOrder && <CheckoutForm authCart={authCart} inputStyle={inputStyle} />}
-            <OrderConfirmation authCart={authCart} />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="hz-root" style={{
       width: '100%',
-      minHeight: '100dvh',
+      minHeight: '0',
       padding: 'clamp(12px, 2vw, 24px)',
       paddingTop: 'max(clamp(12px, 2vw, 24px), env(safe-area-inset-top))',
       paddingBottom: 'max(clamp(12px, 2vw, 24px), env(safe-area-inset-bottom))',
@@ -637,8 +495,8 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
       <div className="hz-container">
 
-      <div className="hz-glass-btn hz-store-header" style={{ padding: '12px 18px', marginBottom: '20px', borderRadius: '18px' }}>
-        <div className="hz-store-brand">
+      <div className="hz-glass-btn hz-store-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', marginBottom: '20px', borderRadius: '18px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img src="/logo.png" alt="Hamza Store" style={{ width: '118px', height: 'auto', maxHeight: '52px', objectFit: 'contain', objectPosition: 'left center', display: 'block' }} />
           <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '14px' }}>{settings.storeName || 'HAMZA STORE'}</span>
           <span style={{ fontSize: '11px', padding: '3px 10px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
@@ -646,24 +504,15 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
           </span>
         </div>
 
-        <div className="hz-header-controls">
-          <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
-        </div>
+        <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
       </div>
 
-      {!settings.hideHero && <div className="hz-hero-frame" aria-label="معرض واجهة المتجر">
-        <div className="hz-hero-media active">
-          {heroIsVideo ? (
-            <video key={heroMedia} src={heroMedia} autoPlay muted playsInline controls onEnded={() => heroMediaItems.length > 1 && moveHero(1)} />
-          ) : (
-            <img src={heroMedia} alt={settings.storeName || 'Hamza Store - ألعاب وتقنية'} />
-          )}
-        </div>
-        {heroMediaItems.length > 1 && <>
-          <button type="button" className="hz-hero-arrow prev" onClick={() => moveHero(-1)} aria-label="الصورة السابقة">‹</button>
-          <button type="button" className="hz-hero-arrow next" onClick={() => moveHero(1)} aria-label="الصورة التالية">›</button>
-          <div className="hz-hero-dots">{heroMediaItems.map((item, index) => <button type="button" key={`${item}-${index}`} className={`hz-hero-dot${index === (heroIndex % heroMediaItems.length) ? ' active' : ''}`} onClick={() => setHeroIndex(index)} aria-label={`عرض الوسيط ${index + 1}`} />)}</div>
-        </>}
+      {!settings.hideHero && <div className="hz-hero-frame">
+        {/[.]mp4($|[?#])|[.]webm($|[?#])|[.]mov($|[?#])/i.test(settings.heroMediaUrl || '') ? (
+          <video src={settings.heroMediaUrl} controls muted playsInline style={{ display: 'block', width: '100%', height: 'auto' }} />
+        ) : (
+          <img src={settings.heroMediaUrl || '/hero-banner.png'} alt={settings.storeName || 'Hamza Store - ألعاب وتقنية'} style={{ display: 'block', width: '100%', height: 'auto' }} />
+        )}
       </div>}
 
       <CheckoutForm authCart={authCart} inputStyle={inputStyle} />
@@ -825,7 +674,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
           </div>
           <p style={{ margin: '0 0 15px 0', color: '#94a3b8', fontSize: '12px' }}>أدخل رقم الطلب لجلب حالته من قاعدة البيانات مباشرة:</p>
 
-          <form className="hz-order-tracker-form" onSubmit={handleTrackOrder} style={{ display: 'flex', gap: '10px' }}>
+          <form onSubmit={handleTrackOrder} style={{ display: 'flex', gap: '10px' }}>
             <input
               type="text"
               placeholder="أدخل رقم الطلب هنا..."
