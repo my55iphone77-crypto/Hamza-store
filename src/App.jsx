@@ -46,6 +46,7 @@ const APP_GROUPS = {
 
 const GLASS_STYLE = `
   .hz-atmosphere {
+    position: relative;
     background:
       radial-gradient(ellipse 800px 500px at 10% -5%, rgba(249,115,22,0.38), transparent 55%),
       radial-gradient(ellipse 700px 500px at 95% 0%, rgba(56,189,248,0.35), transparent 55%),
@@ -53,10 +54,13 @@ const GLASS_STYLE = `
       radial-gradient(ellipse 500px 350px at 25% 55%, rgba(16,185,129,0.20), transparent 60%),
       #05060a;
     min-height: 100dvh;
+    height: auto;
     width: 100%;
+    max-width: 100%;
     box-sizing: border-box;
     border-radius: 28px;
-    overflow-x: clip;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .hz-glass-card {
@@ -121,6 +125,7 @@ const GLASS_STYLE = `
 
   .hz-app-full-container {
     width: 100% !important;
+    max-width: 100% !important;
     min-height: 0;
     margin: 0 !important;
     border-radius: 26px !important;
@@ -129,9 +134,9 @@ const GLASS_STYLE = `
     overflow: visible !important;
   }
   .hz-app-full-container > div { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
-  .hz-section-shell { width: 100%; max-width: 100%; min-width: 0; display: block; }
+  .hz-section-shell { width: 100%; max-width: 100%; min-width: 0; display: block; overflow: visible; overflow-wrap: anywhere; }
   .hz-section-shell > * { width: 100%; max-width: 100%; min-width: 0; border-radius: 24px !important; background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-  .hz-section-shell > [style*="position: fixed"] { width: 100vw !important; max-width: none !important; min-width: 0 !important; height: 100dvh !important; max-height: none !important; overflow-y: auto !important; align-items: center !important; padding: clamp(12px, 3vw, 24px) !important; background: rgba(15, 23, 42, 0.16) !important; backdrop-filter: blur(4px) !important; touch-action: pan-y; }
+  .hz-section-shell > [style*="position: fixed"] { width: 100% !important; max-width: 100% !important; min-width: 0 !important; height: 100dvh !important; max-height: none !important; overflow-y: auto !important; align-items: center !important; padding: clamp(12px, 3vw, 24px) !important; background: rgba(15, 23, 42, 0.16) !important; backdrop-filter: blur(4px) !important; touch-action: pan-y; }
   .hz-section-shell > [style*="position: fixed"] > div { width: min(100%, 760px) !important; max-width: min(100%, 760px) !important; height: min(760px, calc(100dvh - clamp(24px, 3vw, 48px))) !important; max-height: calc(100dvh - clamp(24px, 3vw, 48px)) !important; min-height: 0 !important; margin: auto !important; overflow-y: auto !important; overflow-x: hidden !important; flex: 0 1 auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
   .hz-section-shell img, .hz-section-shell video, .hz-section-shell canvas { max-width: 100%; }
   .hz-section-shell table { width: 100%; max-width: 100%; border-collapse: collapse; }
@@ -142,7 +147,7 @@ const GLASS_STYLE = `
   .hz-products-section { width: 100% !important; max-width: none !important; min-width: 0 !important; overflow: visible !important; }
   .hz-products-grid { width: 100% !important; max-width: none !important; min-width: 0 !important; align-items: stretch; }
   .hz-products-grid > * { min-width: 0; max-width: none; }
-  .hz-admin-main { width: 100% !important; padding: 12px 18px !important; }
+  .hz-admin-main { width: 100% !important; max-width: 100%; min-width: 0; min-height: 0; padding: 12px 18px !important; overflow: visible; }
   .hz-products-section { min-height: 0; }
   .hz-section-shell .hz-product-modal { width: min(100%, 560px) !important; max-width: 560px !important; padding: 18px !important; }
   .hz-product-modal h3 { font-size: 16px !important; margin-bottom: 10px !important; }
@@ -163,7 +168,7 @@ const GLASS_STYLE = `
   @media (max-width: 720px) { .hz-product-form, .hz-employee-form { grid-template-columns: minmax(0, 1fr); } .hz-product-form > button:last-child, .hz-employee-form > button:last-child { grid-column: auto; } }
   .hz-section-shell [style*="position: fixed"] > div[style*="maxWidth"], .hz-section-shell [style*="position: fixed"] > div[style*="max-width"] { width: min(100%, 760px) !important; max-width: min(100%, 760px) !important; max-height: calc(100dvh - clamp(24px, 6vw, 48px)) !important; margin: auto !important; }
   .hz-atmosphere, .hz-atmosphere * { box-sizing: border-box; }
-  .hz-atmosphere { min-width: 0; overflow-x: clip; overscroll-behavior-x: none; }
+  .hz-atmosphere { min-width: 0; max-width: 100%; overflow-x: hidden; overscroll-behavior-x: none; }
   .hz-admin-main, .hz-admin-main > div { min-width: 0; max-width: 100%; }
   .hz-admin-main input, .hz-admin-main select, .hz-admin-main textarea, .hz-admin-main button { max-width: 100%; }
   @media (max-width: 640px) {
@@ -335,7 +340,7 @@ const GLASS_STYLE = `
 
   /* نفس نظام الحجم والتمرير لكل النوافذ المنبثقة في أقسام الإدارة. */
   .hz-section-shell [style*="position: fixed"] {
-    width: 100vw !important; max-width: none !important; height: 100dvh !important; max-height: none !important;
+    width: 100% !important; max-width: 100% !important; height: 100dvh !important; max-height: none !important;
     align-items: center !important; overflow-x: hidden !important; overflow-y: auto !important;
     overscroll-behavior: auto !important; touch-action: pan-y !important;
   }
