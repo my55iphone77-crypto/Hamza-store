@@ -33,6 +33,13 @@ const DELIVERY_TYPES = [
   { value: "store_credit", label: "🪙 بطاقة رصيد المتجر (غير قابلة للسحب)" },
 ];
 
+const shop2CatalogId = (item) => {
+  if (!item || typeof item !== "object") return "";
+  return item.id ?? item.big_category_id ?? item.category_id ?? item.sub_category_id ?? item.subcategory_id ?? item.item_id ?? "";
+};
+
+const shop2CatalogName = (item) => String(item?.name ?? item?.title ?? item?.label ?? item?.product_name ?? "");
+
 function fileToCompressedBase64(file) {
   return new Promise((resolve, reject) => {
     if (!file.type || !file.type.startsWith("image/")) {
@@ -661,16 +668,16 @@ export default function Products() {
                   <input type="search" value={shop2GameSearch} onChange={(e) => setShop2GameSearch(e.target.value)} placeholder="🔎 ابحث عن اسم اللعبة..." style={glassInputStyle} />
                   <select value={shop2BigCategoryId} onChange={(e) => handleShop2BigCategoryChange(e.target.value)} style={glassInputStyle}>
                     <option value="">{shop2CatalogLoading ? "جاري التحميل..." : "اختر اللعبة"}</option>
-                    {shop2BigCategories.filter((item) => !shop2GameSearch.trim() || String(item.name || "").toLowerCase().includes(shop2GameSearch.trim().toLowerCase())).map((item) => <option key={item.id} value={item.id}>{item.name} (ID: {item.id})</option>)}
+                    {shop2BigCategories.filter((item) => !shop2GameSearch.trim() || shop2CatalogName(item).toLowerCase().includes(shop2GameSearch.trim().toLowerCase())).map((item) => { const id = shop2CatalogId(item); return <option key={id} value={id}>{shop2CatalogName(item)} (ID: {id})</option>; })}
                   </select>
                 </div>
                 <select value={shop2topupCategoryId} onChange={(e) => handleShop2CategoryChange(e.target.value)} style={glassInputStyle} disabled={!shop2BigCategoryId}>
                   <option value="">اختر نوع التعبئة</option>
-                  {shop2Categories.map((item) => <option key={item.id} value={item.id}>{item.name} (ID: {item.id})</option>)}
+                  {shop2Categories.map((item) => { const id = shop2CatalogId(item); return <option key={id} value={id}>{shop2CatalogName(item)} (ID: {id})</option>; })}
                 </select>
                 <select value={shop2topupItemId} onChange={(e) => setShop2topupItemId(e.target.value)} style={glassInputStyle} disabled={!shop2topupCategoryId}>
                   <option value="">اختر الباقة</option>
-                  {shop2Items.map((item) => <option key={item.id} value={item.id}>{item.name} (ID: {item.id})</option>)}
+                  {shop2Items.map((item) => { const id = shop2CatalogId(item); return <option key={id} value={id}>{shop2CatalogName(item)} (ID: {id})</option>; })}
                 </select>
                 <span style={{ gridColumn: "1 / -1", color: "#7dd3fc", fontSize: "11px" }}>اختر اللعبة ثم نوع التعبئة ثم الباقة؛ التطبيق يضع Category ID وItem ID تلقائياً.</span>
               </div>}

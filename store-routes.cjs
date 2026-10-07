@@ -11,22 +11,35 @@ module.exports = function buildStoreRouter(deps) {
   } = deps;
 
   const router = express.Router();
+  const getShop2UnitPrice = (priceData) => {
+    const candidates = [
+      priceData?.price?.unit_price,
+      priceData?.unit_price,
+      priceData?.data?.price?.unit_price,
+      priceData?.data?.unit_price,
+      typeof priceData?.price === 'number' ? priceData.price : undefined,
+      typeof priceData?.data === 'number' ? priceData.data : undefined,
+    ];
+    const value = candidates.find((candidate) => candidate !== undefined && candidate !== null && candidate !== '');
+    const number = Number(value);
+    return Number.isFinite(number) ? number : undefined;
+  };
   const validateShop2TopupProduct = async (product = {}) => {
     if (String(product.deliveryType || '') !== 'id_topup') return;
     const itemId = Number(product.shop2topupItemId || 0) || 0;
     if (!itemId) throw new Error(`منتج الشحن "${product.name || 'بدون اسم'}" يحتاج معرّفاً صالحاً من كتالوج Shop2Topup قبل الحفظ.`);
     if (!shop2topup.configured()) throw new Error('لا يمكن حفظ منتج الشحن الآن لأن ربط Shop2Topup غير مهيأ.');
     const priceData = await shop2topup.getPrice(itemId);
-    if (priceData?.price?.unit_price === undefined) {
+    if (getShop2UnitPrice(priceData) === undefined) {
       throw new Error(`منتج الشحن "${product.name || 'بدون اسم'}" غير موجود في كتالوج Shop2Topup. اختر منتجاً من الكتالوج قبل الحفظ.`);
     }
   };
   // مسارات داخلية محمية: مفتاح Shop2Topup لا يصل أبداً إلى الواجهة.
   router.get('/shop2topup/catalog/big-categories', permissionGuard('manage_products', 'manager'), async (req, res) => {
-    try { res.json(await shop2topup.listBigCategories(true)); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
+    try { res.json(await shop2topup.listBigCategories(String(req.query.for_ui || 'true').toLowerCase() !== 'false')); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
   });
   router.get('/shop2topup/catalog/categories', permissionGuard('manage_products', 'manager'), async (req, res) => {
-    try { res.json(await shop2topup.listCategories({ bigCategoryId: req.query.bigCategoryId, forUi: true })); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
+    try { res.json(await shop2topup.listCategories({ bigCategoryId: req.query.bigCategoryId, forUi: String(req.query.for_ui || 'true').toLowerCase() !== 'false' })); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
   });
   router.get('/shop2topup/catalog/subcategories', permissionGuard('manage_products', 'manager'), async (req, res) => {
     try { res.json(await shop2topup.listSubcategories({ categoryId: req.query.categoryId })); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
@@ -776,7 +789,7 @@ module.exports = function buildStoreRouter(deps) {
               throw error;
             }
             const priceData = await shop2topup.getPrice(item.shop2topupItemId);
-            const livePrice = priceData?.price?.unit_price;
+            const livePrice = getShop2UnitPrice(priceData);
             if (livePrice === undefined) throw new Error(`منتج ${item.name} غير موجود في كتالوج Shop2Topup. احذف المنتج من السلة أو حدّث ربطه من لوحة المنتجات بمعرّف موجود في الكتالوج.`);
             await shop2topup.validatePlayer({ sub_category_id: item.shop2topupItemId, ...item.topupRequirements, player_id: playerId });
             providerPrices.set(Number(item.shop2topupItemId), livePrice);
