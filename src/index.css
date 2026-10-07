@@ -39,7 +39,7 @@ body {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  min-height: 100dvh;
+  min-height: 0;
   color: var(--text);
   background: var(--bg);
   overflow-x: clip;
