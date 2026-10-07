@@ -53,9 +53,8 @@ body {
   margin: 0;
   text-align: right;
   border-inline: none;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+  min-height: 0;
+  display: block;
   box-sizing: border-box;
 }
 
@@ -73,7 +72,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 @media (max-width: 640px) {
   html { width: 100%; min-width: 0; overflow-x: clip; }
-  #root { min-height: 100dvh; overflow-x: clip; }
+  #root { min-height: 0; overflow-x: clip; }
   h1, h2, h3, h4, p { overflow-wrap: anywhere; }
 }
 
