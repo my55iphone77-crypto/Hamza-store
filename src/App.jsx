@@ -127,6 +127,7 @@ const GLASS_STYLE = `
     width: 100% !important;
     max-width: 100% !important;
     min-height: 0;
+    height: auto !important;
     margin: 0 !important;
     border-radius: 26px !important;
     box-sizing: border-box;
@@ -147,7 +148,8 @@ const GLASS_STYLE = `
   .hz-products-section { width: 100% !important; max-width: none !important; min-width: 0 !important; overflow: visible !important; }
   .hz-products-grid { width: 100% !important; max-width: none !important; min-width: 0 !important; align-items: stretch; }
   .hz-products-grid > * { min-width: 0; max-width: none; }
-  .hz-admin-main { width: 100% !important; max-width: 100%; min-width: 0; min-height: 0; padding: 12px 18px !important; overflow: visible; }
+  .hz-admin-main { width: 100% !important; max-width: 100%; min-width: 0; min-height: 0; height: auto !important; padding: 12px 18px !important; overflow: visible !important; }
+  .hz-admin-main > div, .hz-section-shell, .hz-section-shell > * { height: auto !important; max-height: none !important; overflow: visible !important; }
   .hz-products-section { min-height: 0; }
   .hz-section-shell .hz-product-modal { width: min(100%, 560px) !important; max-width: 560px !important; padding: 18px !important; }
   .hz-product-modal h3 { font-size: 16px !important; margin-bottom: 10px !important; }

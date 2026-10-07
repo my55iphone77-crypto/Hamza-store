@@ -242,9 +242,9 @@ const GLASS_STYLE = `
   }
 
   /* ================= تجاوب الأبعاد مع كل الأجهزة ================= */
-  .hz-container { width: 100%; max-width: none; min-width: 0; margin: 0; }
+  .hz-container { width: 100%; max-width: none; min-width: 0; height: auto !important; margin: 0; overflow: visible !important; }
   /* لا تمدد الأقسام الفارغة إلى طول الشاشة؛ كل قسم يتبع محتواه فقط */
-  .hz-root, .hz-root > .hz-container, .hz-root > .hz-container > * { min-height: 0 !important; }
+  .hz-root, .hz-root > .hz-container, .hz-root > .hz-container > * { min-height: 0 !important; height: auto !important; overflow: visible !important; }
   .hz-grid {
     display: grid; width: 100%; box-sizing: border-box;
     grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
