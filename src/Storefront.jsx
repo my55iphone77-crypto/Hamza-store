@@ -147,7 +147,15 @@ const GLASS_STYLE = `
   .hz-store-header::after { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 12% 0%, rgba(56,189,248,0.16), transparent 38%), radial-gradient(circle at 88% 100%, rgba(249,115,22,0.12), transparent 42%); pointer-events: none; }
   .hz-hero-frame { position: relative; width: 100%; height: clamp(260px, 42vw, 560px); margin-bottom: 24px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(240,192,96,0.38); box-shadow: 0 20px 60px rgba(0,0,0,0.42), 0 0 45px rgba(56,189,248,0.08); background: #080b10; }
   .hz-hero-frame::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(2,6,23,0.02), rgba(2,6,23,0.32)); }
-  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: 100% !important; max-height: 100% !important; object-fit: cover !important; object-position: center; }
+  .hz-hero-frame img, .hz-hero-frame video { display: block; width: 100%; height: 100% !important; max-height: 100% !important; object-fit: contain !important; object-position: center; background: #080b10; }
+  .hz-hero-media { position: absolute; inset: 0; opacity: 0; transition: opacity .55s ease; pointer-events: none; }
+  .hz-hero-media.active { opacity: 1; pointer-events: auto; }
+  .hz-hero-arrow { position: absolute; z-index: 4; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; color: #fff; background: rgba(8,11,16,.58); backdrop-filter: blur(12px); cursor: pointer; font-size: 22px; }
+  .hz-hero-arrow.prev { inset-inline-start: 14px; }
+  .hz-hero-arrow.next { inset-inline-end: 14px; }
+  .hz-hero-dots { position: absolute; z-index: 4; inset: auto 0 12px; display: flex; justify-content: center; gap: 7px; }
+  .hz-hero-dot { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.45); cursor: pointer; }
+  .hz-hero-dot.active { width: 24px; border-radius: 999px; background: #facc15; }
   .hz-store-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: 26px 0 4px; padding: 16px 18px; border: 1px solid rgba(148,163,184,0.18); border-radius: 18px; background: linear-gradient(135deg, rgba(15,23,42,0.72), rgba(8,11,16,0.52)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); color: #94a3b8; font-size: 11px; }
   .hz-store-footer strong { color: #bae6fd; font-size: 13px; }
   .hz-social-section { margin-top: 26px; }
@@ -243,7 +251,10 @@ const GLASS_STYLE = `
   /* موبايل */
   @media (max-width: 559px) {
     .hz-store-header { border-radius: 18px; padding: 10px !important; }
-    .hz-hero-frame { height: 160px; min-height: 0; border-radius: 18px; margin-bottom: 12px; }
+    .hz-hero-frame { height: 210px; min-height: 0; border-radius: 18px; margin-bottom: 12px; }
+    .hz-hero-arrow { width: 36px; height: 36px; font-size: 18px; }
+    .hz-hero-arrow.prev { inset-inline-start: 8px; }
+    .hz-hero-arrow.next { inset-inline-end: 8px; }
     .hz-store-intro { display: block; }
     .hz-catalog-count { display: inline-flex; margin-top: 12px; }
     .hz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
@@ -338,6 +349,24 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
   const [orderStatusResult, setOrderStatusResult] = useState(null);
   const [trackerLoading, setTrackerLoading] = useState(false);
   const [sensitiveSyncStatus, setSensitiveSyncStatus] = useState('متصل وآمن 🔒');
+
+  const heroMediaItems = useMemo(() => {
+    const configured = Array.isArray(settings.heroMediaItems) ? settings.heroMediaItems : [];
+    const items = configured.map((item) => typeof item === 'string' ? item : item?.url).map((url) => String(url || '').trim()).filter(Boolean);
+    return items.length ? items : [String(settings.heroMediaUrl || '/hero-banner.png').trim() || '/hero-banner.png'];
+  }, [settings.heroMediaItems, settings.heroMediaUrl]);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const heroMedia = heroMediaItems[heroIndex % heroMediaItems.length];
+  const heroIsVideo = /[.]mp4($|[?#])|[.]webm($|[?#])|[.]mov($|[?#])/i.test(heroMedia);
+
+
+  useEffect(() => {
+    if (heroMediaItems.length < 2) return undefined;
+    const timer = window.setInterval(() => setHeroIndex((index) => (index + 1) % heroMediaItems.length), 7000);
+    return () => window.clearInterval(timer);
+  }, [heroMediaItems.length]);
+
+  const moveHero = (direction) => setHeroIndex((index) => (index + direction + heroMediaItems.length) % heroMediaItems.length);
 
   const api = useMemo(() => {
     try {
@@ -606,12 +635,19 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         </div>
       </div>
 
-      {!settings.hideHero && <div className="hz-hero-frame">
-        {/[.]mp4($|[?#])|[.]webm($|[?#])|[.]mov($|[?#])/i.test(settings.heroMediaUrl || '') ? (
-          <video src={settings.heroMediaUrl} controls muted playsInline style={{ display: 'block', width: '100%', height: 'auto' }} />
-        ) : (
-          <img src={settings.heroMediaUrl || '/hero-banner.png'} alt={settings.storeName || 'Hamza Store - ألعاب وتقنية'} style={{ display: 'block', width: '100%', height: 'auto' }} />
-        )}
+      {!settings.hideHero && <div className="hz-hero-frame" aria-label="معرض واجهة المتجر">
+        <div className="hz-hero-media active">
+          {heroIsVideo ? (
+            <video key={heroMedia} src={heroMedia} autoPlay muted playsInline controls onEnded={() => heroMediaItems.length > 1 && moveHero(1)} />
+          ) : (
+            <img src={heroMedia} alt={settings.storeName || 'Hamza Store - ألعاب وتقنية'} />
+          )}
+        </div>
+        {heroMediaItems.length > 1 && <>
+          <button type="button" className="hz-hero-arrow prev" onClick={() => moveHero(-1)} aria-label="الصورة السابقة">‹</button>
+          <button type="button" className="hz-hero-arrow next" onClick={() => moveHero(1)} aria-label="الصورة التالية">›</button>
+          <div className="hz-hero-dots">{heroMediaItems.map((item, index) => <button type="button" key={`${item}-${index}`} className={`hz-hero-dot${index === (heroIndex % heroMediaItems.length) ? ' active' : ''}`} onClick={() => setHeroIndex(index)} aria-label={`عرض الوسيط ${index + 1}`} />)}</div>
+        </>}
       </div>}
 
       <CheckoutForm authCart={authCart} inputStyle={inputStyle} />
