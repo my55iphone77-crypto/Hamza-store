@@ -48,7 +48,13 @@ module.exports = function buildStoreRouter(deps) {
     try { res.json(await shop2topup.getPrice(req.params.itemId)); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
   });
   router.get('/shop2topup/catalog/category/:categoryId/requirements', publicActionLimiter, async (req, res) => {
-    try { res.json(await shop2topup.getRequirements(req.params.categoryId)); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
+    try {
+      res.json(await shop2topup.getRequirements(req.params.categoryId));
+    } catch (e) {
+      // بعض الفئات (مثل بطاقات الهدايا) لا تحتاج Player ID؛ هذه نتيجة صحيحة وليست عطل مزود.
+      if (/no player requirements/i.test(String(e.message || ''))) return res.json({ success: true, data: [], requirements: [] });
+      res.status(e.status === 429 ? 429 : 502).json({ error: e.message });
+    }
   });
   router.post('/shop2topup/player/validate', publicActionLimiter, async (req, res) => {
     try {
