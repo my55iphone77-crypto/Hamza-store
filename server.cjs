@@ -143,6 +143,7 @@ async function sendStoreEmail(toEmail, subject, htmlContent) {
   const originalHtml = String(htmlContent || '');
   // بعض تطبيقات البريد تحذف وسم style؛ نعالج القياسات الحرجة داخل العناصر نفسها أيضاً.
   const mobileSafeHtml = originalHtml
+    .replace(/max-width\s*:\s*\d+px/gi, 'max-width:100%')
     .replace(/min-width\s*:\s*[^;"']+;?/gi, 'min-width:0;')
     .replace(/white-space\s*:\s*nowrap\s*;?/gi, 'white-space:normal;overflow-wrap:anywhere;')
     .replace(/<table(\s[^>]*)?>/gi, (tag) => {
@@ -156,7 +157,7 @@ async function sendStoreEmail(toEmail, subject, htmlContent) {
   const responsiveEmailStyles = `<meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
     * { box-sizing: border-box; }
     html, body { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
-    body { overflow-x: hidden !important; -webkit-text-size-adjust: 100%; }
+    body { min-height: 100vh !important; overflow-x: hidden !important; -webkit-text-size-adjust: 100%; }
     table { width: 100% !important; max-width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
     img { max-width: 100% !important; height: auto !important; }
     td, th, p, div, span, a, b, strong { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
@@ -177,8 +178,8 @@ async function sendStoreEmail(toEmail, subject, htmlContent) {
       a { max-width: 100% !important; }
     }
   </style>`;
-  const brandHeader = `<div style="max-width:720px;width:100%;margin:0 auto 18px;padding:18px 22px;text-align:center;background:#080808;border-radius:16px;border:1px solid #b58b3d;overflow:hidden;"><img src="${BRAND_LOGO_URL}" alt="Hamza Store" style="display:block;width:190px;max-width:80%;height:auto;margin:0 auto 8px;object-fit:contain;"><div style="font-family:Arial,sans-serif;color:#f3d48a;font-size:12px;letter-spacing:2px;overflow-wrap:anywhere;">HAMZA STORE</div></div>`;
-  const html = `${responsiveEmailStyles}<div dir="rtl" style="width:100%;max-width:100%;margin:0;padding:0;overflow-x:hidden;box-sizing:border-box;">${brandHeader}${mobileSafeHtml}</div>`;
+  const brandHeader = `<div style="max-width:100%;width:100%;min-height:90px;margin:0 auto 18px;padding:18px 22px;text-align:center;background:#080808;border-radius:16px;border:1px solid #b58b3d;overflow:hidden;"><img src="${BRAND_LOGO_URL}" alt="Hamza Store" style="display:block;width:190px;max-width:80%;height:auto;margin:0 auto 8px;object-fit:contain;"><div style="font-family:Arial,sans-serif;color:#f3d48a;font-size:12px;letter-spacing:2px;overflow-wrap:anywhere;">HAMZA STORE</div></div>`;
+  const html = `${responsiveEmailStyles}<div dir="rtl" style="width:100%;max-width:100%;min-height:100vh;margin:0;padding:0;overflow-x:hidden;box-sizing:border-box;">${brandHeader}${mobileSafeHtml}</div>`;
   const text = html.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const maxAttempts = MAIL_PROVIDER === 'brevo-api' ? 2 : 1;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
