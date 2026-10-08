@@ -722,6 +722,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
           <div className="hz-grid">
             {filteredProducts.map((product) => {
               const isOpenStoreCredit = product.deliveryType === 'store_credit';
+              const isProviderOutOfStock = product.deliveryType === 'id_topup' && ['out_of_stock', 'out-of-stock', 'unavailable'].includes(String(product.providerAvailability || '').toLowerCase());
               const stock = product.stock ?? product.quantity ?? 0;
               const originalPrice = Number(product.price ?? 0);
 
@@ -755,8 +756,8 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                   <div className="hz-product-body" style={{ padding: '16px' }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <span className="hz-product-glasschip" style={{ fontSize: '11px', color: '#34d399', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
-                          المخزون: {isOpenStoreCredit ? 'مفتوح' : stock}
+                        <span className="hz-product-glasschip" style={{ fontSize: '11px', color: isProviderOutOfStock ? '#fca5a5' : '#34d399', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
+                          {isProviderOutOfStock ? 'Out of Stock · غير متوفر' : `المخزون: ${isOpenStoreCredit ? 'مفتوح' : stock}`}
                         </span>
                         {hasDiscount && (
                           <span className="hz-product-glasschip" style={{ fontSize: '11px', color: '#f59e0b', padding: '4px 8px', borderRadius: '20px', fontWeight: 'bold' }}>
@@ -787,6 +788,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                       </div>
                       <button
                         onClick={() => authCart && authCart.addToCart && authCart.addToCart({ ...product, price: displayPrice })}
+                        disabled={isProviderOutOfStock || (!isOpenStoreCredit && product.deliveryType !== 'id_topup' && Number(stock) <= 0)}
                         className="hz-glass-btn hz-add-btn"
                         style={{
                           background: 'linear-gradient(135deg, #059669, #10b981)',
@@ -794,12 +796,13 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                           border: 'none',
                           padding: '8px 16px',
                           borderRadius: '12px',
-                          cursor: 'pointer',
+                          cursor: isProviderOutOfStock ? 'not-allowed' : 'pointer',
+                          opacity: isProviderOutOfStock ? 0.6 : 1,
                           fontWeight: 'bold',
                           fontSize: '13px'
                         }}
                       >
-                        أضف للسلة 🛒
+                        {isProviderOutOfStock ? 'غير متوفر حالياً' : 'أضف للسلة 🛒'}
                       </button>
                       {loyaltyPrice > 0 && (
                         <button

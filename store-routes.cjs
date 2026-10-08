@@ -24,6 +24,12 @@ module.exports = function buildStoreRouter(deps) {
     const number = Number(value);
     return Number.isFinite(number) ? number : undefined;
   };
+  const isShop2OutOfStockError = (error) => /out[\s_-]*of[\s_-]*stock|stock[\s_-]*(?:is[\s_-]*)?unavailable|not[\s_-]*available|unavailable|no[\s_-]*inventory|sold[\s_-]*out/i.test(String(error?.message || error || ''));
+  const markShop2Availability = async (item, status) => {
+    if (!item?.id || !mongoose.isValidObjectId(item.id)) return;
+    await Product.updateOne({ _id: item.id }, { $set: { providerAvailability: status, providerAvailabilityCheckedAt: new Date() } }).catch(() => {});
+    broadcast('PRODUCTS', { _id: item.id, providerAvailability: status });
+  };
   const validateShop2TopupProduct = async (product = {}) => {
     if (String(product.deliveryType || '') !== 'id_topup') return;
     const itemId = Number(product.shop2topupItemId || 0) || 0;
@@ -798,9 +804,11 @@ module.exports = function buildStoreRouter(deps) {
       const providerItems = isSandboxPayment ? [] : items.filter((item) => item.deliveryType === 'id_topup' && Number(item.shop2topupItemId || 0) > 0);
       const providerPrices = new Map();
       if (providerItems.length > 0) {
+        let validatingItem = null;
         try {
           if (!shop2topup.configured()) throw new Error('Shop2Topup غير مهيأ في إعدادات الخادم.');
           for (const item of providerItems) {
+            validatingItem = item;
             const playerId = String(item.playerId || item.topupRequirements?.player_id || '').trim();
             if (!playerId) {
               const error = new Error(`آيدي اللاعب مطلوب لمنتج ${item.name}.`);
@@ -812,9 +820,12 @@ module.exports = function buildStoreRouter(deps) {
             if (livePrice === undefined) throw new Error(`منتج ${item.name} غير موجود في كتالوج Shop2Topup. احذف المنتج من السلة أو حدّث ربطه من لوحة المنتجات بمعرّف موجود في الكتالوج.`);
             await shop2topup.validatePlayer({ sub_category_id: item.shop2topupItemId, ...item.topupRequirements, player_id: playerId });
             providerPrices.set(Number(item.shop2topupItemId), livePrice);
+            await markShop2Availability(item, 'available');
           }
         } catch (providerValidationError) {
-          return res.status(Number(providerValidationError.status) === 422 ? 422 : 400).json({ error: providerValidationError.message || 'تعذر التحقق من منتج التعبئة أو آيدي اللاعب.' });
+          const outOfStock = isShop2OutOfStockError(providerValidationError);
+          if (outOfStock) await markShop2Availability(validatingItem, 'out_of_stock');
+          return res.status(outOfStock ? 409 : (Number(providerValidationError.status) === 422 ? 422 : 400)).json({ error: outOfStock ? `المنتج "${validatingItem?.name || 'المحدد'}" غير متوفر حالياً (Out of Stock) من منصة التعبئة.` : (providerValidationError.message || 'تعذر التحقق من منتج التعبئة أو آيدي اللاعب.') });
         }
       }
       const subtotal = total;
@@ -900,9 +911,11 @@ module.exports = function buildStoreRouter(deps) {
         loyaltyPointsEarned: pointsEarned, loyaltyPointsRedeemed, loyaltyRewardItem
       }).save();
       if (providerItems.length > 0) {
+        let creatingItem = null;
         try {
           if (!shop2topup.configured()) throw new Error('Shop2Topup غير مهيأ في إعدادات الخادم.');
           for (const item of providerItems) {
+            creatingItem = item;
             const livePrice = providerPrices.get(Number(item.shop2topupItemId));
             const created = await shop2topup.createOrder({
               orderId: crypto.randomUUID(),
@@ -931,12 +944,15 @@ module.exports = function buildStoreRouter(deps) {
           order.providerUpdatedAt = new Date();
           order.status = 'تعبئة معلقة';
           await order.save();
+          if (isShop2OutOfStockError(providerError)) await markShop2Availability(creatingItem, 'out_of_stock');
           console.error('[orders] Shop2Topup failure:', providerError.message || providerError);
           if (!externalOrderCreated) {
-            const message = /balance|رصيد|insufficient|غير كاف/i.test(String(providerError.message || ''))
+            const message = isShop2OutOfStockError(providerError)
+              ? `المنتج "${creatingItem?.name || 'المحدد'}" غير متوفر حالياً (Out of Stock) من منصة التعبئة.`
+              : /balance|رصيد|insufficient|غير كاف/i.test(String(providerError.message || ''))
               ? 'رصيد Shop2Topup غير كافٍ لإتمام العملية، ولم يتم تأكيد الطلب.'
               : `تعذر تنفيذ التعبئة: ${providerError.message || 'رفض مزود الخدمة الطلب.'}`;
-            return res.status(Number(providerError.status) === 402 ? 402 : 502).json({ error: message });
+            return res.status(isShop2OutOfStockError(providerError) ? 409 : (Number(providerError.status) === 402 ? 402 : 502)).json({ error: message });
           }
           return res.status(409).json({ error: 'تم إرسال الطلب إلى Shop2Topup لكنه ما زال قيد المعالجة. لا تعِد المحاولة قبل ظهور حالته.' });
         }

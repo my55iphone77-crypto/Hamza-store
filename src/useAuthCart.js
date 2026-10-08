@@ -88,6 +88,11 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     if (!product || typeof product !== 'object') return;
     const isOpenStoreCredit = product.deliveryType === 'store_credit';
     const isDynamicTopup = product.deliveryType === 'id_topup' && Number(product.shop2topupItemId || 0) > 0;
+    const isProviderOutOfStock = isDynamicTopup && ['out_of_stock', 'out-of-stock', 'unavailable'].includes(String(product.providerAvailability || '').toLowerCase());
+    if (isProviderOutOfStock) {
+      alert('هذا المنتج غير متوفر حالياً من منصة التعبئة (Out of Stock).');
+      return;
+    }
     const stockCount = typeof product.stock === 'number' ? product.stock : 0;
     if (!isOpenStoreCredit && !isDynamicTopup && stockCount <= 0) {
       alert('⚠️ عذراً، هذا المنتج نفد من المخزون حالياً.');
@@ -327,6 +332,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
         } else {
           setError(errorMsg || (err?.message ? `تعذر إتمام الطلب: ${err.message}` : 'فشل إتمام عملية الشراء عبر الخادم.'));
         }
+        if (typeof fetchProducts === 'function') fetchProducts(typeof searchTerm === 'string' ? searchTerm : '');
       }
     } finally {
       if (isMounted.current) setSubmittingCheckout(false);
