@@ -126,7 +126,7 @@ const GLASS_STYLE = `
   .hz-app-full-container {
     width: 100% !important;
     max-width: 100% !important;
-    min-height: max(0px, calc(100dvh - 132px));
+    min-height: 0;
     height: auto !important;
     margin: 0 !important;
     border-radius: 26px !important;
@@ -177,7 +177,7 @@ const GLASS_STYLE = `
     .hz-admin-header { padding: 10px 12px !important; }
     .hz-admin-header > div { width: 100%; justify-content: center; }
     .hz-admin-main { padding: 10px 8px !important; overflow-x: clip; }
-    .hz-app-full-container { min-height: max(0px, calc(100dvh - 92px)); padding: 12px !important; border-radius: 16px; }
+    .hz-app-full-container { min-height: 0; padding: 12px !important; border-radius: 16px; }
     .hz-glass-card { padding: 14px; border-radius: 18px; }
     .hz-glass-icon { width: 42px; height: 42px; font-size: 19px; }
     .hz-admin-main [style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
