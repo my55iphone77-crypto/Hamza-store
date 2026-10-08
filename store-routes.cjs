@@ -24,7 +24,7 @@ module.exports = function buildStoreRouter(deps) {
     const number = Number(value);
     return Number.isFinite(number) ? number : undefined;
   };
-  const isShop2OutOfStockError = (error) => /out[\s_-]*of[\s_-]*stock|stock[\s_-]*(?:is[\s_-]*)?unavailable|not[\s_-]*available|unavailable|no[\s_-]*inventory|sold[\s_-]*out/i.test(String(error?.message || error || ''));
+  const isShop2OutOfStockError = (error) => /out[\s_-]*of[\s_-]*stock|stock[\s_-]*(?:is[\s_-]*)?unavailable|not[\s_-]*available|unavailable|no[\s_-]*inventory|sold[\s_-]*out|insufficient[\s_-]*(?:balance|funds)|balance[\s_-]*(?:is[\s_-]*)?(?:empty|insufficient)|رصيد.*(?:غير كاف|منته)/i.test(String(error?.message || error || ''));
   const markShop2Availability = async (item, status) => {
     if (!item?.id || !mongoose.isValidObjectId(item.id)) return;
     await Product.updateOne({ _id: item.id }, { $set: { providerAvailability: status, providerAvailabilityCheckedAt: new Date() } }).catch(() => {});
@@ -59,6 +59,7 @@ module.exports = function buildStoreRouter(deps) {
       if (!categoryId) return res.status(400).json({ error: 'معرّف فئة Shop2Topup مطلوب لفحص التوفر.' });
       res.json(await shop2topup.getItemAvailability({ itemId: req.params.itemId, categoryId }));
     } catch (e) {
+      if (isShop2OutOfStockError(e)) return res.json({ success: true, item_id: Number(req.params.itemId), available: false, available_quantity: 0, status: 'out_of_stock' });
       res.status(e.status === 429 ? 429 : 502).json({ error: e.message || 'تعذر فحص توفر المنتج من منصة التعبئة.' });
     }
   });
@@ -827,6 +828,17 @@ module.exports = function buildStoreRouter(deps) {
             const priceData = await shop2topup.getPrice(item.shop2topupItemId);
             const livePrice = getShop2UnitPrice(priceData);
             if (livePrice === undefined) throw new Error(`منتج ${item.name} غير موجود في كتالوج Shop2Topup. احذف المنتج من السلة أو حدّث ربطه من لوحة المنتجات بمعرّف موجود في الكتالوج.`);
+            const availability = await shop2topup.getItemAvailability({ itemId: item.shop2topupItemId, categoryId: item.shop2topupCategoryId });
+            if (!availability?.available) {
+              const error = new Error(`المنتج "${item.name}" غير متوفر حالياً (Out of Stock) من منصة التعبئة.`);
+              error.status = 409;
+              throw error;
+            }
+            if (availability.available_quantity !== null && Number(item.quantity) > Number(availability.available_quantity)) {
+              const error = new Error(`الكمية المتاحة حالياً من "${item.name}" هي ${Number(availability.available_quantity)} قطعة فقط.`);
+              error.status = 409;
+              throw error;
+            }
             await shop2topup.validatePlayer({ sub_category_id: item.shop2topupItemId, ...item.topupRequirements, player_id: playerId });
             providerPrices.set(Number(item.shop2topupItemId), livePrice);
             await markShop2Availability(item, 'available');
@@ -834,7 +846,7 @@ module.exports = function buildStoreRouter(deps) {
         } catch (providerValidationError) {
           const outOfStock = isShop2OutOfStockError(providerValidationError);
           if (outOfStock) await markShop2Availability(validatingItem, 'out_of_stock');
-          return res.status(outOfStock ? 409 : (Number(providerValidationError.status) === 422 ? 422 : 400)).json({ error: outOfStock ? `المنتج "${validatingItem?.name || 'المحدد'}" غير متوفر حالياً (Out of Stock) من منصة التعبئة.` : (providerValidationError.message || 'تعذر التحقق من منتج التعبئة أو آيدي اللاعب.') });
+          return res.status(outOfStock || Number(providerValidationError.status) === 409 ? 409 : (Number(providerValidationError.status) === 422 ? 422 : 400)).json({ error: outOfStock ? `المنتج "${validatingItem?.name || 'المحدد'}" غير متوفر حالياً (Out of Stock) من منصة التعبئة.` : (providerValidationError.message || 'تعذر التحقق من منتج التعبئة أو آيدي اللاعب.') });
         }
       }
       const subtotal = total;

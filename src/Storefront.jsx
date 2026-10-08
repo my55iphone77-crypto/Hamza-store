@@ -427,7 +427,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         try {
           const response = await api.get(`/shop2topup/catalog/items/${encodeURIComponent(String(product.shop2topupItemId))}/availability`, { params: { categoryId: product.shop2topupCategoryId } });
           const data = response?.data || {};
-          return [String(product._id || product.id), data.status === 'out_of_stock' ? 'out_of_stock' : data.available === true ? 'available' : null];
+          return [String(product._id || product.id), { status: data.status === 'out_of_stock' ? 'out_of_stock' : data.available === true ? 'available' : null, quantity: Number.isFinite(Number(data.available_quantity)) ? Number(data.available_quantity) : null }];
         } catch (error) {
           return [String(product._id || product.id), null];
         }
@@ -435,7 +435,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       if (!cancelled) {
         setProviderAvailability(prev => {
           const next = { ...prev };
-          results.forEach(([id, status]) => { if (status) next[id] = status; });
+          results.forEach(([id, value]) => { if (value?.status) next[id] = value; });
           return next;
         });
       }
@@ -447,7 +447,10 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
   const productsWithAvailability = useMemo(() => (Array.isArray(products) ? products : []).map(product => ({
     ...product,
-    ...(providerAvailability[String(product?._id || product?.id)] ? { providerAvailability: providerAvailability[String(product._id || product.id)] } : {})
+    ...(providerAvailability[String(product?._id || product?.id)] ? {
+      providerAvailability: providerAvailability[String(product._id || product.id)].status,
+      ...(providerAvailability[String(product._id || product.id)].quantity !== null ? { providerStockQuantity: providerAvailability[String(product._id || product.id)].quantity } : {})
+    } : {})
   })), [products, providerAvailability]);
 
   const authCart = useAuthCart({ api, fetchProducts, searchTerm, setError });
@@ -757,6 +760,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
               const isOpenStoreCredit = product.deliveryType === 'store_credit';
               const isProviderOutOfStock = product.deliveryType === 'id_topup' && ['out_of_stock', 'out-of-stock', 'unavailable'].includes(String(product.providerAvailability || '').toLowerCase());
               const stock = product.stock ?? product.quantity ?? 0;
+              const providerStockQuantity = Number(product.providerStockQuantity);
               const originalPrice = Number(product.price ?? 0);
 
               const rawDiscount = product.discountPrice ?? product.salePrice ?? 0;
@@ -790,7 +794,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <span className="hz-product-glasschip" style={{ fontSize: '11px', color: isProviderOutOfStock ? '#fca5a5' : '#34d399', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
-                          {isProviderOutOfStock ? 'Out of Stock · غير متوفر' : `المخزون: ${isOpenStoreCredit ? 'مفتوح' : stock}`}
+                          {isProviderOutOfStock ? 'Out of Stock · غير متوفر' : Number.isFinite(providerStockQuantity) ? `المتاح من المنصة: ${providerStockQuantity}` : `المخزون: ${isOpenStoreCredit ? 'مفتوح' : stock}`}
                         </span>
                         {hasDiscount && (
                           <span className="hz-product-glasschip" style={{ fontSize: '11px', color: '#f59e0b', padding: '4px 8px', borderRadius: '20px', fontWeight: 'bold' }}>

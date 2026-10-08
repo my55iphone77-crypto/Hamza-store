@@ -93,6 +93,11 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
       alert('هذا المنتج غير متوفر حالياً من منصة التعبئة (Out of Stock).');
       return;
     }
+    const providerQuantity = Number(product.providerStockQuantity);
+    if (isDynamicTopup && Number.isFinite(providerQuantity) && providerQuantity <= 0) {
+      alert('هذا المنتج غير متوفر حالياً من منصة التعبئة (Out of Stock).');
+      return;
+    }
     const stockCount = typeof product.stock === 'number' ? product.stock : 0;
     if (!isOpenStoreCredit && !isDynamicTopup && stockCount <= 0) {
       alert('⚠️ عذراً، هذا المنتج نفد من المخزون حالياً.');
@@ -106,6 +111,11 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
       const existing = safePrevCart.find(item => item && (item.id === prodId || item._id === prodId) && Boolean(item.loyaltyOnly) === Boolean(product.loyaltyOnly));
       if (existing) {
         const currentQty = typeof existing.quantity === 'number' ? existing.quantity : 1;
+        const existingProviderQuantity = Number(existing.providerStockQuantity);
+        if (existing.deliveryType === 'id_topup' && Number.isFinite(existingProviderQuantity) && currentQty >= existingProviderQuantity) {
+          alert(`لا يمكن طلب أكثر من ${existingProviderQuantity} قطعة المتوفرة حالياً من منصة التعبئة.`);
+          return safePrevCart;
+        }
         if (!isOpenStoreCredit && !isDynamicTopup && currentQty >= stockCount) {
           alert('⚠️ لقد وصلت للحد الأقصى المتوفر في المخزون لهذا المنتج.');
           return safePrevCart;
@@ -133,7 +143,10 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
         const isOpenStoreCredit = item.deliveryType === 'store_credit';
         const isDynamicTopup = item.deliveryType === 'id_topup' && Number(item.shop2topupItemId || 0) > 0;
         const stockCount = Number(item.stock || 0);
-        const maxQuantity = !isOpenStoreCredit && !isDynamicTopup && stockCount > 0 ? stockCount : requestedQuantity;
+        const providerQuantity = Number(item.providerStockQuantity);
+        const maxQuantity = isDynamicTopup && Number.isFinite(providerQuantity) && providerQuantity > 0
+          ? providerQuantity
+          : (!isOpenStoreCredit && !isDynamicTopup && stockCount > 0 ? stockCount : requestedQuantity);
         return { ...item, quantity: Math.min(requestedQuantity, maxQuantity) };
       })
       : []));

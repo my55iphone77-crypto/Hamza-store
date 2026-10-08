@@ -51,12 +51,14 @@ module.exports = {
     const catalog = await request(`/catalog/subcategories?categoryId=${encodeURIComponent(String(categoryId || ''))}`);
     const list = catalog?.subcategories || catalog?.data || [];
     const item = Array.isArray(list) ? list.find(entry => Number(entry?.item_id ?? entry?.id) === Number(itemId)) : null;
-    if (!item) return { success: true, item_id: Number(itemId), available: false, status: 'out_of_stock' };
+    if (!item) return { success: true, item_id: Number(itemId), available: false, available_quantity: 0, status: 'out_of_stock' };
     const explicitAvailability = item.available ?? item.is_available ?? item.in_stock ?? item.inStock;
     const numericStock = item.stock ?? item.inventory ?? item.quantity;
+    const availableQuantity = Number(item.available_quantity ?? item.availableQuantity ?? item.available_stock ?? item.availableStock ?? item.remaining ?? item.max_quantity ?? numericStock);
     const statusText = String(item.status || item.availability || '').toLowerCase();
-    const unavailable = explicitAvailability === false || Number(numericStock) <= 0 || /out[\s_-]*of[\s_-]*stock|sold[\s_-]*out|unavailable|inactive/i.test(statusText);
-    return { success: true, item_id: Number(itemId), available: !unavailable, status: unavailable ? 'out_of_stock' : 'available', item };
+    const hasQuantity = Number.isFinite(availableQuantity) && availableQuantity >= 0;
+    const unavailable = explicitAvailability === false || (hasQuantity && availableQuantity <= 0) || /out[\s_-]*of[\s_-]*stock|sold[\s_-]*out|unavailable|inactive/i.test(statusText);
+    return { success: true, item_id: Number(itemId), available: !unavailable, available_quantity: hasQuantity ? availableQuantity : null, status: unavailable ? 'out_of_stock' : 'available', item };
   },
   getRequirements: (categoryId) => request(`/catalog/category/${encodeURIComponent(String(categoryId))}/requirements`),
   validatePlayer: (payload) => request('/player/validate', { method: 'POST', body: JSON.stringify(payload) }),
