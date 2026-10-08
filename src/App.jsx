@@ -53,7 +53,7 @@ const GLASS_STYLE = `
       radial-gradient(ellipse 900px 600px at 50% 105%, rgba(168,85,247,0.30), transparent 55%),
       radial-gradient(ellipse 500px 350px at 25% 55%, rgba(16,185,129,0.20), transparent 60%),
       #05060a;
-    min-height: 0;
+    min-height: 100dvh;
     height: auto;
     width: 100%;
     max-width: 100%;
