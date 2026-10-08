@@ -47,6 +47,17 @@ module.exports = {
     return request(`/catalog/subcategories${query.toString() ? `?${query}` : ''}`);
   },
   getPrice: (itemId) => request(`/catalog/subcategory/${encodeURIComponent(String(itemId))}/price`),
+  getItemAvailability: async ({ itemId, categoryId } = {}) => {
+    const catalog = await request(`/catalog/subcategories?categoryId=${encodeURIComponent(String(categoryId || ''))}`);
+    const list = catalog?.subcategories || catalog?.data || [];
+    const item = Array.isArray(list) ? list.find(entry => Number(entry?.item_id ?? entry?.id) === Number(itemId)) : null;
+    if (!item) return { success: true, item_id: Number(itemId), available: false, status: 'out_of_stock' };
+    const explicitAvailability = item.available ?? item.is_available ?? item.in_stock ?? item.inStock;
+    const numericStock = item.stock ?? item.inventory ?? item.quantity;
+    const statusText = String(item.status || item.availability || '').toLowerCase();
+    const unavailable = explicitAvailability === false || Number(numericStock) <= 0 || /out[\s_-]*of[\s_-]*stock|sold[\s_-]*out|unavailable|inactive/i.test(statusText);
+    return { success: true, item_id: Number(itemId), available: !unavailable, status: unavailable ? 'out_of_stock' : 'available', item };
+  },
   getRequirements: (categoryId) => request(`/catalog/category/${encodeURIComponent(String(categoryId))}/requirements`),
   validatePlayer: (payload) => request('/player/validate', { method: 'POST', body: JSON.stringify(payload) }),
   createOrder: ({ orderId = uuid(), subCategoryId, quantity, requirements, expectedUnitPrice }) => request('/orders/create', {

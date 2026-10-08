@@ -417,6 +417,39 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
     return (globalProducts && globalProducts.length > 0) ? globalProducts : localProducts;
   }, [globalProducts, localProducts]);
 
+  const [providerAvailability, setProviderAvailability] = useState({});
+  useEffect(() => {
+    let cancelled = false;
+    const checkAvailability = async () => {
+      const targets = (Array.isArray(products) ? products : []).filter(product => product?.deliveryType === 'id_topup' && product?.shop2topupItemId && product?.shop2topupCategoryId);
+      if (!targets.length) return;
+      const results = await Promise.all(targets.map(async (product) => {
+        try {
+          const response = await api.get(`/shop2topup/catalog/items/${encodeURIComponent(String(product.shop2topupItemId))}/availability`, { params: { categoryId: product.shop2topupCategoryId } });
+          const data = response?.data || {};
+          return [String(product._id || product.id), data.status === 'out_of_stock' ? 'out_of_stock' : data.available === true ? 'available' : null];
+        } catch (error) {
+          return [String(product._id || product.id), null];
+        }
+      }));
+      if (!cancelled) {
+        setProviderAvailability(prev => {
+          const next = { ...prev };
+          results.forEach(([id, status]) => { if (status) next[id] = status; });
+          return next;
+        });
+      }
+    };
+    checkAvailability();
+    const timer = window.setInterval(checkAvailability, 60000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [products, api]);
+
+  const productsWithAvailability = useMemo(() => (Array.isArray(products) ? products : []).map(product => ({
+    ...product,
+    ...(providerAvailability[String(product?._id || product?.id)] ? { providerAvailability: providerAvailability[String(product._id || product.id)] } : {})
+  })), [products, providerAvailability]);
+
   const authCart = useAuthCart({ api, fetchProducts, searchTerm, setError });
 
   // 🔄 WebSocket & Global Event Bus Integration
@@ -487,14 +520,14 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
   }, [products]);
 
   const filteredProducts = useMemo(() => {
-    if (!Array.isArray(products)) return [];
-    return products.filter(p => {
+    if (!Array.isArray(productsWithAvailability)) return [];
+    return productsWithAvailability.filter(p => {
       if (!isPublishedProduct(p)) return false;
       if (selectedCategory === 'all') return true;
 
       return String(p.category || '').trim() === String(selectedCategory).trim();
     });
-  }, [products, selectedCategory]);
+  }, [productsWithAvailability, selectedCategory]);
 
   const handleTrackOrder = async (e) => {
     e.preventDefault();

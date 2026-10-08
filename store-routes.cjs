@@ -53,6 +53,15 @@ module.exports = function buildStoreRouter(deps) {
   router.get('/shop2topup/catalog/items/:itemId/price', permissionGuard('manage_products', 'manager'), async (req, res) => {
     try { res.json(await shop2topup.getPrice(req.params.itemId)); } catch (e) { res.status(e.status === 429 ? 429 : 502).json({ error: e.message }); }
   });
+  router.get('/shop2topup/catalog/items/:itemId/availability', publicActionLimiter, async (req, res) => {
+    try {
+      const categoryId = String(req.query.categoryId || '').trim();
+      if (!categoryId) return res.status(400).json({ error: 'معرّف فئة Shop2Topup مطلوب لفحص التوفر.' });
+      res.json(await shop2topup.getItemAvailability({ itemId: req.params.itemId, categoryId }));
+    } catch (e) {
+      res.status(e.status === 429 ? 429 : 502).json({ error: e.message || 'تعذر فحص توفر المنتج من منصة التعبئة.' });
+    }
+  });
   router.get('/shop2topup/catalog/category/:categoryId/requirements', publicActionLimiter, async (req, res) => {
     try {
       res.json(await shop2topup.getRequirements(req.params.categoryId));
