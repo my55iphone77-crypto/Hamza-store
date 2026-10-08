@@ -134,6 +134,9 @@ const GLASS_STYLE = `
     cursor: default !important;
     overflow: visible !important;
   }
+  /* الحاوية الرئيسية للقسم ليست بطاقة تفاعلية؛ التأثير اللامع الكبير بداخلها كان ينشئ ارتفاع تمرير وهميًا */
+  .hz-app-full-container::before, .hz-app-full-container::after { display: none !important; content: none !important; }
+  .hz-app-full-container { overflow: visible !important; }
   .hz-app-full-container > div { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
   .hz-section-shell { width: 100%; max-width: 100%; min-width: 0; display: block; overflow: visible; overflow-wrap: anywhere; }
   .hz-section-shell > * { width: 100%; max-width: 100%; min-width: 0; min-height: 0 !important; height: auto !important; border-radius: 24px !important; background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
@@ -170,7 +173,7 @@ const GLASS_STYLE = `
   @media (max-width: 720px) { .hz-product-form, .hz-employee-form { grid-template-columns: minmax(0, 1fr); } .hz-product-form > button:last-child, .hz-employee-form > button:last-child { grid-column: auto; } }
   .hz-section-shell [style*="position: fixed"] > div[style*="maxWidth"], .hz-section-shell [style*="position: fixed"] > div[style*="max-width"] { width: min(100%, 760px) !important; max-width: min(100%, 760px) !important; max-height: calc(100dvh - clamp(24px, 6vw, 48px)) !important; margin: auto !important; }
   .hz-atmosphere, .hz-atmosphere * { box-sizing: border-box; }
-  .hz-atmosphere { min-width: 0; max-width: 100%; overflow-x: clip; overscroll-behavior-x: none; }
+  .hz-atmosphere { min-width: 0; max-width: 100%; min-height: 0 !important; overflow-x: clip; overscroll-behavior-x: none; }
   .hz-admin-main, .hz-admin-main > div { min-width: 0; max-width: 100%; }
   .hz-admin-main input, .hz-admin-main select, .hz-admin-main textarea, .hz-admin-main button { max-width: 100%; }
   @media (max-width: 640px) {
