@@ -182,7 +182,7 @@ module.exports = function buildAuthCoreRouter(deps) {
         const emailSent = await sendStoreEmail(
           cleanEmail,
           'إعادة تعيين كلمة المرور - متجر حمزة',
-          `<h3>مرحباً ${user.name || ''}،</h3><p><a href="${resetLink}">اضغط هنا لتعيين كلمة مرور جديدة</a></p><p>هذا الرابط صالح لمدة ساعة واحدة فقط.</p>`
+          `<div dir="rtl" style="max-width:640px;margin:0 auto;font-family:Arial,Tahoma,sans-serif;color:#e5e7eb;text-align:right"><div style="background:#172033;border:1px solid #334155;border-radius:16px;padding:22px"><h2 style="margin:0 0 14px;color:#67e8f9;font-size:22px">مرحباً ${user.name || ''}،</h2><p style="line-height:1.9;color:#cbd5e1">تلقينا طلباً لإعادة تعيين كلمة مرور حسابك في متجر حمزة.</p><div style="text-align:center;margin:24px 0"><a href="${resetLink}" style="display:inline-block;max-width:100%;background:#2563eb;color:#fff;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:bold">إعادة تعيين كلمة المرور</a></div><p style="font-size:13px;line-height:1.8;color:#94a3b8">الرابط صالح لمدة ساعة واحدة فقط. إذا لم تطلب إعادة التعيين، يمكنك تجاهل هذه الرسالة بأمان.</p></div></div>`
         );
         if (!emailSent) return res.status(502).json({ error: 'تعذر إرسال البريد حالياً. يرجى التحقق من إعدادات SMTP أو المحاولة لاحقاً.' });
       }
@@ -307,7 +307,7 @@ module.exports = function buildAuthCoreRouter(deps) {
         await sendStoreEmail(
           cleanEmail,
           'تفعيل حسابك - متجر حمزة',
-          `<h3>مرحباً ${user.name || ''}،</h3><p><a href="${verifyLink}">اضغط هنا لتفعيل حسابك</a></p><p>هذا الرابط صالح لمدة 24 ساعة.</p>`
+          `<div dir="rtl" style="max-width:640px;margin:0 auto;font-family:Arial,Tahoma,sans-serif;color:#e5e7eb;text-align:right"><div style="background:#172033;border:1px solid #334155;border-radius:16px;padding:22px"><h2 style="margin:0 0 14px;color:#67e8f9;font-size:22px">مرحباً ${user.name || ''}،</h2><p style="line-height:1.9;color:#cbd5e1">بقيت خطوة واحدة لتفعيل بريدك الإلكتروني والاستفادة من خدمات متجر حمزة.</p><div style="text-align:center;margin:24px 0"><a href="${verifyLink}" style="display:inline-block;max-width:100%;background:#06b6d4;color:#fff;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:bold">تفعيل البريد الإلكتروني</a></div><p style="font-size:13px;line-height:1.8;color:#94a3b8">رابط التفعيل صالح لمدة 24 ساعة فقط.</p></div></div>`
         );
       }
 

@@ -1070,7 +1070,7 @@ module.exports = function buildStoreRouter(deps) {
         sendStoreEmail(
           before.customerEmail,
           'رد على استفسارك - متجر حمزة',
-          `<div dir="rtl" style="font-family:Tahoma,Arial"><p>مرحباً ${esc(before.customerName)}،</p><p>${esc(before.reply)}</p><p style="color:#888">بخصوص: ${esc(before.issue)}</p></div>`
+          `<div dir="rtl" style="max-width:640px;margin:0 auto;font-family:Tahoma,Arial,sans-serif;color:#e5e7eb;line-height:1.9"><div style="background:#172033;border:1px solid #334155;border-radius:16px;padding:22px"><h2 style="margin:0 0 14px;color:#67e8f9;font-size:21px">رد فريق خدمة العملاء</h2><p>مرحباً ${esc(before.customerName)}،</p><div style="margin:16px 0;padding:15px;background:#0f1b30;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(before.reply)}</div><p style="color:#94a3b8;font-size:13px">بخصوص: ${esc(before.issue)}</p><p style="color:#94a3b8;font-size:12px">شكراً لتواصلك مع متجر حمزة.</p></div></div>`
         );
       }
     } catch (e) { res.status(400).json({ error: 'فشل تحديث الشكوى' }); }
@@ -1376,7 +1376,7 @@ module.exports = function buildStoreRouter(deps) {
       if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(to))) return res.status(400).json({ error: 'إيميل المستلم غير صالح.' });
       if (!allowMail(String(req.user._id))) return res.status(429).json({ error: 'تجاوزت حد الإرسال في الساعة.' });
       const ok = await sendStoreEmail(String(to), String(subject || 'رسالة من متجر حمزة').slice(0, 200),
-        `<div dir="rtl" style="font-family:Tahoma,Arial;white-space:pre-line">${esc(message)}</div>`);
+        `<div dir="rtl" style="max-width:640px;margin:0 auto;font-family:Tahoma,Arial,sans-serif;color:#e5e7eb;line-height:1.9"><div style="background:#172033;border:1px solid #334155;border-radius:16px;padding:22px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(message)}</div></div>`);
       if (!ok) return res.status(502).json({ error: 'فشل إرسال البريد من الخادم.' });
       res.json({ success: true });
     } catch (e) { res.status(500).json({ error: 'خطأ في إرسال البريد' }); }
