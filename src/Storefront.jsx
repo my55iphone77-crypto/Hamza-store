@@ -20,7 +20,7 @@ const isPublishedProduct = (product = {}) => {
 const GLASS_STYLE = `
   /* ✅ إصلاح السكرول: overflow-x:hidden على html و body معاً كان يحوّل body لحاوية سكرول ثانية */
   html { margin: 0; padding: 0; background: radial-gradient(ellipse 900px 600px at 50% 105%, rgba(168,85,247,0.22), transparent 60%), #05060a; -webkit-text-size-adjust: 100%; }
-  body { margin: 0; padding: 0; background: inherit; overflow-x: clip; overscroll-behavior-x: none; }
+  body { margin: 0; padding: 0; background: radial-gradient(ellipse 900px 600px at 50% 105%, rgba(168,85,247,0.22), transparent 60%), radial-gradient(ellipse 700px 500px at 95% 0%, rgba(56,189,248,0.18), transparent 58%), #05060a; overflow-x: clip; overscroll-behavior-x: none; }
   @keyframes fadeSlideIn {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
