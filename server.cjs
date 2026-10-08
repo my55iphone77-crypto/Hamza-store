@@ -141,8 +141,32 @@ async function sendStoreEmail(toEmail, subject, htmlContent) {
     return false;
   }
   const originalHtml = String(htmlContent || '');
-  const brandHeader = `<div style="max-width:720px;margin:0 auto 18px;padding:18px 22px;text-align:center;background:#080808;border-radius:16px;border:1px solid #b58b3d;"><img src="${BRAND_LOGO_URL}" alt="Hamza Store" style="display:block;width:190px;max-width:80%;height:auto;margin:0 auto 8px;object-fit:contain;"><div style="font-family:Arial,sans-serif;color:#f3d48a;font-size:12px;letter-spacing:2px;">HAMZA STORE</div></div>`;
-  const html = `${brandHeader}${originalHtml}`;
+  const responsiveEmailStyles = `<meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
+    * { box-sizing: border-box; }
+    html, body { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    body { overflow-x: hidden !important; -webkit-text-size-adjust: 100%; }
+    table { width: 100% !important; max-width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
+    img { max-width: 100% !important; height: auto !important; }
+    td, th, p, div, span, a, b, strong { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
+    th, td { white-space: normal !important; }
+    [style*="min-width"] { min-width: 0 !important; }
+    [style*="white-space:nowrap"], [style*="white-space: nowrap"] { white-space: normal !important; }
+    @media only screen and (max-width: 600px) {
+      body { padding: 0 !important; }
+      body > div, body > table { width: 100% !important; max-width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; border-radius: 0 !important; }
+      div[style*="max-width"], table[style*="max-width"] { max-width: 100% !important; }
+      div[style*="padding:30px"], div[style*="padding: 30px"] { padding: 20px 14px !important; }
+      div[style*="padding:28px"], div[style*="padding: 28px"] { padding: 20px 14px !important; }
+      div[style*="padding:32px"], div[style*="padding: 32px"] { padding: 22px 14px !important; }
+      th, td { padding: 8px 6px !important; font-size: 12px !important; }
+      h1 { font-size: 22px !important; line-height: 1.35 !important; }
+      h2 { font-size: 18px !important; }
+      h3 { font-size: 16px !important; }
+      a { max-width: 100% !important; }
+    }
+  </style>`;
+  const brandHeader = `<div style="max-width:720px;width:100%;margin:0 auto 18px;padding:18px 22px;text-align:center;background:#080808;border-radius:16px;border:1px solid #b58b3d;overflow:hidden;"><img src="${BRAND_LOGO_URL}" alt="Hamza Store" style="display:block;width:190px;max-width:80%;height:auto;margin:0 auto 8px;object-fit:contain;"><div style="font-family:Arial,sans-serif;color:#f3d48a;font-size:12px;letter-spacing:2px;overflow-wrap:anywhere;">HAMZA STORE</div></div>`;
+  const html = `${responsiveEmailStyles}${brandHeader}${originalHtml}`;
   const text = html.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const maxAttempts = MAIL_PROVIDER === 'brevo-api' ? 2 : 1;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
