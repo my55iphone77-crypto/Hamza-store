@@ -31,6 +31,10 @@
 
 html, body {
   overflow-x: clip;
+  background:
+    radial-gradient(ellipse 900px 600px at 50% 105%, rgba(168,85,247,0.22), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 95% 0%, rgba(56,189,248,0.18), transparent 58%),
+    #05060a;
 }
 
 body {
@@ -41,7 +45,7 @@ body {
   max-width: 100%;
   min-height: 0;
   color: var(--text);
-  background: var(--bg);
+  background: inherit;
   overflow-x: clip;
   overscroll-behavior-x: none;
 }
