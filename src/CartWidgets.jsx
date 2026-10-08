@@ -194,6 +194,8 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
     currentUser = null,
     cart = [],
     updateCartItemPlayerId = () => {},
+    validateCartItemPlayer = async () => ({ success: false }),
+    playerValidation = {},
     totalPrice = 0,
     loyaltyPointsCost = 0,
     submittingCheckout = false,
@@ -250,14 +252,41 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
               </div>
 
               {item.deliveryType === 'id_topup' && (
-                <input
-                  type="text"
-                  placeholder="أدخل آيدي اللاعب لهذا المنتج..."
-                  value={item.playerId || ''}
-                  onChange={(e) => updateCartItemPlayerId(itemId, e.target.value)}
-                  required
-                  style={{ background: '#0b0f19', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '10px 14px', borderRadius: '10px', color: '#fff', fontSize: '13px', outline: 'none', ...(inputStyle || {}) }}
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch', flexWrap: 'wrap' }}>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="أدخل آيدي لاعب PUBG Mobile..."
+                      value={item.playerId || ''}
+                      onChange={(e) => updateCartItemPlayerId(itemId, e.target.value.replace(/[^0-9]/g, ''))}
+                      onBlur={() => { if (String(item.playerId || '').trim()) validateCartItemPlayer(item); }}
+                      required
+                      style={{ flex: '1 1 220px', minWidth: 0, background: '#0b0f19', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '10px 14px', borderRadius: '10px', color: '#fff', fontSize: '13px', outline: 'none', ...(inputStyle || {}) }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => validateCartItemPlayer(item)}
+                      disabled={playerValidation[String(itemId)]?.status === 'checking' || !String(item.playerId || '').trim()}
+                      style={{ flex: '0 1 auto', minWidth: '105px', border: '1px solid rgba(56,189,248,.45)', borderRadius: '10px', padding: '10px 12px', color: '#e0f2fe', background: 'linear-gradient(135deg,rgba(14,165,233,.28),rgba(37,99,235,.18))', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
+                    >
+                      {playerValidation[String(itemId)]?.status === 'checking' ? 'جاري التحقق...' : 'تحقق من الآيدي'}
+                    </button>
+                  </div>
+                  {playerValidation[String(itemId)]?.status === 'valid' && playerValidation[String(itemId)]?.playerId === String(item.playerId || '').trim() && (
+                    <div role="status" style={{ padding: '10px 12px', borderRadius: '10px', color: '#bbf7d0', background: 'rgba(22,163,74,.14)', border: '1px solid rgba(74,222,128,.42)', fontSize: '13px' }}>
+                      ✅ تم التحقق من الحساب{playerValidation[String(itemId)]?.playerName ? <>: <strong style={{ color: '#86efac' }}>{playerValidation[String(itemId)].playerName}</strong></> : ' بنجاح'}
+                    </div>
+                  )}
+                  {playerValidation[String(itemId)]?.status === 'invalid' && playerValidation[String(itemId)]?.playerId === String(item.playerId || '').trim() && (
+                    <div role="alert" style={{ padding: '10px 12px', borderRadius: '10px', color: '#fecaca', background: 'rgba(127,29,29,.2)', border: '1px solid rgba(248,113,113,.42)', fontSize: '13px' }}>
+                      ❌ {playerValidation[String(itemId)]?.error || 'تعذر التحقق من آيدي اللاعب.'}
+                    </div>
+                  )}
+                  {playerValidation[String(itemId)]?.status === 'idle' && String(item.playerId || '').trim() && (
+                    <div style={{ color: '#fbbf24', fontSize: '12px' }}>اضغط خارج الحقل أو زر التحقق لإظهار اسم الحساب قبل تأكيد الطلب.</div>
+                  )}
+                </div>
               )}
 
               {(item.deliveryType === 'code' || item.deliveryType === 'subscription') && (
