@@ -716,6 +716,19 @@ module.exports = function buildStoreRouter(deps) {
     try {
       const { customerName, customerEmail, customerAddress, paymentMethod, redeemPoints, couponCode } = req.body || {};
       const authUser = await getUserFromAuthHeader(req.headers.authorization);
+      const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase();
+      const sandboxPaymentMethods = new Set(['sandbox_card', 'sandbox_wallet', 'sandbox_bank']);
+      const isSandboxPayment = sandboxPaymentMethods.has(normalizedPaymentMethod);
+      const sandboxPaymentNames = {
+        sandbox_card: 'بطاقة بنكية تجريبية (Sandbox)',
+        sandbox_wallet: 'محفظة إلكترونية تجريبية (Sandbox)',
+        sandbox_bank: 'تحويل بنكي تجريبي (Sandbox)'
+      };
+      const paymentMethodName = sandboxPaymentNames[normalizedPaymentMethod] || normalizedPaymentMethod;
+      const isStoreBalancePayment = ['store_balance', 'balance'].includes(normalizedPaymentMethod);
+      if (normalizedPaymentMethod && !isSandboxPayment && !isStoreBalancePayment) {
+        return res.status(400).json({ error: 'طريقة الدفع غير معروفة أو غير مفعّلة.' });
+      }
       const rawItems = Array.isArray(req.body && req.body.items) ? req.body.items : [];
       const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(customerEmail || '').trim());
       if (!customerName || !emailOk || rawItems.length === 0) {
@@ -750,7 +763,7 @@ module.exports = function buildStoreRouter(deps) {
           shop2topupCategoryId = Number(prod.shop2topupCategoryId || shop2topupCategoryId) || 0;
           shop2topupItemId = Number(prod.shop2topupItemId || shop2topupItemId) || 0;
           if (loyaltyOnly && loyaltyPrice <= 0) loyaltyOnly = false;
-          if (['code', 'subscription'].includes(deliveryType) && (!Array.isArray(prod.codes) || prod.codes.length < qty)) {
+          if (!isSandboxPayment && ['code', 'subscription'].includes(deliveryType) && (!Array.isArray(prod.codes) || prod.codes.length < qty)) {
             return res.status(409).json({ error: `لا يوجد عدد كافٍ من الأكواد للمنتج: ${prod.name}.` });
           }
         }
@@ -762,7 +775,7 @@ module.exports = function buildStoreRouter(deps) {
         total += price * qty;
         earnedPoints += itemPoints * qty;
         const deliveredCodes = [];
-        if (deliveryType === 'store_credit' || storeCreditAmount > 0) {
+        if (!isSandboxPayment && (deliveryType === 'store_credit' || storeCreditAmount > 0)) {
           const amount = storeCreditAmount > 0 ? storeCreditAmount : price;
           for (let i = 0; i < qty; i += 1) {
             const code = newCreditCode();
@@ -772,11 +785,11 @@ module.exports = function buildStoreRouter(deps) {
         }
         if (deliveryType === 'id_topup' && shop2topupItemId > 0) topupRequirements = { ...topupRequirements, player_id: String(it.playerId || '').trim() };
         items.push({ id: String(it.id || ''), name, price, quantity: qty, deliveryType, storeCreditAmount, loyaltyPoints: itemPoints, loyaltyOnly, loyaltyPrice, playerId: it.playerId ? String(it.playerId) : undefined, shop2topupCategoryId, shop2topupItemId, topupRequirements, deliveredCodes });
-        if (it.id && mongoose.isValidObjectId(it.id) && ['code', 'subscription'].includes(deliveryType)) {
+        if (!isSandboxPayment && it.id && mongoose.isValidObjectId(it.id) && ['code', 'subscription'].includes(deliveryType)) {
           codeStockNeeds.push({ productId: String(it.id), quantity: qty, itemIndex: items.length - 1, productName: name });
         }
       }
-      const providerItems = items.filter((item) => item.deliveryType === 'id_topup' && Number(item.shop2topupItemId || 0) > 0);
+      const providerItems = isSandboxPayment ? [] : items.filter((item) => item.deliveryType === 'id_topup' && Number(item.shop2topupItemId || 0) > 0);
       const providerPrices = new Map();
       if (providerItems.length > 0) {
         try {
@@ -815,8 +828,8 @@ module.exports = function buildStoreRouter(deps) {
         total = Math.max(0, subtotal - couponDiscount);
       }
       let walletAmount = 0;
-      const usesStoreBalance = ['store_balance', 'balance'].includes(String(paymentMethod || '').trim().toLowerCase());
-      if (total > 0 && !usesStoreBalance) {
+      const usesStoreBalance = isStoreBalancePayment;
+      if (total > 0 && !usesStoreBalance && !isSandboxPayment) {
         return res.status(402).json({ error: 'لا توجد بوابة دفع مفعّلة حالياً. لا يمكن إتمام الطلب قبل ربط طريقة دفع آمنة.' });
       }
       if (usesStoreBalance) {
@@ -824,14 +837,14 @@ module.exports = function buildStoreRouter(deps) {
         if (Number(authUser.storeBalance || 0) < total) return res.status(400).json({ error: 'رصيد المتجر غير كافٍ.' });
         walletAmount = total;
       }
-      if (loyaltyPointsCost > 0) {
+      if (loyaltyPointsCost > 0 && !isSandboxPayment) {
         if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام نقاط الولاء.' });
         if (Number(authUser.loyaltyPoints || 0) < loyaltyPointsCost) return res.status(400).json({ error: `تحتاج ${loyaltyPointsCost} نقطة لشراء المنتجات المختارة.` });
       }
-      let loyaltyPointsRedeemed = loyaltyPointsCost;
+      let loyaltyPointsRedeemed = isSandboxPayment ? 0 : loyaltyPointsCost;
       let loyaltyRewardItem = '';
       const threshold = Math.max(1, Number(authUser?.loyaltyThreshold || 100));
-      if (redeemPoints === true || redeemPoints === 'true') {
+      if (!isSandboxPayment && (redeemPoints === true || redeemPoints === 'true')) {
         if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام نقاط الولاء.' });
         if (Number(authUser.loyaltyPoints || 0) < loyaltyPointsCost + threshold) return res.status(400).json({ error: `تحتاج ${loyaltyPointsCost + threshold} نقطة لإتمام الطلب ومكافأة الولاء.` });
         const reward = await Product.findOne({ stock: { $gt: 0 } }).sort({ price: 1 });
@@ -844,7 +857,7 @@ module.exports = function buildStoreRouter(deps) {
         loyaltyRewardItem = reward.name;
       }
       // حجز أكواد المنتجات الرقمية بعد نجاح تحقق الرصيد والنقاط.
-      for (const need of codeStockNeeds) {
+      for (const need of (isSandboxPayment ? [] : codeStockNeeds)) {
         const current = await Product.findById(need.productId).select('codes');
         const selectedCodes = Array.isArray(current?.codes) ? current.codes.slice(0, need.quantity) : [];
         if (selectedCodes.length < need.quantity) return res.status(409).json({ error: `نفدت أكواد المنتج: ${need.productName}.` });
@@ -856,8 +869,8 @@ module.exports = function buildStoreRouter(deps) {
         if (!reserved) return res.status(409).json({ error: `تم حجز أكواد المنتج ${need.productName} للتو، أعد المحاولة.` });
         items[need.itemIndex].deliveredCodes = selectedCodes;
       }
-      const pointsEarned = authUser ? Math.max(0, Math.round(earnedPoints * 100) / 100) : 0;
-      if (authUser) {
+      const pointsEarned = authUser && !isSandboxPayment ? Math.max(0, Math.round(earnedPoints * 100) / 100) : 0;
+      if (authUser && !isSandboxPayment) {
         const update = { $inc: { loyaltyPoints: pointsEarned - loyaltyPointsRedeemed } };
         if (walletAmount > 0) update.$inc.storeBalance = -walletAmount;
         const updatedUser = await User.findOneAndUpdate(
@@ -876,8 +889,8 @@ module.exports = function buildStoreRouter(deps) {
         customerName: String(customerName).trim(),
         customerEmail: String(customerEmail).trim().toLowerCase(),
         customerAddress: String(customerAddress || 'طلب رقمي من المتجر').trim(),
-        items, totalAmount: total, currency: 'JOD', status: 'جديد',
-        paymentMethod: String(paymentMethod || ''), couponCode: appliedCouponCode, couponDiscount, walletAmount,
+        items, totalAmount: total, currency: 'JOD', status: isSandboxPayment ? 'اختبار ناجح' : 'جديد',
+        paymentMethod: normalizedPaymentMethod, paymentMethodName, paymentMode: isSandboxPayment ? 'sandbox' : (usesStoreBalance ? 'balance' : ''), paymentStatus: isSandboxPayment ? 'paid_test' : (usesStoreBalance ? 'paid_balance' : 'pending'), couponCode: appliedCouponCode, couponDiscount, walletAmount,
         loyaltyPointsEarned: pointsEarned, loyaltyPointsRedeemed, loyaltyRewardItem
       }).save();
       if (providerItems.length > 0) {
@@ -922,7 +935,7 @@ module.exports = function buildStoreRouter(deps) {
           return res.status(409).json({ error: 'تم إرسال الطلب إلى Shop2Topup لكنه ما زال قيد المعالجة. لا تعِد المحاولة قبل ظهور حالته.' });
         }
       }
-      if (Sale) {
+      if (Sale && !isSandboxPayment) {
         try {
           await Sale.insertMany(items.map((item) => ({
             customerName: String(customerName).trim(),
@@ -937,10 +950,10 @@ module.exports = function buildStoreRouter(deps) {
           console.error('[orders] sales log failure:', salesError.message);
         }
       }
-      if (creditCardsToIssue.length > 0 && StoreCreditCard) {
+      if (!isSandboxPayment && creditCardsToIssue.length > 0 && StoreCreditCard) {
         await StoreCreditCard.insertMany(creditCardsToIssue.map(card => ({ ...card, orderId: String(order._id), customerEmail: String(customerEmail).trim().toLowerCase() })));
       }
-      if (appliedCouponCode) {
+      if (appliedCouponCode && !isSandboxPayment) {
         const consumed = await Coupon.findOneAndUpdate(
           { code: appliedCouponCode, expiry: { $gt: new Date() }, $or: [{ maxUsage: { $lte: 0 } }, { $expr: { $lt: ['$usageCount', '$maxUsage'] } }] },
           { $inc: { usageCount: 1 } }, { new: true }
@@ -949,12 +962,12 @@ module.exports = function buildStoreRouter(deps) {
       }
       const itemRows = items.map((item) => `<tr><td style="padding:14px;border-bottom:1px solid #e5e7eb"><b>${esc(item.name)}</b><br><span style="font-size:12px;color:#64748b">${item.deliveryType === 'code' || item.deliveryType === 'subscription' ? 'تسليم رقمي' : item.deliveryType === 'store_credit' ? 'بطاقة رصيد' : 'منتج رقمي'}</span></td><td style="padding:14px;border-bottom:1px solid #e5e7eb;text-align:center">${item.quantity}</td><td style="padding:14px;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap">${(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)} JOD</td></tr>`).join('');
       const delivered = items.flatMap((item) => (item.deliveredCodes || []).map((code) => `<div style="background:#0f172a;color:#f8fafc;border-radius:12px;padding:12px 14px;margin:8px 0;border:1px solid #334155"><b style="color:#67e8f9">${esc(item.name)}</b><br><code style="display:inline-block;margin-top:7px;color:#fde68a;font-size:15px;letter-spacing:1px">${esc(code)}</code></div>`)).join('');
-      const nextBalance = authUser ? Math.max(0, Number(authUser.storeBalance || 0) - walletAmount) : null;
-      const nextPoints = authUser ? Math.max(0, Number(authUser.loyaltyPoints || 0) + pointsEarned - loyaltyPointsRedeemed) : null;
+      const nextBalance = authUser ? (isSandboxPayment ? Number(authUser.storeBalance || 0) : Math.max(0, Number(authUser.storeBalance || 0) - walletAmount)) : null;
+      const nextPoints = authUser ? (isSandboxPayment ? Number(authUser.loyaltyPoints || 0) : Math.max(0, Number(authUser.loyaltyPoints || 0) + pointsEarned - loyaltyPointsRedeemed)) : null;
       const emailShell = (content) => `<div dir="rtl" style="margin:0;background:#07111f;padding:24px 10px;font-family:Arial,Tahoma,sans-serif;color:#e5e7eb"><div style="max-width:720px;margin:auto;background:linear-gradient(145deg,#111c32,#0b1220);border:1px solid #334155;border-radius:24px;overflow:hidden;box-shadow:0 18px 45px #0008"><div style="padding:28px 30px;background:linear-gradient(135deg,#0ea5e9,#2563eb 55%,#7c3aed);color:#fff"><div style="font-size:13px;opacity:.85">HAMZA STORE · متجر حمزة</div><h1 style="margin:8px 0 0;font-size:28px">${content}</h1></div>`;
       const invoiceHtml = `${emailShell('شكراً لطلبك!')}<div style="padding:28px 30px"><p style="font-size:17px;margin-top:0">مرحباً <b style="color:#67e8f9">${esc(customerName)}</b>،</p><p style="color:#cbd5e1;line-height:1.9">تم استلام طلبك بنجاح. شكراً لثقتك بمتجر حمزة، نتمنى لك تجربة جميلة.</p><div style="background:#0f1b30;border:1px solid #334155;border-radius:16px;padding:16px;margin:20px 0;line-height:2"><b>رقم الطلب:</b> <span style="color:#67e8f9">${esc(order.orderNumber)}</span><br><b>التاريخ:</b> ${new Date(order.date).toLocaleString('ar-JO')}<br><b>البريد:</b> ${esc(customerEmail)}<br><b>طريقة الدفع:</b> ${esc(paymentMethod || 'غير محددة')}</div><h2 style="color:#fbbf24;font-size:18px">تفاصيل الطلب</h2><table style="width:100%;border-collapse:collapse;background:#f8fafc;color:#172033;border-radius:14px;overflow:hidden"><thead><tr style="background:#dbeafe"><th style="padding:12px;text-align:right">المنتج</th><th style="padding:12px">الكمية</th><th style="padding:12px;text-align:left">الإجمالي</th></tr></thead><tbody>${itemRows}</tbody></table><div style="margin-top:20px;padding:18px;border-radius:16px;background:linear-gradient(135deg,#064e3b,#065f46);text-align:center"><div style="font-size:13px;color:#a7f3d0">الإجمالي النهائي</div><strong style="font-size:28px;color:#fff">${Number(total).toFixed(2)} JOD</strong></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><div style="flex:1;min-width:190px;background:#172554;padding:14px;border-radius:12px;color:#bfdbfe">⭐ النقاط المكتسبة<br><b style="font-size:20px;color:#fff">${pointsEarned}</b></div><div style="flex:1;min-width:190px;background:#3b1f5c;padding:14px;border-radius:12px;color:#e9d5ff">🎁 النقاط المستخدمة<br><b style="font-size:20px;color:#fff">${loyaltyPointsRedeemed}</b></div></div>${delivered ? `<h2 style="color:#fbbf24;font-size:18px;margin-top:28px">🔐 الأكواد الخاصة بك</h2><p style="color:#cbd5e1">احتفظ بهذه الأكواد ولا تشاركها مع أي شخص.</p>${delivered}` : ''}${authUser ? `<div style="margin-top:20px;background:#172033;padding:15px;border-radius:14px;line-height:2">رصيد المتجر بعد الطلب: <b style="color:#67e8f9">${nextBalance.toFixed(2)} JOD</b><br>نقاط الولاء الحالية: <b style="color:#fbbf24">${nextPoints}</b></div>` : ''}<p style="margin-top:26px;color:#94a3b8;font-size:12px;line-height:1.8">رصيد المتجر ونقاط الولاء للاستخدام داخل متجر حمزة فقط وغير قابلين للسحب. إذا احتجت أي مساعدة، تواصل مع فريق خدمة العملاء.</p><div style="margin-top:26px;padding-top:18px;border-top:1px solid #334155;text-align:center;color:#94a3b8;font-size:12px">شكراً لزيارتك متجر حمزة — نتمنى أن نراك قريباً</div></div></div></div>`;
       const ownerHtml = `${emailShell('إشعار بيع جديد')}<div style="padding:28px 30px"><p style="font-size:17px">تم تسجيل عملية بيع جديدة بنجاح.</p><div style="background:#0f1b30;border:1px solid #334155;border-radius:16px;padding:16px;line-height:2"><b>رقم الطلب:</b> <span style="color:#67e8f9">${esc(order.orderNumber)}</span><br><b>العميل:</b> ${esc(customerName)}<br><b>البريد:</b> ${esc(customerEmail)}<br><b>طريقة الدفع:</b> ${esc(paymentMethod || 'غير محددة')}<br><b>عدد المنتجات:</b> ${items.length}</div><div style="margin-top:18px;background:#064e3b;border-radius:16px;padding:18px;text-align:center"><span style="color:#a7f3d0">إجمالي البيع</span><br><strong style="font-size:27px;color:#fff">${Number(total).toFixed(2)} JOD</strong></div><h3 style="color:#fbbf24">المنتجات والأكواد</h3><table style="width:100%;border-collapse:collapse;background:#f8fafc;color:#172033"><tbody>${itemRows}</tbody></table>${delivered ? `<h3 style="color:#fbbf24">الأكواد التي تم إصدارها</h3>${delivered}` : ''}<p style="margin-top:24px;color:#94a3b8;font-size:12px">تم حفظ الطلب في قاعدة البيانات وتسجيله في المبيعات وإصدار الأكواد تلقائياً.</p></div></div></div>`;
-      const accountPayload = authUser ? { storeBalance: Number(authUser.storeBalance || 0) - walletAmount, loyaltyPoints: Number(authUser.loyaltyPoints || 0) + pointsEarned - loyaltyPointsRedeemed, loyaltyThreshold: threshold } : undefined;
+      const accountPayload = authUser ? { storeBalance: isSandboxPayment ? Number(authUser.storeBalance || 0) : Number(authUser.storeBalance || 0) - walletAmount, loyaltyPoints: isSandboxPayment ? Number(authUser.loyaltyPoints || 0) : Number(authUser.loyaltyPoints || 0) + pointsEarned - loyaltyPointsRedeemed, loyaltyThreshold: threshold } : undefined;
       // نعيد تأكيد الطلب فوراً؛ إرسال الفاتورة وإشعار المالك عملية خلفية لا يجب أن تؤخر الدفع.
       res.json({ order, account: accountPayload });
       Promise.allSettled([

@@ -1,38 +1,40 @@
 // ═══════════════════════════════════════════════════════════════
-// 💳 طرق الدفع — المصدر الوحيد في المشروع
-// أي طريقة enabled !== false بتظهر تلقائياً:
-//   1) بصفحة تأكيد الطلب (CheckoutForm)
-//   2) بجواب البوت لما الزبون يسأل "شو طرق الدفع؟"
-//
-// ⚠️ مهم: خلّي enabled: false لحد ما تربط الطريقة بالسيرفر
-// (والسيرفر لازم يتأكد من الدفع قبل ما يسلّم الأكواد). تفعيلها قبل
-// هيك بيخلي الزبون يختار طريقة دفع وهي مش شغالة فعلياً.
+// بوابات الدفع — وضع تجريبي فقط
+// هذه الخيارات لا تحوّل أموالاً ولا تخصم رصيداً ولا تُصدر أكواداً حقيقية.
+// عند جاهزية الترخيص، تُستبدل بموصلات Live معتمدة من مزود الدفع.
 // ═══════════════════════════════════════════════════════════════
 
 export const PAYMENT_METHODS = [
   {
-    id: 'card',
-    name: 'بطاقة بنكية (فيزا / ماستركارد)',
-    icon: '💳',
-    description: 'دفع إلكتروني آمن وتأكيد فوري',
-    enabled: false,
+    id: 'sandbox_card',
+    name: 'بطاقة بنكية تجريبية (Visa / Mastercard)',
+    icon: '🧪',
+    description: 'Sandbox — لا يتم خصم أي مبلغ حقيقي',
+    enabled: true,
+    sandbox: true,
   },
   {
-    id: 'wallet',
-    name: 'محفظة إلكترونية / كليك',
-    icon: '📱',
-    description: 'تأكيد تلقائي بعد إتمام الدفع',
-    enabled: false,
+    id: 'sandbox_wallet',
+    name: 'محفظة إلكترونية تجريبية / كليك',
+    icon: '🧪',
+    description: 'Sandbox — محاكاة نجاح الدفع فقط',
+    enabled: true,
+    sandbox: true,
   },
   {
-    id: 'balance',
-    name: 'رصيد المتجر',
-    icon: '👛',
-    description: 'الدفع من رصيد حسابك داخل المتجر',
-    enabled: false,
+    id: 'sandbox_bank',
+    name: 'تحويل بنكي تجريبي',
+    icon: '🧪',
+    description: 'Sandbox — لا يحتاج إلى حساب بنكي',
+    enabled: true,
+    sandbox: true,
   },
 ];
 
 export function getActivePaymentMethods() {
   return PAYMENT_METHODS.filter(m => m && m.enabled !== false && m.id && typeof m.name === 'string' && m.name.trim());
+}
+
+export function isSandboxPaymentMethod(id) {
+  return getActivePaymentMethods().some(m => m.id === id && m.sandbox === true);
 }

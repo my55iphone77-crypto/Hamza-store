@@ -380,6 +380,8 @@ const orderSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true },
   currency: { type: String, default: 'JOD' },
   paymentMethod: { type: String, default: '' },
+  paymentMode: { type: String, enum: ['live', 'sandbox', 'balance', ''], default: '' },
+  paymentStatus: { type: String, default: 'pending' },
   couponCode: { type: String, default: '' },
   couponDiscount: { type: Number, default: 0, min: 0 },
   walletAmount: { type: Number, default: 0 },

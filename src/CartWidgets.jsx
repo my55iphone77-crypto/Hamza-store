@@ -283,7 +283,7 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
 
       {activeMethods.length > 0 && (
         <div>
-          <div style={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '14px', marginBottom: '10px' }}>💳 اختر طريقة الدفع</div>
+          <div style={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '14px', marginBottom: '10px' }}>💳 اختر طريقة الدفع <span style={{ color: '#fbbf24', fontSize: '11px' }}>🧪 وضع تجريبي فقط — لا يتم خصم أموال حقيقية</span></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '10px' }}>
             {activeMethods.map(m => {
               const selected = paymentMethod === m.id;
@@ -338,7 +338,7 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
 
       <div style={{ display: 'flex', gap: '12px' }}>
         <button type="submit" disabled={submittingCheckout || (Number(finalTotal || 0) > 0 && activeMethods.length === 0 && paymentMethod !== 'store_balance')} className="hz-checkout-btn" style={{ flex: 1, background: submittingCheckout ? '#065f46' : 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', padding: '14px', borderRadius: '12px', cursor: submittingCheckout ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '15px', boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)' }}>
-          {submittingCheckout ? 'جاري تأكيد الطلب...' : (activeMethods.length > 0 ? `ادفع ${Number(finalTotal).toFixed(2)} دينار واستلم أكوادك 🔓` : 'تأكيد الطلب والتسليم الرقمي 🛒')}
+          {submittingCheckout ? 'جاري تنفيذ الاختبار...' : (activeMethods.length > 0 ? `تنفيذ الدفع التجريبي ${Number(finalTotal).toFixed(2)} دينار 🧪` : 'تأكيد الطلب والتسليم الرقمي 🛒')}
         </button>
         <button type="button" onClick={() => setCheckoutMode(false)} className="hz-cancel-btn" style={{ background: 'linear-gradient(135deg, #4b5563, #374151)', color: '#fff', border: 'none', padding: '14px 22px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
           إلغاء
