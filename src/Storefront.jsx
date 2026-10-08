@@ -825,7 +825,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                       </div>
                       <button
                         onClick={() => authCart && authCart.addToCart && authCart.addToCart({ ...product, price: displayPrice })}
-                        disabled={isProviderOutOfStock || (!isOpenStoreCredit && product.deliveryType !== 'id_topup' && Number(stock) <= 0)}
+                        disabled={!isOpenStoreCredit && product.deliveryType !== 'id_topup' && Number(stock) <= 0}
                         className="hz-glass-btn hz-add-btn"
                         style={{
                           background: 'linear-gradient(135deg, #059669, #10b981)',
@@ -833,13 +833,13 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                           border: 'none',
                           padding: '8px 16px',
                           borderRadius: '12px',
-                          cursor: isProviderOutOfStock ? 'not-allowed' : 'pointer',
-                          opacity: isProviderOutOfStock ? 0.6 : 1,
+                          cursor: 'pointer',
+                          opacity: 1,
                           fontWeight: 'bold',
                           fontSize: '13px'
                         }}
                       >
-                        {isProviderOutOfStock ? 'غير متوفر حالياً' : 'أضف للسلة 🛒'}
+                        أضف للسلة 🛒
                       </button>
                       {loyaltyPrice > 0 && (
                         <button

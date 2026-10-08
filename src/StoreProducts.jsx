@@ -157,10 +157,10 @@ export function ProductGrid({ loading = false, products = [], addToCart = () => 
                   type="button"
                   className="hz-add-btn"
                   onClick={() => safeAddToCart(product)}
-                  disabled={isProviderOutOfStock || (!isOpenStoreCredit && stockCount <= 0)}
-                  style={{ background: isProviderOutOfStock || (!isOpenStoreCredit && stockCount <= 0) ? '#4b5563' : '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '8px', cursor: isProviderOutOfStock || (!isOpenStoreCredit && stockCount <= 0) ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+                  disabled={!isOpenStoreCredit && product.deliveryType !== 'id_topup' && stockCount <= 0}
+                  style={{ background: !isOpenStoreCredit && product.deliveryType !== 'id_topup' && stockCount <= 0 ? '#4b5563' : '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '8px', cursor: !isOpenStoreCredit && product.deliveryType !== 'id_topup' && stockCount <= 0 ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '13px' }}
                 >
-                  {isProviderOutOfStock ? 'غير متوفر حالياً' : isOpenStoreCredit || stockCount > 0 ? 'أضف للسلة ➕' : 'غير متوفر'}
+                    {isOpenStoreCredit || product.deliveryType === 'id_topup' || stockCount > 0 ? 'أضف للسلة ➕' : 'غير متوفر'}
                 </button>
               </div>
             </div>
