@@ -488,6 +488,62 @@ module.exports = function buildStoreRouter(deps) {
     }
   });
 
+  // تسجيل لعبة موجودة في تخزين خارجي دائم؛ GameVault يرفع الملف أولاً إلى Manus Storage.
+  router.post('/games/register', guard('staff'), async (req, res) => {
+    try {
+      const payload = req.body || {};
+      const gameUrl = String(payload.gameUrl || '').trim();
+      if (!/^https:\/\//i.test(gameUrl)) return res.status(400).json({ error: 'رابط التخزين الدائم يجب أن يبدأ بـ https://.' });
+      const product = await new Product({
+        name: String(payload.name || 'لعبة جديدة').trim().slice(0, 160),
+        description: String(payload.description || 'لعبة رقمية من متجر حمزة.').trim().slice(0, 2000),
+        category: String(payload.category || 'ألعاب').trim().slice(0, 80),
+        price: Math.max(0, Number(payload.price || 0)),
+        image: String(payload.image || '').trim(),
+        status: 'منشور',
+        deliveryType: 'game',
+        gameUrl,
+        gameFileType: String(payload.gameFileType || 'zip').toLowerCase() === 'html' ? 'html' : 'zip',
+        storageProvider: 'manus',
+        storageKey: String(payload.storageKey || '').trim().slice(0, 220),
+        stock: 1,
+        codes: [],
+      }).save();
+      broadcast('PRODUCTS', await Product.find().sort({ createdAt: -1 }));
+      res.json({ success: true, product, gameUrl, message: 'تم تسجيل اللعبة ونشرها في المتجر.' });
+    } catch (e) { res.status(400).json({ error: e.message || 'تعذر تسجيل اللعبة.' }); }
+  });
+
+  // حالة العضوية من سجل الحساب؛ لا نعرض اشتراكًا فعالًا ما لم يكتبه تدفق دفع موثوق.
+  router.get('/membership', async (req, res) => {
+    try {
+      const user = await getUserFromAuthHeader(req.headers.authorization);
+      if (!user) return res.status(401).json({ error: 'سجّل الدخول لعرض عضويتك.' });
+      const raw = user.gameVaultPass || user.membership || user.subscription || {};
+      const expiresAt = raw.expiresAt || raw.renewsAt || user.gameVaultPassExpiresAt || user.subscriptionExpiresAt || null;
+      const hasActiveStatus = ['active', 'paid', 'مفعّل', 'فعال'].includes(String(raw.status || user.subscriptionStatus || '').toLowerCase());
+      const notExpired = !expiresAt || new Date(expiresAt).getTime() > Date.now();
+      const active = hasActiveStatus && notExpired;
+      const includedGameIds = active && Array.isArray(raw.includedGameIds) ? raw.includedGameIds.map(String) : [];
+      res.json({ subscription: {
+        plan: active ? String(raw.plan || 'GameVault Pass') : '',
+        status: active ? 'active' : 'expired',
+        price: active && raw.price != null ? String(raw.price) : '',
+        currency: active ? String(raw.currency || 'JOD') : '',
+        renewsAt: active && expiresAt ? new Date(expiresAt).toLocaleDateString('ar-JO') : '',
+        daysLeft: active && expiresAt ? Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000)) : 0,
+        includedCount: includedGameIds.length,
+        includedGameIds,
+      }});
+    } catch (e) { res.status(500).json({ error: 'تعذر قراءة حالة العضوية.' }); }
+  });
+
+  router.get('/payment/status', (_req, res) => {
+    const provider = String(process.env.PAYMENT_PROVIDER || '').trim().toLowerCase();
+    const enabled = String(process.env.PAYMENT_ENABLED || '').toLowerCase() === 'true';
+    res.json({ configured: Boolean(provider && enabled), provider: provider || null, mode: enabled ? 'live-ready' : 'not-configured', checkout: Boolean(process.env.PAYMENT_CHECKOUT_URL) });
+  });
+
   function permissionGuard(permission, fallback = 'staff') {
     return async (req, res, next) => {
     const user = await getUserFromAuthHeader(req.headers.authorization);
