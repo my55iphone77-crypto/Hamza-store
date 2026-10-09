@@ -356,6 +356,19 @@ const GLASS_STYLE = `
   @media (pointer: coarse) { .hz-category-chip, .hz-add-btn, .hz-root button { min-height: 44px; } }
   /* تركيز واضح للكيبورد والريموت */
   .hz-root button:focus-visible, .hz-root input:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
+  .gamevault-pass-card-art { position: relative; display: block; width: 100%; margin: -26px -26px 22px; width: calc(100% + 52px); padding: 0; border: 0; cursor: zoom-in; overflow: hidden; background: #17132b; text-align: right; }
+  .gamevault-pass-card-art img { display: block; width: 100%; aspect-ratio: 16 / 7; object-fit: cover; transition: transform .45s ease, filter .3s ease; }
+  .gamevault-pass-card-art:hover img { transform: scale(1.035); filter: brightness(1.08); }
+  .gamevault-pass-card-art span { position: absolute; right: 14px; bottom: 12px; padding: 7px 10px; color: #f5f3ff; background: rgba(8,9,18,.68); border: 1px solid rgba(255,255,255,.2); border-radius: 9px; font-size: 10px; backdrop-filter: blur(8px); }
+  .gamevault-pass-card-art:focus-visible { outline: 3px solid #38bdf8; outline-offset: -3px; }
+  .gamevault-image-lightbox { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: rgba(2,6,23,.88); backdrop-filter: blur(14px); }
+  .gamevault-image-lightbox-panel { position: relative; width: min(1050px, 96vw); max-height: 92vh; overflow: hidden; border: 1px solid rgba(196,181,253,.4); border-radius: 18px; background: #070b16; box-shadow: 0 30px 100px rgba(0,0,0,.65); }
+  .gamevault-image-lightbox-panel img { display: block; width: 100%; max-height: 82vh; object-fit: contain; background: #070b16; }
+  .gamevault-image-lightbox-panel button { position: absolute; top: 13px; left: 13px; z-index: 2; width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.22); border-radius: 10px; color: #fff; background: rgba(5,8,18,.75); cursor: pointer; font-size: 22px; line-height: 1; }
+  .gamevault-image-lightbox-panel button:hover { background: #7c3aed; }
+  .gamevault-image-lightbox-caption { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; color: #fff; font-size: 13px; }
+  .gamevault-image-lightbox-caption span { color: #94a3b8; font-size: 11px; }
+  @media (max-width: 700px) { .gamevault-pass-card-art { margin: -26px -26px 18px; width: calc(100% + 52px); }.gamevault-pass-card-art img { aspect-ratio: 16 / 9; }.gamevault-image-lightbox { padding: 10px; }.gamevault-image-lightbox-caption { flex-direction: column; gap: 4px; } }
   @media (max-width: 700px) { .gamevault-pass-layout { grid-template-columns: minmax(0, 1fr) !important; } }
 `;
 
@@ -369,6 +382,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
   const [orderStatusResult, setOrderStatusResult] = useState(null);
   const [trackerLoading, setTrackerLoading] = useState(false);
   const [sensitiveSyncStatus, setSensitiveSyncStatus] = useState('متصل وآمن 🔒');
+  const [showPassImage, setShowPassImage] = useState(false);
 
   const heroMediaItems = useMemo(() => {
     const configured = Array.isArray(settings.heroMediaItems) ? settings.heroMediaItems : [];
@@ -769,6 +783,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
           <section className="gamevault-pass-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.15fr) minmax(240px, .85fr)', gap: '18px', alignItems: 'stretch', marginBottom: '26px' }}>
             <article style={{ position: 'relative', overflow: 'hidden', padding: '26px', borderRadius: '24px', border: '1px solid rgba(167,139,250,.38)', background: 'linear-gradient(135deg, rgba(45,27,84,.95), rgba(10,15,30,.96))', boxShadow: '0 18px 48px rgba(76,29,149,.22)' }}>
               <div style={{ position: 'absolute', width: '260px', height: '260px', left: '-100px', top: '-110px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,.34), transparent 68%)' }} />
+              <button type="button" className="gamevault-pass-card-art" onClick={() => setShowPassImage(true)} aria-label="عرض صورة GameVault Pass كاملة"><img src="/gamevault-pass.svg" alt="بطاقة GameVault Pass" /><span>اضغط لعرض الصورة كاملة</span></button>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}><img src="/gamevault-logo.svg" alt="GameVault" style={{ width: '58px', height: '58px', borderRadius: '16px', boxShadow: '0 10px 26px rgba(124,58,237,.35)' }} /><div><span className="hz-store-kicker" style={{ margin: 0 }}>GAMEVAULT PASS</span><h3 style={{ margin: '4px 0 0', color: '#fff', fontSize: '23px' }}>مكتبتك الشهرية للألعاب</h3></div></div>
               <p style={{ position: 'relative', margin: '0 0 20px', color: '#c4b5fd', lineHeight: 1.8, fontSize: '13px' }}>اشتراك واحد يفتح لك 5 ألعاب مختارة طوال مدة الاشتراك، وتظهر الألعاب تلقائيًا داخل مكتبتك في GameVault.</p>
               <div style={{ position: 'relative', display: 'flex', gap: '9px', flexWrap: 'wrap' }}><span style={{ padding: '8px 11px', borderRadius: '10px', color: '#e9d5ff', background: 'rgba(139,92,246,.16)', border: '1px solid rgba(167,139,250,.25)', fontSize: '11px' }}>5 ألعاب مشمولة</span><span style={{ padding: '8px 11px', borderRadius: '10px', color: '#a7f3d0', background: 'rgba(16,185,129,.12)', border: '1px solid rgba(52,211,153,.24)', fontSize: '11px' }}>وصول محمي</span></div>
@@ -964,6 +979,16 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       </div>
 
       <SocialCards cards={settings.socialCards} />
+
+      {showPassImage && (
+        <div className="gamevault-image-lightbox" role="dialog" aria-modal="true" aria-label="صورة GameVault Pass" onClick={() => setShowPassImage(false)}>
+          <div className="gamevault-image-lightbox-panel" onClick={(event) => event.stopPropagation()}>
+            <button type="button" onClick={() => setShowPassImage(false)} aria-label="إغلاق الصورة">×</button>
+            <img src="/gamevault-pass.svg" alt="GameVault Pass بالحجم الكامل" />
+            <div className="gamevault-image-lightbox-caption"><strong>GameVault Pass</strong><span>اضغط خارج الصورة للإغلاق</span></div>
+          </div>
+        </div>
+      )}
 
       <footer className="hz-store-footer">
         <strong>{settings.storeName || 'HAMZA STORE'}</strong>
