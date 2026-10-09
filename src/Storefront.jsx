@@ -768,6 +768,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
               const hasDiscount = discountPrice > 0 && discountPrice < originalPrice;
               const displayPrice = hasDiscount ? discountPrice : originalPrice;
               const loyaltyPrice = Math.max(0, Number(product.loyaltyPrice || 0));
+              const isOwnedGame = product.deliveryType === 'game' && (authCart?.currentUser?.ownedGames || []).map(String).includes(String(product._id || product.id));
 
               const name = product.name || product.title || 'منتج رقمي';
               const imageUrl = product.image || product.imageUrl || product.img || product.photo || product.picture || '';
@@ -824,6 +825,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                         )}
                       </div>
                       <button
+                        disabled={isOwnedGame}
                         onClick={() => authCart && authCart.addToCart && authCart.addToCart({ ...product, price: displayPrice })}
                         disabled={!isOpenStoreCredit && product.deliveryType !== 'id_topup' && Number(stock) <= 0}
                         className="hz-glass-btn hz-add-btn"
@@ -833,13 +835,13 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                           border: 'none',
                           padding: '8px 16px',
                           borderRadius: '12px',
-                          cursor: 'pointer',
-                          opacity: 1,
+                          cursor: isOwnedGame ? 'not-allowed' : 'pointer',
+                          opacity: isOwnedGame ? 0.75 : 1,
                           fontWeight: 'bold',
                           fontSize: '13px'
                         }}
                       >
-                        أضف للسلة 🛒
+                        {isOwnedGame ? 'مملوكة — من مكتبتي 🎮' : product.deliveryType === 'game' ? 'شراء مرة واحدة 🎮' : 'أضف للسلة 🛒'}
                       </button>
                       {loyaltyPrice > 0 && (
                         <button
@@ -858,6 +860,22 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
           </div>
         )}
       </div>
+
+      {authCart?.currentUser && Array.isArray(authCart.myGames) && authCart.myGames.length > 0 && (
+        <section className="hz-glass-card" style={{ maxWidth: '1000px', margin: '28px auto 10px', padding: '18px' }} dir="rtl">
+          <h3 style={{ margin: '0 0 6px', color: '#c4b5fd' }}>🎮 مكتبة ألعابي</h3>
+          <p style={{ margin: '0 0 14px', color: '#94a3b8', fontSize: '12px' }}>الألعاب هنا مرتبطة بحسابك؛ إذا حذفت اللعبة من جهازك تقدر ترجع لها بدون شراء جديد.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+            {authCart.myGames.map((game) => (
+              <div key={game.id || game._id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(196,181,253,0.25)' }}>
+                {game.image && <img src={game.image} alt="" style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }} />}
+                <strong style={{ flex: 1, color: '#f8fafc', fontSize: '13px' }}>{game.name}</strong>
+                <a href={game.gameUrl} target="_blank" rel="noreferrer" style={{ background: '#7c3aed', color: '#fff', padding: '8px 10px', borderRadius: '8px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' }}>تشغيل 🎮</a>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div style={{ maxWidth: '600px', margin: '40px auto 20px auto' }}>
         <div className="hz-glass-card" style={{ padding: '25px' }}>

@@ -62,6 +62,15 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   const [storeCreditCode, setStoreCreditCode] = useState('');
   const [redeemingStoreCredit, setRedeemingStoreCredit] = useState(false);
   const [playerValidation, setPlayerValidation] = useState({});
+  const [myGames, setMyGames] = useState([]);
+  useEffect(() => {
+    let active = true;
+    if (!currentUser) { setMyGames([]); return () => { active = false; }; }
+    api.get('/my-games').then((response) => {
+      if (active) setMyGames(Array.isArray(response?.data?.games) ? response.data.games : []);
+    }).catch(() => { if (active) setMyGames([]); });
+    return () => { active = false; };
+  }, [api, currentUser]);
 
   const redeemStoreCredit = useCallback(async () => {
     if (!currentUser || !storeCreditCode.trim()) return;
@@ -87,6 +96,15 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   const addToCart = (product) => {
     if (!product || typeof product !== 'object') return;
     const isOpenStoreCredit = product.deliveryType === 'store_credit';
+    const isOwnedGame = product.deliveryType === 'game' && (currentUser?.ownedGames || []).map(String).includes(String(product.id || product._id));
+    if (isOwnedGame) {
+      alert('🎮 أنت تملك هذه اللعبة مسبقاً. افتح مكتبة ألعابك لتشغيلها.');
+      return;
+    }
+    if (product.deliveryType === 'game' && !currentUser) {
+      setShowLoginPage(true);
+      return;
+    }
     const isDynamicTopup = product.deliveryType === 'id_topup' && Number(product.shop2topupItemId || 0) > 0;
     const stockCount = typeof product.stock === 'number' ? product.stock : 0;
     if (!isOpenStoreCredit && !isDynamicTopup && stockCount <= 0) {
@@ -125,6 +143,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     setCart(prev => (Array.isArray(prev)
       ? prev.map(item => {
         if (!item || !(item.id === id || item._id === id) || Boolean(item.loyaltyOnly) !== Boolean(loyaltyOnly)) return item;
+        if (item.deliveryType === 'game') return { ...item, quantity: 1 };
         const isOpenStoreCredit = item.deliveryType === 'store_credit';
         const isDynamicTopup = item.deliveryType === 'id_topup' && Number(item.shop2topupItemId || 0) > 0;
         const stockCount = Number(item.stock || 0);
@@ -368,6 +387,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     currentUser, isAdminUser, isStaffUser, userRoleInfo,
     cart, setCart, addToCart, removeFromCart, updateCartItemQuantity, updateCartItemPlayerId, validateCartItemPlayer, playerValidation, requiresPlayerId,
     totalPrice, finalTotal, loyaltyPointsCost, totalPoints, totalItemsCount,
+    myGames,
     showCartDropdown, setShowCartDropdown,
     checkoutMode, setCheckoutMode,
     submittingCheckout, lastOrder, setLastOrder,
