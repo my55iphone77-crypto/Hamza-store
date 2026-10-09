@@ -778,6 +778,7 @@ function publicUser(user) {
     storeBalance: Number(user.storeBalance || 0),
     loyaltyPoints: Number(user.loyaltyPoints || 0),
     loyaltyThreshold: Number(user.loyaltyThreshold || 100),
+    ownedGames: Array.isArray(user.ownedGames) ? [...new Set(user.ownedGames.map((id) => String(id)).filter(Boolean))] : [],
     isOwner: user.isOwner || checkOwnerAccess(user.email),
     emailVerified: user.emailVerified,
     twoFactorEnabled: user.twoFactorEnabled

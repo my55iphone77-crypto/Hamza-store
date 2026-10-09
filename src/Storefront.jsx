@@ -511,14 +511,18 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
   const categories = useMemo(() => {
     const set = new Set(['all']);
+    let hasGames = false;
     if (Array.isArray(products)) {
       products.forEach(p => {
-        if (isPublishedProduct(p) && p.category) {
+        if (!isPublishedProduct(p)) return;
+        if (p.deliveryType === 'game') hasGames = true;
+        if (p.category) {
           const cleanCat = String(p.category).trim();
           if (cleanCat) set.add(cleanCat);
         }
       });
     }
+    if (hasGames) set.add('__games__');
     return Array.from(set);
   }, [products]);
 
@@ -527,6 +531,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
     return productsWithAvailability.filter(p => {
       if (!isPublishedProduct(p)) return false;
       if (selectedCategory === 'all') return true;
+      if (selectedCategory === '__games__') return p.deliveryType === 'game';
 
       return String(p.category || '').trim() === String(selectedCategory).trim();
     });
@@ -734,7 +739,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
           {categories.map((cat) => {
             const isActive = selectedCategory === cat;
-            const displayName = cat === 'all' ? 'جميع المنتجات 🌟' : cat;
+            const displayName = cat === 'all' ? 'جميع المنتجات 🌟' : cat === '__games__' ? '🎮 ألعاب المتجر' : cat;
             return (
               <button
                 key={cat}
@@ -768,7 +773,9 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
               const hasDiscount = discountPrice > 0 && discountPrice < originalPrice;
               const displayPrice = hasDiscount ? discountPrice : originalPrice;
               const loyaltyPrice = Math.max(0, Number(product.loyaltyPrice || 0));
+              const isGame = product.deliveryType === 'game';
               const isOwnedGame = product.deliveryType === 'game' && (authCart?.currentUser?.ownedGames || []).map(String).includes(String(product._id || product.id));
+              const isUnavailable = !isOpenStoreCredit && !isGame && product.deliveryType !== 'id_topup' && Number(stock) <= 0;
 
               const name = product.name || product.title || 'منتج رقمي';
               const imageUrl = product.image || product.imageUrl || product.img || product.photo || product.picture || '';
@@ -794,8 +801,8 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                   <div className="hz-product-body" style={{ padding: '16px' }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <span className="hz-product-glasschip" style={{ fontSize: '11px', color: isProviderOutOfStock ? '#fca5a5' : '#34d399', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
-                          {isProviderOutOfStock ? 'Out of Stock · غير متوفر' : Number.isFinite(providerStockQuantity) ? `المتاح من المنصة: ${providerStockQuantity}` : `المخزون: ${isOpenStoreCredit ? 'مفتوح' : stock}`}
+                        <span className="hz-product-glasschip" style={{ fontSize: '11px', color: isOwnedGame ? '#c4b5fd' : isProviderOutOfStock ? '#fca5a5' : '#34d399', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
+                          {isOwnedGame ? 'مملوكة في مكتبتك 🎮' : isGame ? 'لعبة رقمية · شراء مرة واحدة' : isProviderOutOfStock ? 'Out of Stock · غير متوفر' : Number.isFinite(providerStockQuantity) ? `المتاح من المنصة: ${providerStockQuantity}` : `المخزون: ${isOpenStoreCredit ? 'مفتوح' : stock}`}
                         </span>
                         {hasDiscount && (
                           <span className="hz-product-glasschip" style={{ fontSize: '11px', color: '#f59e0b', padding: '4px 8px', borderRadius: '20px', fontWeight: 'bold' }}>
@@ -825,9 +832,8 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                         )}
                       </div>
                       <button
-                        disabled={isOwnedGame}
+                        disabled={isOwnedGame || isUnavailable}
                         onClick={() => authCart && authCart.addToCart && authCart.addToCart({ ...product, price: displayPrice })}
-                        disabled={!isOpenStoreCredit && product.deliveryType !== 'id_topup' && Number(stock) <= 0}
                         className="hz-glass-btn hz-add-btn"
                         style={{
                           background: 'linear-gradient(135deg, #059669, #10b981)',
@@ -836,12 +842,12 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                           padding: '8px 16px',
                           borderRadius: '12px',
                           cursor: isOwnedGame ? 'not-allowed' : 'pointer',
-                          opacity: isOwnedGame ? 0.75 : 1,
+                          opacity: isOwnedGame || isUnavailable ? 0.65 : 1,
                           fontWeight: 'bold',
                           fontSize: '13px'
                         }}
                       >
-                        {isOwnedGame ? 'مملوكة — من مكتبتي 🎮' : product.deliveryType === 'game' ? 'شراء مرة واحدة 🎮' : 'أضف للسلة 🛒'}
+                        {isOwnedGame ? 'مملوكة — من مكتبتي 🎮' : isUnavailable ? 'غير متوفر' : isGame ? 'شراء مرة واحدة 🎮' : 'أضف للسلة 🛒'}
                       </button>
                       {loyaltyPrice > 0 && (
                         <button
