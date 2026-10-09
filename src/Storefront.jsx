@@ -11,7 +11,7 @@ import { useAuthCart, HeaderControls, CheckoutForm, OrderConfirmation, ResetPass
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const API_BASE_URL = isLocal ? 'http://localhost:4000/api' : '/api';
 const SOCKET_URL = isLocal ? 'http://localhost:4000' : window.location.origin;
-const GAMEVAULT_URL = 'https://8328-ixmqfopv5gdjzvane8iwv-666c86ce.sg2.manus.computer/';
+const GAMEVAULT_URL = 'https://gamevault-ve8wpxcj.manus.space/';
 const isPublishedProduct = (product = {}) => {
   const status = String(product.status || '').trim().toLowerCase();
   if (status) return ['منشور', 'published', 'active'].includes(status);
