@@ -356,6 +356,7 @@ const GLASS_STYLE = `
   @media (pointer: coarse) { .hz-category-chip, .hz-add-btn, .hz-root button { min-height: 44px; } }
   /* تركيز واضح للكيبورد والريموت */
   .hz-root button:focus-visible, .hz-root input:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
+  @media (max-width: 700px) { .gamevault-pass-layout { grid-template-columns: minmax(0, 1fr) !important; } }
 `;
 
 export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {} }) {
@@ -524,6 +525,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       });
     }
     if (hasGames) set.add('__games__');
+    set.add('__subscription__');
     return Array.from(set);
   }, [products]);
 
@@ -533,6 +535,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       if (!isPublishedProduct(p)) return false;
       if (selectedCategory === 'all') return true;
       if (selectedCategory === '__games__') return p.deliveryType === 'game';
+      if (selectedCategory === '__subscription__') return false;
 
       return String(p.category || '').trim() === String(selectedCategory).trim();
     });
@@ -692,7 +695,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
         <div className="hz-header-controls">
           <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
-          <a href={GAMEVAULT_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 12px', borderRadius: '11px', color: '#e9d5ff', background: 'linear-gradient(135deg, rgba(124,58,237,.32), rgba(37,99,235,.24))', border: '1px solid rgba(167,139,250,.4)', textDecoration: 'none', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap' }}>🎮 مكتبة ألعابي</a>
+          <a href={GAMEVAULT_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '7px 12px 7px 9px', borderRadius: '11px', color: '#e9d5ff', background: 'linear-gradient(135deg, rgba(124,58,237,.32), rgba(37,99,235,.24))', border: '1px solid rgba(167,139,250,.4)', textDecoration: 'none', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap' }}><img src="/gamevault-logo.svg" alt="" style={{ width: '24px', height: '24px', borderRadius: '7px' }} /> مكتبة ألعابي</a>
         </div>
       </div>
 
@@ -746,7 +749,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
           {categories.map((cat) => {
             const isActive = selectedCategory === cat;
-            const displayName = cat === 'all' ? 'جميع المنتجات 🌟' : cat === '__games__' ? '🎮 ألعاب المتجر' : cat;
+            const displayName = cat === 'all' ? 'جميع المنتجات 🌟' : cat === '__games__' ? '🎮 ألعاب المتجر' : cat === '__subscription__' ? '✨ GameVault Pass' : cat;
             return (
               <button
                 key={cat}
@@ -762,7 +765,20 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       </div>
 
       <div style={{ width: '100%', boxSizing: 'border-box' }}>
-        {loading ? (
+        {selectedCategory === '__subscription__' ? (
+          <section className="gamevault-pass-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.15fr) minmax(240px, .85fr)', gap: '18px', alignItems: 'stretch', marginBottom: '26px' }}>
+            <article style={{ position: 'relative', overflow: 'hidden', padding: '26px', borderRadius: '24px', border: '1px solid rgba(167,139,250,.38)', background: 'linear-gradient(135deg, rgba(45,27,84,.95), rgba(10,15,30,.96))', boxShadow: '0 18px 48px rgba(76,29,149,.22)' }}>
+              <div style={{ position: 'absolute', width: '260px', height: '260px', left: '-100px', top: '-110px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,.34), transparent 68%)' }} />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}><img src="/gamevault-logo.svg" alt="GameVault" style={{ width: '58px', height: '58px', borderRadius: '16px', boxShadow: '0 10px 26px rgba(124,58,237,.35)' }} /><div><span className="hz-store-kicker" style={{ margin: 0 }}>GAMEVAULT PASS</span><h3 style={{ margin: '4px 0 0', color: '#fff', fontSize: '23px' }}>مكتبتك الشهرية للألعاب</h3></div></div>
+              <p style={{ position: 'relative', margin: '0 0 20px', color: '#c4b5fd', lineHeight: 1.8, fontSize: '13px' }}>اشتراك واحد يفتح لك 5 ألعاب مختارة طوال مدة الاشتراك، وتظهر الألعاب تلقائيًا داخل مكتبتك في GameVault.</p>
+              <div style={{ position: 'relative', display: 'flex', gap: '9px', flexWrap: 'wrap' }}><span style={{ padding: '8px 11px', borderRadius: '10px', color: '#e9d5ff', background: 'rgba(139,92,246,.16)', border: '1px solid rgba(167,139,250,.25)', fontSize: '11px' }}>5 ألعاب مشمولة</span><span style={{ padding: '8px 11px', borderRadius: '10px', color: '#a7f3d0', background: 'rgba(16,185,129,.12)', border: '1px solid rgba(52,211,153,.24)', fontSize: '11px' }}>وصول محمي</span></div>
+            </article>
+            <aside style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px', borderRadius: '24px', border: '1px solid rgba(56,189,248,.25)', background: 'linear-gradient(145deg, rgba(15,35,58,.92), rgba(8,13,24,.96))' }}>
+              <div><span style={{ color: '#67e8f9', fontSize: '11px', fontWeight: 800 }}>السعر من إعدادات المتجر</span><strong style={{ display: 'block', margin: '10px 0 4px', color: '#fff', fontSize: '32px' }}>{Number(settings.gameVaultPassPrice ?? 7)} <small style={{ color: '#cbd5e1', fontSize: '14px' }}>د.أ / شهر</small></strong><p style={{ margin: 0, color: '#94a3b8', fontSize: '11px', lineHeight: 1.7 }}>الدفع الإلكتروني سيُفعّل فور إضافة بوابة الدفع.</p></div>
+              <a href={GAMEVAULT_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '20px', padding: '13px 16px', borderRadius: '12px', color: '#fff', background: 'linear-gradient(135deg, #7c3aed, #2563eb)', textDecoration: 'none', fontSize: '13px', fontWeight: 800 }}><img src="/gamevault-logo.svg" alt="" style={{ width: '22px', height: '22px', borderRadius: '6px' }} /> فتح تطبيق GameVault ↗</a>
+            </aside>
+          </section>
+        ) : loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>جاري تحميل المنتجات السحابية...</div>
         ) : !filteredProducts.length ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>لا توجد منتجات متاحة في هذه الفئة حالياً.</div>
