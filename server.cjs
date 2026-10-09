@@ -46,6 +46,7 @@ const OWNER_EMAIL = (process.env.OWNER_EMAIL || '').trim();
 const APP_NAME = process.env.APP_NAME || 'متجر حمزة';
 const BRAND_LOGO_URL = process.env.BRAND_LOGO_URL || `${FRONTEND_URL || ''}/logo.png`;
 const SHOP2TOPUP_WEBHOOK_SECRET = String(process.env.SHOP2TOPUP_WEBHOOK_SECRET || '').trim();
+const GAME_ASSET_BASE_URL = String(process.env.GAME_ASSET_BASE_URL || process.env.RENDER_EXTERNAL_URL || FRONTEND_URL || '').trim();
 
 app.use(helmet());
 // صور المنتجات تُرسل مضغوطة داخل JSON بصيغة base64؛ نحتاج حداً أكبر من 1MB حتى لا يفشل نشر بطاقة مع صورة.
@@ -1057,7 +1058,7 @@ app.use('/api', buildStoreRouter({
   WorkHour, AttendanceLog, AppState,
   Settings, Salary, Task, DocumentModel, Coupon, Commission, CommissionLog, StoreCreditCard,
   mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
-  io, User, getUserFromAuthHeader, publicActionLimiter, SHOP2TOPUP_WEBHOOK_SECRET
+  io, User, getUserFromAuthHeader, publicActionLimiter, SHOP2TOPUP_WEBHOOK_SECRET, GAME_ASSET_BASE_URL
 }));
 
 const distIndex = path.join(__dirname, 'dist', 'index.html');
