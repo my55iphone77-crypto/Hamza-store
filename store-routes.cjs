@@ -519,20 +519,23 @@ module.exports = function buildStoreRouter(deps) {
     try {
       const user = await getUserFromAuthHeader(req.headers.authorization);
       if (!user) return res.status(401).json({ error: 'سجّل الدخول لعرض عضويتك.' });
+      const storeSettings = await Settings.findOne().lean().catch(() => ({}));
       const raw = user.gameVaultPass || user.membership || user.subscription || {};
+      const configuredPrice = Number(storeSettings?.gameVaultPassPrice);
+      const passPrice = Number.isFinite(configuredPrice) && configuredPrice >= 0 ? configuredPrice : 7;
       const expiresAt = raw.expiresAt || raw.renewsAt || user.gameVaultPassExpiresAt || user.subscriptionExpiresAt || null;
       const hasActiveStatus = ['active', 'paid', 'مفعّل', 'فعال'].includes(String(raw.status || user.subscriptionStatus || '').toLowerCase());
       const notExpired = !expiresAt || new Date(expiresAt).getTime() > Date.now();
       const active = hasActiveStatus && notExpired;
       const includedGameIds = active && Array.isArray(raw.includedGameIds) ? raw.includedGameIds.map(String) : [];
       res.json({ subscription: {
-        plan: active ? String(raw.plan || 'GameVault Pass') : '',
+        plan: String(raw.plan || 'GameVault Pass'),
         status: active ? 'active' : 'expired',
-        price: active && raw.price != null ? String(raw.price) : '',
-        currency: active ? String(raw.currency || 'JOD') : '',
+        price: active && raw.price != null ? String(raw.price) : String(passPrice),
+        currency: String(raw.currency || 'JOD'),
         renewsAt: active && expiresAt ? new Date(expiresAt).toLocaleDateString('ar-JO') : '',
         daysLeft: active && expiresAt ? Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000)) : 0,
-        includedCount: includedGameIds.length,
+        includedCount: includedGameIds.length || 5,
         includedGameIds,
       }});
     } catch (e) { res.status(500).json({ error: 'تعذر قراءة حالة العضوية.' }); }

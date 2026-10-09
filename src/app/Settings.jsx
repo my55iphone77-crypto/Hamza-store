@@ -46,6 +46,7 @@ function Settings({ inputStyle = {} } = {}) {
   const [storeName, setStoreName] = useState(settings.storeName || 'متجر حمزة');
   const [storeTagline, setStoreTagline] = useState(settings.storeTagline || 'متجر بطاقات الألعاب الرقمية');
   const [welcomeText, setWelcomeText] = useState(settings.welcomeText || 'أهلاً بك في متجرنا');
+  const [gameVaultPassPrice, setGameVaultPassPrice] = useState(String(settings.gameVaultPassPrice ?? 7));
   const [heroMediaUrl, setHeroMediaUrl] = useState(settings.heroMediaUrl || '');
   const [heroMediaItems, setHeroMediaItems] = useState(() => Array.isArray(settings.heroMediaItems) && settings.heroMediaItems.length ? settings.heroMediaItems.map((item) => typeof item === 'string' ? item : item?.url).filter(Boolean) : (settings.heroMediaUrl ? [settings.heroMediaUrl] : []));
   const [heroHeight, setHeroHeight] = useState(Number(settings.heroHeight || 520));
@@ -238,6 +239,7 @@ function Settings({ inputStyle = {} } = {}) {
       storeName: storeName.trim(),
       storeTagline: storeTagline.trim(),
       welcomeText: welcomeText.trim(),
+      gameVaultPassPrice: Math.max(0, Number(gameVaultPassPrice) || 0),
       heroMediaUrl: heroMediaUrl.trim(),
       heroMediaItems: heroMediaItems.map((url) => String(url || '').trim()).filter(Boolean),
       heroHeight: Math.min(900, Math.max(180, Number(heroHeight) || 520)),
@@ -387,6 +389,7 @@ function Settings({ inputStyle = {} } = {}) {
           <label style={{ color: '#cbd5e1', fontSize: '12px' }}>اسم المتجر<input value={storeName} onChange={(e) => setStoreName(e.target.value)} style={inputStyle} /></label>
           <label style={{ color: '#cbd5e1', fontSize: '12px' }}>الوصف المختصر<input value={storeTagline} onChange={(e) => setStoreTagline(e.target.value)} style={inputStyle} /></label>
           <label style={{ color: '#cbd5e1', fontSize: '12px' }}>رسالة الترحيب<input value={welcomeText} onChange={(e) => setWelcomeText(e.target.value)} style={inputStyle} /></label>
+          <label style={{ color: '#cbd5e1', fontSize: '12px' }}>سعر GameVault Pass الشهري (دينار أردني)<input type="number" min="0" step="0.01" value={gameVaultPassPrice} onChange={(e) => setGameVaultPassPrice(e.target.value)} style={inputStyle} /></label>
           <label style={{ color: '#cbd5e1', fontSize: '12px' }}>رابط صورة/فيديو الواجهة الأساسي<input value={heroMediaUrl} onChange={(e) => { const value = e.target.value; setHeroMediaUrl(value); setHeroMediaItems((prev) => prev.length ? prev.map((url, index) => index === 0 ? value : url) : (value ? [value] : [])); }} placeholder="https://..." dir="ltr" style={inputStyle} /></label>
           <label style={{ color: '#cbd5e1', fontSize: '12px', gridColumn: '1 / -1' }}>معرض الصور والفيديوهات (رابط واحد في كل سطر)
             <textarea value={heroMediaItems.join('\n')} onChange={(e) => setHeroMediaItems(e.target.value.split(/\r?\n/).map((url) => url.trim()).filter(Boolean))} placeholder="ضع رابط كل صورة أو فيديو في سطر مستقل؛ سيتم التبديل تلقائياً كل 7 ثوانٍ" dir="ltr" rows={4} style={{ ...inputStyle, resize: 'vertical', minHeight: '92px' }} />

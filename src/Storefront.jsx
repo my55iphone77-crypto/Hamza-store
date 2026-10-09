@@ -11,6 +11,7 @@ import { useAuthCart, HeaderControls, CheckoutForm, OrderConfirmation, ResetPass
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const API_BASE_URL = isLocal ? 'http://localhost:4000/api' : '/api';
 const SOCKET_URL = isLocal ? 'http://localhost:4000' : window.location.origin;
+const GAMEVAULT_URL = 'https://8328-ixmqfopv5gdjzvane8iwv-666c86ce.sg2.manus.computer/';
 const isPublishedProduct = (product = {}) => {
   const status = String(product.status || '').trim().toLowerCase();
   if (status) return ['منشور', 'published', 'active'].includes(status);
@@ -691,6 +692,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
         <div className="hz-header-controls">
           <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
+          <a href={GAMEVAULT_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 12px', borderRadius: '11px', color: '#e9d5ff', background: 'linear-gradient(135deg, rgba(124,58,237,.32), rgba(37,99,235,.24))', border: '1px solid rgba(167,139,250,.4)', textDecoration: 'none', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap' }}>🎮 مكتبة ألعابي</a>
         </div>
       </div>
 
@@ -721,6 +723,11 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         <p>{settings.storeTagline || settings.welcomeText || 'بطاقات رقمية أصلية، تسليم سريع، وتجربة شراء آمنة.'}</p>
         </div>
         <span className="hz-catalog-count">● متجر موثوق ومتصل</span>
+        </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', margin: '0 0 22px', padding: '14px 16px', border: '1px solid rgba(167,139,250,.28)', borderRadius: '16px', background: 'linear-gradient(100deg, rgba(76,29,149,.2), rgba(15,23,42,.58))' }}>
+        <div><strong style={{ display: 'block', color: '#f5f3ff', fontSize: '14px' }}>GameVault Pass · {Number(settings.gameVaultPassPrice ?? 7)} دنانير شهريًا</strong><span style={{ display: 'block', marginTop: '4px', color: '#c4b5fd', fontSize: '11px' }}>وصول إلى 5 ألعاب طوال مدة الاشتراك — الدفع سيُفعّل بعد إضافة بوابة الدفع.</span></div>
+        <a href={GAMEVAULT_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 14px', borderRadius: '10px', color: '#fff', background: 'linear-gradient(135deg, #7c3aed, #2563eb)', textDecoration: 'none', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap' }}>فتح GameVault ↗</a>
       </div>
 
       {error && (
