@@ -504,7 +504,7 @@ module.exports = function buildStoreRouter(deps) {
         deliveryType: 'game',
         gameUrl,
         gameFileType: String(payload.gameFileType || 'zip').toLowerCase() === 'html' ? 'html' : 'zip',
-        storageProvider: 'manus',
+        storageProvider: String(payload.storageProvider || 'r2').trim().slice(0, 32),
         storageKey: String(payload.storageKey || '').trim().slice(0, 220),
         stock: 1,
         codes: [],
@@ -711,7 +711,7 @@ module.exports = function buildStoreRouter(deps) {
       if (!user) return res.status(401).json({ error: 'سجّل الدخول لعرض مكتبة ألعابك.' });
       const ownedIds = Array.isArray(user.ownedGames) ? user.ownedGames.map(String) : [];
       const games = ownedIds.length
-        ? await Product.find({ _id: { $in: ownedIds }, deliveryType: 'game' }).select('name description image category gameUrl price createdAt').lean()
+        ? await Product.find({ _id: { $in: ownedIds }, deliveryType: 'game' }).select('name description image category gameUrl storageKey storageProvider price createdAt').lean()
         : [];
       res.json({ games: games.map((game) => ({ ...game, id: String(game._id) })) });
     } catch (e) { res.status(500).json({ error: 'تعذر تحميل مكتبة الألعاب.' }); }
