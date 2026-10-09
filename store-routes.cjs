@@ -184,36 +184,6 @@ module.exports = function buildStoreRouter(deps) {
     console.warn('تعذر تهيئة رفع ملفات الألعاب');
   }
 
-  // رفع اللعبة من GameVault: الرابط يُولّد تلقائياً ولا يطلب من صاحب المتجر إدخاله.
-  router.post('/games/upload', guard('staff'), gameUpload.single('gameFile'), async (req, res) => {
-    try {
-      const file = req.file;
-      if (!file) return res.status(400).json({ error: 'ارفع ملف ZIP أو HTML صالحاً.' });
-      const extension = String(file.originalname || '').toLowerCase().endsWith('.zip') ? 'zip' : 'html';
-      const assetBase = String(GAME_ASSET_BASE_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/$/, '');
-      if (!assetBase) return res.status(503).json({ error: 'رابط ملفات الألعاب غير مهيأ على الخادم.' });
-      const gameUrl = `${assetBase}/uploads/games/${encodeURIComponent(file.filename)}`;
-      const product = await new Product({
-        name: String(req.body?.name || file.originalname).trim().slice(0, 160),
-        description: String(req.body?.description || 'لعبة مرفوعة تلقائياً من GameVault.').trim().slice(0, 2000),
-        category: String(req.body?.category || 'ألعاب').trim().slice(0, 80),
-        price: Math.max(0, Number(req.body?.price || 0)),
-        image: String(req.body?.image || '').trim(),
-        status: 'منشور',
-        deliveryType: 'game',
-        gameUrl,
-        gameFileType: extension,
-        stock: 1,
-        codes: [],
-      }).save();
-      broadcast('PRODUCTS', await Product.find().sort({ createdAt: -1 }));
-      res.json({ success: true, product, gameUrl, message: 'تم رفع اللعبة وإنشاء منتجها في المتجر تلقائياً.' });
-    } catch (e) {
-      if (req.file?.path) { try { require('fs').unlinkSync(req.file.path); } catch (_) {} }
-      res.status(400).json({ error: e.message || 'فشل رفع اللعبة.' });
-    }
-  });
-
   // ============================= الإعدادات العامة =============================
   router.get('/settings', async (req, res) => {
     try {
@@ -487,6 +457,36 @@ module.exports = function buildStoreRouter(deps) {
     req.user = user;
     next();
   };
+
+  // رفع اللعبة من GameVault: الرابط يُولّد تلقائياً ولا يطلب من صاحب المتجر إدخاله.
+  router.post('/games/upload', guard('staff'), gameUpload.single('gameFile'), async (req, res) => {
+    try {
+      const file = req.file;
+      if (!file) return res.status(400).json({ error: 'ارفع ملف ZIP أو HTML صالحاً.' });
+      const extension = String(file.originalname || '').toLowerCase().endsWith('.zip') ? 'zip' : 'html';
+      const assetBase = String(GAME_ASSET_BASE_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/$/, '');
+      if (!assetBase) return res.status(503).json({ error: 'رابط ملفات الألعاب غير مهيأ على الخادم.' });
+      const gameUrl = `${assetBase}/uploads/games/${encodeURIComponent(file.filename)}`;
+      const product = await new Product({
+        name: String(req.body?.name || file.originalname).trim().slice(0, 160),
+        description: String(req.body?.description || 'لعبة مرفوعة تلقائياً من GameVault.').trim().slice(0, 2000),
+        category: String(req.body?.category || 'ألعاب').trim().slice(0, 80),
+        price: Math.max(0, Number(req.body?.price || 0)),
+        image: String(req.body?.image || '').trim(),
+        status: 'منشور',
+        deliveryType: 'game',
+        gameUrl,
+        gameFileType: extension,
+        stock: 1,
+        codes: [],
+      }).save();
+      broadcast('PRODUCTS', await Product.find().sort({ createdAt: -1 }));
+      res.json({ success: true, product, gameUrl, message: 'تم رفع اللعبة وإنشاء منتجها في المتجر تلقائياً.' });
+    } catch (e) {
+      if (req.file?.path) { try { require('fs').unlinkSync(req.file.path); } catch (_) {} }
+      res.status(400).json({ error: e.message || 'فشل رفع اللعبة.' });
+    }
+  });
 
   function permissionGuard(permission, fallback = 'staff') {
     return async (req, res, next) => {
