@@ -59,8 +59,8 @@ const GLASS_STYLE = `
   }
 
   .hz-product-media { position: absolute; inset: 0; z-index: 0; display: flex; align-items: center; justify-content: center; background: #080b10; }
-  /* إظهار الصورة كاملة داخل البطاقة؛ cover كان يقص أطراف الصور العريضة. */
-  .hz-product-media img { width: 100%; height: 100%; object-fit: contain; object-position: center; padding: 4px; box-sizing: border-box; display: block; transition: filter 0.35s ease; }
+  /* ملء مساحة البطاقة بالكامل ومنع ظهور فراغات سوداء حول الصورة. */
+  .hz-product-media img { width: 100%; height: 100%; object-fit: cover; object-position: center; padding: 0; box-sizing: border-box; display: block; transition: filter 0.35s ease; }
   .hz-product-card:hover .hz-product-media img { filter: brightness(1.06); }
   .hz-product-media::after {
     content: ''; position: absolute; inset: 0;
