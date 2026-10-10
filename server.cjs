@@ -46,6 +46,7 @@ const OWNER_EMAIL = (process.env.OWNER_EMAIL || '').trim();
 const APP_NAME = process.env.APP_NAME || 'متجر حمزة';
 const BRAND_LOGO_URL = process.env.BRAND_LOGO_URL || `${FRONTEND_URL || ''}/logo.png`;
 const SHOP2TOPUP_WEBHOOK_SECRET = String(process.env.SHOP2TOPUP_WEBHOOK_SECRET || '').trim();
+const GAME_ASSET_BASE_URL = String(process.env.GAME_ASSET_BASE_URL || process.env.RENDER_EXTERNAL_URL || FRONTEND_URL || '').trim();
 
 app.use(helmet());
 // صور المنتجات تُرسل مضغوطة داخل JSON بصيغة base64؛ نحتاج حداً أكبر من 1MB حتى لا يفشل نشر بطاقة مع صورة.
@@ -141,8 +142,49 @@ async function sendStoreEmail(toEmail, subject, htmlContent) {
     return false;
   }
   const originalHtml = String(htmlContent || '');
-  const brandHeader = `<div style="max-width:720px;margin:0 auto 18px;padding:18px 22px;text-align:center;background:#080808;border-radius:16px;border:1px solid #b58b3d;"><img src="${BRAND_LOGO_URL}" alt="Hamza Store" style="display:block;width:190px;max-width:80%;height:auto;margin:0 auto 8px;object-fit:contain;"><div style="font-family:Arial,sans-serif;color:#f3d48a;font-size:12px;letter-spacing:2px;">HAMZA STORE</div></div>`;
-  const html = `${brandHeader}${originalHtml}`;
+  // بعض تطبيقات البريد تحذف وسم style؛ نعالج القياسات الحرجة داخل العناصر نفسها أيضاً.
+  const mobileSafeHtml = originalHtml
+    .replace(/max-width\s*:\s*\d+px/gi, 'max-width:100%')
+    .replace(/min-width\s*:\s*[^;"']+;?/gi, 'min-width:0;')
+    .replace(/white-space\s*:\s*nowrap\s*;?/gi, 'white-space:normal;overflow-wrap:anywhere;')
+    .replace(/<table(\s[^>]*)?>/gi, (tag) => {
+      if (/style\s*=\s*['"]/i.test(tag)) return tag.replace(/style\s*=\s*(['"])(.*?)\1/i, (_, quote, style) => `style=${quote}${style};width:100%;max-width:100%;table-layout:fixed;overflow-wrap:anywhere;${quote}`);
+      return tag.replace(/>$/, ' style="width:100%;max-width:100%;table-layout:fixed;overflow-wrap:anywhere;">');
+    })
+    .replace(/<img(\s[^>]*)?>/gi, (tag) => {
+      if (/style\s*=\s*['"]/i.test(tag)) return tag.replace(/style\s*=\s*(['"])(.*?)\1/i, (_, quote, style) => `style=${quote}${style};max-width:100%;height:auto;${quote}`);
+      return tag.replace(/>$/, ' style="max-width:100%;height:auto;">');
+    });
+  const responsiveEmailStyles = `<meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
+    * { box-sizing: border-box; }
+    html, body { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    body { min-height: 100vh !important; overflow-x: hidden !important; -webkit-text-size-adjust: 100%; }
+    table { width: 100% !important; max-width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
+    img { max-width: 100% !important; height: auto !important; }
+    td, th, p, div, span, a, b, strong { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
+    th, td { white-space: normal !important; }
+    h1, h2, h3 { font-family: Arial,Tahoma,sans-serif; letter-spacing: -.2px; }
+    a { box-shadow: 0 8px 20px rgba(14,165,233,.18); }
+    [style*="min-width"] { min-width: 0 !important; }
+    [style*="white-space:nowrap"], [style*="white-space: nowrap"] { white-space: normal !important; }
+    @media only screen and (max-width: 600px) {
+      body { padding: 0 !important; }
+      body > div, body > table { width: 100% !important; max-width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; border-radius: 0 !important; }
+      div[style*="max-width"], table[style*="max-width"] { max-width: 100% !important; }
+      div[style*="padding:30px"], div[style*="padding: 30px"] { padding: 20px 14px !important; }
+      div[style*="padding:28px"], div[style*="padding: 28px"] { padding: 20px 14px !important; }
+      div[style*="padding:32px"], div[style*="padding: 32px"] { padding: 22px 14px !important; }
+      th, td { padding: 8px 6px !important; font-size: 12px !important; }
+      h1 { font-size: 22px !important; line-height: 1.35 !important; }
+      h2 { font-size: 18px !important; }
+      h3 { font-size: 16px !important; }
+      a { max-width: 100% !important; }
+    }
+  </style>`;
+  const brandHeader = `<div style="max-width:100%;width:100%;min-height:132px;margin:0 auto 20px;padding:22px 24px 20px;text-align:center;background:linear-gradient(135deg,#050b18 0%,#111c32 52%,#1e1b4b 100%);border-radius:24px;border:1px solid rgba(56,189,248,.58);box-shadow:0 18px 42px rgba(2,6,23,.42),inset 0 1px 0 rgba(255,255,255,.16);overflow:hidden;"><div style="height:3px;width:100%;max-width:260px;margin:0 auto 14px;border-radius:99px;background:linear-gradient(90deg,#fbbf24,#38bdf8,#a78bfa);"></div><div style="display:inline-block;max-width:100%;margin:0 auto 12px;padding:5px 12px;border:1px solid rgba(251,191,36,.35);border-radius:999px;color:#fde68a;font:700 10px Arial,Tahoma,sans-serif;letter-spacing:1.5px;">DIGITAL STORE · متجر رقمي</div><img src="${BRAND_LOGO_URL}" alt="Hamza Store" style="display:block;width:190px;max-width:80%;height:auto;margin:0 auto 9px;object-fit:contain;"><div style="font-family:Arial,sans-serif;color:#f8d477;font-size:12px;font-weight:bold;letter-spacing:3px;overflow-wrap:anywhere;">HAMZA STORE · متجر حمزة</div></div>`;
+  const contentFrame = `<div style="width:100%;max-width:100%;background:linear-gradient(145deg,rgba(17,28,50,.96),rgba(7,17,31,.96));border:1px solid rgba(148,163,184,.24);border-radius:24px;box-shadow:0 20px 48px rgba(2,6,23,.38),inset 0 1px 0 rgba(255,255,255,.1);overflow:hidden;"><div style="height:3px;width:100%;background:linear-gradient(90deg,#38bdf8,#818cf8,#fbbf24);"></div><div style="width:100%;max-width:100%;">${mobileSafeHtml}</div></div>`;
+  const brandFooter = `<div style="max-width:100%;width:100%;margin:20px auto 0;padding:18px 16px;text-align:center;border-top:1px solid rgba(148,163,184,.22);color:#94a3b8;font:12px/1.8 Arial,Tahoma,sans-serif;overflow-wrap:anywhere;"><strong style="display:block;color:#cbd5e1;font-size:13px;margin-bottom:4px;">شكراً لثقتك بمتجر حمزة</strong><span>بطاقات رقمية · تسليم سريع · نقاط ولاء ومزايا مستمرة</span><br><span style="color:#64748b;">هذه رسالة آلية، يرجى عدم الرد عليها مباشرة.</span></div>`;
+  const html = `${responsiveEmailStyles}<div dir="rtl" style="width:100%;max-width:100%;min-height:100vh;margin:0;padding:18px 12px 28px;overflow-x:hidden;box-sizing:border-box;background:radial-gradient(circle at 10% 0%,#172554 0,#07111f 38%,#020617 100%);">${brandHeader}${contentFrame}${brandFooter}</div>`;
   const text = html.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const maxAttempts = MAIL_PROVIDER === 'brevo-api' ? 2 : 1;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -354,7 +396,8 @@ const productSchema = new mongoose.Schema({
   status: { type: String, default: 'منشور' },
   scheduledDate: { type: Date },
   unpublishDate: { type: Date },
-  deliveryType: { type: String, enum: ['code', 'id_topup', 'subscription', 'store_credit'], default: 'code' },
+  deliveryType: { type: String, enum: ['code', 'id_topup', 'subscription', 'store_credit', 'game'], default: 'code' },
+  gameUrl: { type: String, default: '' },
   codes: [{ type: String }],
   stock: { type: Number, default: 0 },
   lowStockThreshold: { type: Number, default: 3 },
@@ -514,6 +557,7 @@ const userSchema = new mongoose.Schema({
   storeBalance: { type: Number, default: 0, min: 0 },
   loyaltyPoints: { type: Number, default: 0, min: 0 },
   loyaltyThreshold: { type: Number, default: 100, min: 1 },
+  ownedGames: { type: [String], default: [] },
   isOwner: { type: Boolean, default: false },
   emailVerified: { type: Boolean, default: false },
   emailVerificationToken: { type: String },
@@ -735,6 +779,7 @@ function publicUser(user) {
     storeBalance: Number(user.storeBalance || 0),
     loyaltyPoints: Number(user.loyaltyPoints || 0),
     loyaltyThreshold: Number(user.loyaltyThreshold || 100),
+    ownedGames: Array.isArray(user.ownedGames) ? [...new Set(user.ownedGames.map((id) => String(id)).filter(Boolean))] : [],
     isOwner: user.isOwner || checkOwnerAccess(user.email),
     emailVerified: user.emailVerified,
     twoFactorEnabled: user.twoFactorEnabled
@@ -1013,7 +1058,7 @@ app.use('/api', buildStoreRouter({
   WorkHour, AttendanceLog, AppState,
   Settings, Salary, Task, DocumentModel, Coupon, Commission, CommissionLog, StoreCreditCard,
   mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
-  io, User, getUserFromAuthHeader, publicActionLimiter, SHOP2TOPUP_WEBHOOK_SECRET
+  io, User, getUserFromAuthHeader, publicActionLimiter, SHOP2TOPUP_WEBHOOK_SECRET, GAME_ASSET_BASE_URL
 }));
 
 const distIndex = path.join(__dirname, 'dist', 'index.html');

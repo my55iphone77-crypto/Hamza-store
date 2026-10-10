@@ -31,6 +31,7 @@ const DELIVERY_TYPES = [
   { value: "id_topup", label: "🆔 تعبئة عن طريق آيدي (ببجي / فري فاير...)" },
   { value: "subscription", label: "🔁 اشتراك موقع (نتفليكس / شاهد...)" },
   { value: "store_credit", label: "🪙 بطاقة رصيد المتجر (غير قابلة للسحب)" },
+  { value: "game", label: "🎮 لعبة خاصة بالمتجر (شراء مرة واحدة)" },
 ];
 
 const shop2CatalogId = (item) => {
@@ -131,6 +132,7 @@ export default function Products() {
   const [lowStockThreshold, setLowStockThreshold] = useState(3);
   const [maxStockThreshold, setMaxStockThreshold] = useState(50);
   const [newCodeText, setNewCodeText] = useState("");
+  const [gameUrl, setGameUrl] = useState("");
 
   // حقول التعديل الحقيقية
   const [editName, setEditName] = useState("");
@@ -294,6 +296,7 @@ export default function Products() {
 
     const payload = {
       name, description, category: category || UNCATEGORIZED, deliveryType,
+      ...(deliveryType === "game" ? { gameUrl: String(gameUrl || "").trim() } : {}),
       storeCreditAmount: deliveryType === "store_credit" ? (parseFloat(storeCreditAmount) || parseFloat(price)) : undefined,
       loyaltyPoints: loyaltyPointsValue,
       loyaltyPrice: loyaltyPriceValue,
@@ -303,7 +306,7 @@ export default function Products() {
       lowStockThreshold: parseInt(lowStockThreshold) || 3,
       maxStockThreshold: parseInt(maxStockThreshold) || 50,
       ...(deliveryType === "id_topup" ? { shop2topupCategoryId: Number(shop2topupCategoryId) || undefined, shop2topupItemId: Number(shop2topupItemId) || undefined } : {}),
-      codes: codesArray, stock: deliveryType === "id_topup" ? 1 : codesArray.length,
+      codes: codesArray, stock: deliveryType === "id_topup" || deliveryType === "game" ? 1 : codesArray.length,
     };
 
     try {
@@ -311,7 +314,7 @@ export default function Products() {
       setProducts((prev) => [newProduct, ...prev]);
       flashSaving("✅ تم حفظ وإضافة المنتج بنجاح");
       setIsAddModalOpen(false);
-      setName(""); setDescription(""); setPrice(""); setDiscountPrice(""); setImage(""); setNewCodeText(""); setManualStock(""); setShop2topupCategoryId(""); setShop2topupItemId(""); setLoyaltyPoints("0"); setLoyaltyPrice(""); setScheduledDate(""); setUnpublishDate("");
+      setName(""); setDescription(""); setPrice(""); setDiscountPrice(""); setImage(""); setNewCodeText(""); setGameUrl(""); setManualStock(""); setShop2topupCategoryId(""); setShop2topupItemId(""); setLoyaltyPoints("0"); setLoyaltyPrice(""); setScheduledDate(""); setUnpublishDate("");
     } catch (err) {
       alert(err.message);
     }
@@ -335,6 +338,7 @@ export default function Products() {
     setEditManualStock(prod.stock ?? 0);
     setShop2topupCategoryId(prod.shop2topupCategoryId ?? "");
     setShop2topupItemId(prod.shop2topupItemId ?? "");
+    setGameUrl(prod.gameUrl || "");
     setIsEditing(true);
     setActiveTab("details");
   };
@@ -350,12 +354,13 @@ export default function Products() {
       loyaltyPoints: loyaltyPointsValue,
       loyaltyPrice: loyaltyPriceValue,
       image: editImage, status: editStatus,
+      ...(selectedProduct.deliveryType === "game" ? { gameUrl: String(gameUrl || "").trim(), stock: 1 } : {}),
       scheduledDate: toISOStringOrNull(editScheduledDate), unpublishDate: toISOStringOrNull(editUnpublishDate),
       lowStockThreshold: parseInt(editLowStockThreshold) || 3,
       maxStockThreshold: parseInt(editMaxStockThreshold) || 50,
       ...(selectedProduct.deliveryType === "id_topup" ? { shop2topupCategoryId: Number(shop2topupCategoryId) || undefined, shop2topupItemId: Number(shop2topupItemId) || undefined } : {}),
     };
-    if (selectedProduct.deliveryType === "id_topup") payload.stock = 1;
+    if (selectedProduct.deliveryType === "id_topup" || selectedProduct.deliveryType === "game") payload.stock = 1;
 
     try {
       const updated = await apiFetch(`/products/${selectedProduct._id}`, { method: "PUT", body: JSON.stringify(payload) });
@@ -645,6 +650,10 @@ export default function Products() {
               <select value={deliveryType} onChange={(e) => setDeliveryType(e.target.value)} style={glassInputStyle}>
                 {DELIVERY_TYPES.map(d => <option key={d.value} value={d.value} style={{ background: "#1e293b" }}>{d.label}</option>)}
               </select>
+              {deliveryType === "game" && <>
+                <input type="url" placeholder="رابط تشغيل اللعبة أو تحميلها *" value={gameUrl} onChange={(e) => setGameUrl(e.target.value)} style={glassInputStyle} required />
+                <div style={{ color: "#c4b5fd", fontSize: "12px", padding: "10px", background: "rgba(124,58,237,0.10)", borderRadius: "8px" }}>🎮 اللعبة تُحفظ في مكتبة العميل بعد الشراء. يشتريها العميل مرة واحدة فقط، حتى لو حذفها من جهازه.</div>
+              </>}
               <select value={category} onChange={(e) => setCategory(e.target.value)} style={glassInputStyle}>
                 <option value="" style={{ background: "#1e293b" }}>— اختر فئة —</option>
                 {categories.map((c, i) => <option key={i} value={c} style={{ background: "#1e293b" }}>{c}</option>)}
@@ -688,6 +697,8 @@ export default function Products() {
               {image && <img src={image} alt="معاينة" style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />}
               {deliveryType === "store_credit" ? (
                 <div style={{ color: "#facc15", fontSize: "12px", padding: "10px", background: "rgba(250,204,21,0.08)", borderRadius: "8px" }}>🪙 بطاقة رصيد المتجر مفتوحة: لا تحدد مخزوناً ولا تضف أكواداً. يتم توليد كود فريد تلقائياً عند كل شراء.</div>
+              ) : deliveryType === "game" ? (
+                <div style={{ color: "#c4b5fd", fontSize: "12px", padding: "10px", background: "rgba(124,58,237,0.10)", borderRadius: "8px" }}>🔐 لعبة رقمية خاصة: لا تحتاج أكواداً أو مخزوناً يدوياً؛ الملكية مرتبطة بحساب العميل.</div>
               ) : deliveryType === "id_topup" ? (
                 <div style={{ color: "#7dd3fc", fontSize: "12px", padding: "10px", background: "rgba(14,165,233,0.08)", borderRadius: "8px" }}>📡 التوفر ديناميكي من Shop2Topup — لا تدخل كمية يدوية.</div>
               ) : (
@@ -814,6 +825,10 @@ export default function Products() {
                   {isUploadingEditImage && <span style={{ color: "#38bdf8", fontSize: "11px" }}>⏳ جاري المعالجة...</span>}
                 </div>
                 {editImage && <img src={editImage} alt="معاينة" style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />}
+                {selectedProduct.deliveryType === "game" && <>
+                  <input type="url" placeholder="رابط تشغيل اللعبة أو تحميلها *" value={gameUrl} onChange={(e) => setGameUrl(e.target.value)} style={glassInputStyle} required />
+                  <div style={{ color: "#c4b5fd", fontSize: "12px", padding: "10px", background: "rgba(124,58,237,0.10)", borderRadius: "8px" }}>الملكية محفوظة في حساب العميل ولا يمكنه شراء اللعبة مرة ثانية.</div>
+                </>}
                 {selectedProduct.deliveryType === "id_topup" && (
                   <>
                     <div style={{ color: "#7dd3fc", fontSize: "12px", padding: "10px", background: "rgba(14,165,233,0.08)", borderRadius: "8px" }}>📡 التوفر ديناميكي من Shop2Topup — لا تدخل كمية يدوية.</div>

@@ -116,6 +116,7 @@ export function ProductGrid({ loading = false, products = [], addToCart = () => 
           if (!product || typeof product !== 'object') return null;
           const prodId = product.id || product._id || `product-${index}`;
           const isOpenStoreCredit = product.deliveryType === 'store_credit';
+          const isProviderOutOfStock = product.deliveryType === 'id_topup' && ['out_of_stock', 'out-of-stock', 'unavailable'].includes(String(product.providerAvailability || '').toLowerCase());
           const stockCount = typeof product.stock === 'number' ? product.stock : 0;
           const productPrice = product.price !== undefined ? product.price : 0;
 
@@ -142,8 +143,8 @@ export function ProductGrid({ loading = false, products = [], addToCart = () => 
                   <div style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '2px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', fontSize: '24px', fontWeight: 'bold' }}>
                     +
                   </div>
-                  <span style={{ background: isOpenStoreCredit || stockCount > 0 ? '#065f46' : '#991b1b', color: isOpenStoreCredit || stockCount > 0 ? '#34d399' : '#fca5a5', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                    {isOpenStoreCredit ? 'المخزون: مفتوح' : stockCount > 0 ? `المخزون: ${stockCount}` : 'نفد المخزون'}
+                  <span style={{ background: isProviderOutOfStock || (!isOpenStoreCredit && stockCount <= 0) ? '#991b1b' : '#065f46', color: isProviderOutOfStock || (!isOpenStoreCredit && stockCount <= 0) ? '#fca5a5' : '#34d399', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
+                    {isProviderOutOfStock ? 'Out of Stock · غير متوفر' : isOpenStoreCredit ? 'المخزون: مفتوح' : stockCount > 0 ? `المخزون: ${stockCount}` : 'نفد المخزون'}
                   </span>
                 </div>
                 <h4 style={{ margin: '0 0 8px 0', color: '#f8fafc', fontSize: '16px', fontWeight: 'bold' }}>{product.name || 'منتج بدون اسم'}</h4>
@@ -156,10 +157,10 @@ export function ProductGrid({ loading = false, products = [], addToCart = () => 
                   type="button"
                   className="hz-add-btn"
                   onClick={() => safeAddToCart(product)}
-                  disabled={!isOpenStoreCredit && stockCount <= 0}
-                  style={{ background: isOpenStoreCredit || stockCount > 0 ? '#10b981' : '#4b5563', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '8px', cursor: isOpenStoreCredit || stockCount > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '13px' }}
+                  disabled={!isOpenStoreCredit && product.deliveryType !== 'id_topup' && stockCount <= 0}
+                  style={{ background: !isOpenStoreCredit && product.deliveryType !== 'id_topup' && stockCount <= 0 ? '#4b5563' : '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '8px', cursor: !isOpenStoreCredit && product.deliveryType !== 'id_topup' && stockCount <= 0 ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '13px' }}
                 >
-                  {isOpenStoreCredit || stockCount > 0 ? 'أضف للسلة ➕' : 'غير متوفر'}
+                    {isOpenStoreCredit || product.deliveryType === 'id_topup' || stockCount > 0 ? 'أضف للسلة ➕' : 'غير متوفر'}
                 </button>
               </div>
             </div>

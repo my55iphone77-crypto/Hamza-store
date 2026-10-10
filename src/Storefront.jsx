@@ -11,6 +11,7 @@ import { useAuthCart, HeaderControls, CheckoutForm, OrderConfirmation, ResetPass
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const API_BASE_URL = isLocal ? 'http://localhost:4000/api' : '/api';
 const SOCKET_URL = isLocal ? 'http://localhost:4000' : window.location.origin;
+const GAMEVAULT_URL = 'https://gamevault-ve8wpxcj.manus.space/';
 const isPublishedProduct = (product = {}) => {
   const status = String(product.status || '').trim().toLowerCase();
   if (status) return ['منشور', 'published', 'active'].includes(status);
@@ -356,6 +357,20 @@ const GLASS_STYLE = `
   @media (pointer: coarse) { .hz-category-chip, .hz-add-btn, .hz-root button { min-height: 44px; } }
   /* تركيز واضح للكيبورد والريموت */
   .hz-root button:focus-visible, .hz-root input:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
+  .gamevault-pass-card-art { position: relative; display: block; width: 100%; margin: -26px -26px 22px; width: calc(100% + 52px); padding: 0; border: 0; cursor: zoom-in; overflow: hidden; background: #17132b; text-align: right; }
+  .gamevault-pass-card-art img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: contain; background: #17132b; transition: transform .45s ease, filter .3s ease; }
+  .gamevault-pass-card-art:hover img { transform: scale(1.015); filter: brightness(1.08); }
+  .gamevault-pass-card-art span { position: absolute; right: 14px; bottom: 12px; padding: 7px 10px; color: #f5f3ff; background: rgba(8,9,18,.68); border: 1px solid rgba(255,255,255,.2); border-radius: 9px; font-size: 10px; backdrop-filter: blur(8px); }
+  .gamevault-pass-card-art:focus-visible { outline: 3px solid #38bdf8; outline-offset: -3px; }
+  .gamevault-image-lightbox { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: rgba(2,6,23,.88); backdrop-filter: blur(14px); }
+  .gamevault-image-lightbox-panel { position: relative; width: min(1050px, 96vw); max-height: 92vh; overflow: hidden; border: 1px solid rgba(196,181,253,.4); border-radius: 18px; background: #070b16; box-shadow: 0 30px 100px rgba(0,0,0,.65); }
+  .gamevault-image-lightbox-panel img { display: block; width: 100%; max-height: 82vh; object-fit: contain; background: #070b16; }
+  .gamevault-image-lightbox-panel button { position: absolute; top: 13px; left: 13px; z-index: 2; width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.22); border-radius: 10px; color: #fff; background: rgba(5,8,18,.75); cursor: pointer; font-size: 22px; line-height: 1; }
+  .gamevault-image-lightbox-panel button:hover { background: #7c3aed; }
+  .gamevault-image-lightbox-caption { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; color: #fff; font-size: 13px; }
+  .gamevault-image-lightbox-caption span { color: #94a3b8; font-size: 11px; }
+  @media (max-width: 700px) { .gamevault-pass-card-art { margin: -26px -26px 18px; width: calc(100% + 52px); }.gamevault-pass-card-art img { aspect-ratio: 16 / 10; }.gamevault-image-lightbox { padding: 10px; }.gamevault-image-lightbox-caption { flex-direction: column; gap: 4px; } }
+  @media (max-width: 700px) { .gamevault-pass-layout { grid-template-columns: minmax(0, 1fr) !important; } }
 `;
 
 export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {} }) {
@@ -368,6 +383,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
   const [orderStatusResult, setOrderStatusResult] = useState(null);
   const [trackerLoading, setTrackerLoading] = useState(false);
   const [sensitiveSyncStatus, setSensitiveSyncStatus] = useState('متصل وآمن 🔒');
+  const [showPassImage, setShowPassImage] = useState(false);
 
   const heroMediaItems = useMemo(() => {
     const configured = Array.isArray(settings.heroMediaItems) ? settings.heroMediaItems : [];
@@ -417,6 +433,42 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
   const products = useMemo(() => {
     return (globalProducts && globalProducts.length > 0) ? globalProducts : localProducts;
   }, [globalProducts, localProducts]);
+
+  const [providerAvailability, setProviderAvailability] = useState({});
+  useEffect(() => {
+    let cancelled = false;
+    const checkAvailability = async () => {
+      const targets = (Array.isArray(products) ? products : []).filter(product => product?.deliveryType === 'id_topup' && product?.shop2topupItemId && product?.shop2topupCategoryId);
+      if (!targets.length) return;
+      const results = await Promise.all(targets.map(async (product) => {
+        try {
+          const response = await api.get(`/shop2topup/catalog/items/${encodeURIComponent(String(product.shop2topupItemId))}/availability`, { params: { categoryId: product.shop2topupCategoryId } });
+          const data = response?.data || {};
+          return [String(product._id || product.id), { status: data.status === 'out_of_stock' ? 'out_of_stock' : data.available === true ? 'available' : null, quantity: Number.isFinite(Number(data.available_quantity)) ? Number(data.available_quantity) : null }];
+        } catch (error) {
+          return [String(product._id || product.id), null];
+        }
+      }));
+      if (!cancelled) {
+        setProviderAvailability(prev => {
+          const next = { ...prev };
+          results.forEach(([id, value]) => { if (value?.status) next[id] = value; });
+          return next;
+        });
+      }
+    };
+    checkAvailability();
+    const timer = window.setInterval(checkAvailability, 60000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [products, api]);
+
+  const productsWithAvailability = useMemo(() => (Array.isArray(products) ? products : []).map(product => ({
+    ...product,
+    ...(providerAvailability[String(product?._id || product?.id)] ? {
+      providerAvailability: providerAvailability[String(product._id || product.id)].status,
+      ...(providerAvailability[String(product._id || product.id)].quantity !== null ? { providerStockQuantity: providerAvailability[String(product._id || product.id)].quantity } : {})
+    } : {})
+  })), [products, providerAvailability]);
 
   const authCart = useAuthCart({ api, fetchProducts, searchTerm, setError });
 
@@ -476,26 +528,33 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
   const categories = useMemo(() => {
     const set = new Set(['all']);
+    let hasGames = false;
     if (Array.isArray(products)) {
       products.forEach(p => {
-        if (isPublishedProduct(p) && p.category) {
+        if (!isPublishedProduct(p)) return;
+        if (p.deliveryType === 'game') hasGames = true;
+        if (p.category) {
           const cleanCat = String(p.category).trim();
           if (cleanCat) set.add(cleanCat);
         }
       });
     }
+    if (hasGames) set.add('__games__');
+    set.add('__subscription__');
     return Array.from(set);
   }, [products]);
 
   const filteredProducts = useMemo(() => {
-    if (!Array.isArray(products)) return [];
-    return products.filter(p => {
+    if (!Array.isArray(productsWithAvailability)) return [];
+    return productsWithAvailability.filter(p => {
       if (!isPublishedProduct(p)) return false;
       if (selectedCategory === 'all') return true;
+      if (selectedCategory === '__games__') return p.deliveryType === 'game';
+      if (selectedCategory === '__subscription__') return false;
 
       return String(p.category || '').trim() === String(selectedCategory).trim();
     });
-  }, [products, selectedCategory]);
+  }, [productsWithAvailability, selectedCategory]);
 
   const handleTrackOrder = async (e) => {
     e.preventDefault();
@@ -651,6 +710,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
         <div className="hz-header-controls">
           <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
+          <a href={GAMEVAULT_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '7px 12px 7px 9px', borderRadius: '11px', color: '#e9d5ff', background: 'linear-gradient(135deg, rgba(124,58,237,.32), rgba(37,99,235,.24))', border: '1px solid rgba(167,139,250,.4)', textDecoration: 'none', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap' }}><img src="/gamevault-logo.svg" alt="" style={{ width: '24px', height: '24px', borderRadius: '7px' }} /> مكتبة ألعابي</a>
         </div>
       </div>
 
@@ -681,6 +741,11 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         <p>{settings.storeTagline || settings.welcomeText || 'بطاقات رقمية أصلية، تسليم سريع، وتجربة شراء آمنة.'}</p>
         </div>
         <span className="hz-catalog-count">● متجر موثوق ومتصل</span>
+        </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', margin: '0 0 22px', padding: '14px 16px', border: '1px solid rgba(167,139,250,.28)', borderRadius: '16px', background: 'linear-gradient(100deg, rgba(76,29,149,.2), rgba(15,23,42,.58))' }}>
+        <div><strong style={{ display: 'block', color: '#f5f3ff', fontSize: '14px' }}>GameVault Pass · {Number(settings.gameVaultPassPrice ?? 7)} دنانير شهريًا</strong><span style={{ display: 'block', marginTop: '4px', color: '#c4b5fd', fontSize: '11px' }}>وصول إلى 5 ألعاب طوال مدة الاشتراك — الدفع سيُفعّل بعد إضافة بوابة الدفع.</span></div>
+        <a href={GAMEVAULT_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 14px', borderRadius: '10px', color: '#fff', background: 'linear-gradient(135deg, #7c3aed, #2563eb)', textDecoration: 'none', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap' }}>فتح GameVault ↗</a>
       </div>
 
       {error && (
@@ -699,7 +764,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
           {categories.map((cat) => {
             const isActive = selectedCategory === cat;
-            const displayName = cat === 'all' ? 'جميع المنتجات 🌟' : cat;
+            const displayName = cat === 'all' ? 'جميع المنتجات 🌟' : cat === '__games__' ? '🎮 ألعاب المتجر' : cat === '__subscription__' ? '✨ GameVault Pass' : cat;
             return (
               <button
                 key={cat}
@@ -715,7 +780,21 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       </div>
 
       <div style={{ width: '100%', boxSizing: 'border-box' }}>
-        {loading ? (
+        {selectedCategory === '__subscription__' ? (
+          <section className="gamevault-pass-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.15fr) minmax(240px, .85fr)', gap: '18px', alignItems: 'stretch', marginBottom: '26px' }}>
+            <article style={{ position: 'relative', overflow: 'hidden', padding: '26px', borderRadius: '24px', border: '1px solid rgba(167,139,250,.38)', background: 'linear-gradient(135deg, rgba(45,27,84,.95), rgba(10,15,30,.96))', boxShadow: '0 18px 48px rgba(76,29,149,.22)' }}>
+              <div style={{ position: 'absolute', width: '260px', height: '260px', left: '-100px', top: '-110px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,.34), transparent 68%)' }} />
+              <button type="button" className="gamevault-pass-card-art" onClick={() => setShowPassImage(true)} aria-label="عرض صورة GameVault Pass كاملة"><img src="/gamevault-pass.svg" alt="بطاقة GameVault Pass" /><span>اضغط للتكبير اختياريًا</span></button>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}><img src="/gamevault-logo.svg" alt="GameVault" style={{ width: '58px', height: '58px', borderRadius: '16px', boxShadow: '0 10px 26px rgba(124,58,237,.35)' }} /><div><span className="hz-store-kicker" style={{ margin: 0 }}>GAMEVAULT PASS</span><h3 style={{ margin: '4px 0 0', color: '#fff', fontSize: '23px' }}>مكتبتك الشهرية للألعاب</h3></div></div>
+              <p style={{ position: 'relative', margin: '0 0 20px', color: '#c4b5fd', lineHeight: 1.8, fontSize: '13px' }}>اشتراك واحد يفتح لك 5 ألعاب مختارة طوال مدة الاشتراك، وتظهر الألعاب تلقائيًا داخل مكتبتك في GameVault.</p>
+              <div style={{ position: 'relative', display: 'flex', gap: '9px', flexWrap: 'wrap' }}><span style={{ padding: '8px 11px', borderRadius: '10px', color: '#e9d5ff', background: 'rgba(139,92,246,.16)', border: '1px solid rgba(167,139,250,.25)', fontSize: '11px' }}>5 ألعاب مشمولة</span><span style={{ padding: '8px 11px', borderRadius: '10px', color: '#a7f3d0', background: 'rgba(16,185,129,.12)', border: '1px solid rgba(52,211,153,.24)', fontSize: '11px' }}>وصول محمي</span></div>
+            </article>
+            <aside style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px', borderRadius: '24px', border: '1px solid rgba(56,189,248,.25)', background: 'linear-gradient(145deg, rgba(15,35,58,.92), rgba(8,13,24,.96))' }}>
+              <div><span style={{ color: '#67e8f9', fontSize: '11px', fontWeight: 800 }}>السعر من إعدادات المتجر</span><strong style={{ display: 'block', margin: '10px 0 4px', color: '#fff', fontSize: '32px' }}>{Number(settings.gameVaultPassPrice ?? 7)} <small style={{ color: '#cbd5e1', fontSize: '14px' }}>د.أ / شهر</small></strong><p style={{ margin: 0, color: '#94a3b8', fontSize: '11px', lineHeight: 1.7 }}>الدفع الإلكتروني سيُفعّل فور إضافة بوابة الدفع.</p></div>
+              <a href={GAMEVAULT_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '20px', padding: '13px 16px', borderRadius: '12px', color: '#fff', background: 'linear-gradient(135deg, #7c3aed, #2563eb)', textDecoration: 'none', fontSize: '13px', fontWeight: 800 }}><img src="/gamevault-logo.svg" alt="" style={{ width: '22px', height: '22px', borderRadius: '6px' }} /> فتح تطبيق GameVault ↗</a>
+            </aside>
+          </section>
+        ) : loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>جاري تحميل المنتجات السحابية...</div>
         ) : !filteredProducts.length ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>لا توجد منتجات متاحة في هذه الفئة حالياً.</div>
@@ -723,7 +802,9 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
           <div className="hz-grid">
             {filteredProducts.map((product) => {
               const isOpenStoreCredit = product.deliveryType === 'store_credit';
+              const isProviderOutOfStock = product.deliveryType === 'id_topup' && ['out_of_stock', 'out-of-stock', 'unavailable'].includes(String(product.providerAvailability || '').toLowerCase());
               const stock = product.stock ?? product.quantity ?? 0;
+              const providerStockQuantity = Number(product.providerStockQuantity);
               const originalPrice = Number(product.price ?? 0);
 
               const rawDiscount = product.discountPrice ?? product.salePrice ?? 0;
@@ -731,6 +812,9 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
               const hasDiscount = discountPrice > 0 && discountPrice < originalPrice;
               const displayPrice = hasDiscount ? discountPrice : originalPrice;
               const loyaltyPrice = Math.max(0, Number(product.loyaltyPrice || 0));
+              const isGame = product.deliveryType === 'game';
+              const isOwnedGame = product.deliveryType === 'game' && (authCart?.currentUser?.ownedGames || []).map(String).includes(String(product._id || product.id));
+              const isUnavailable = !isOpenStoreCredit && !isGame && product.deliveryType !== 'id_topup' && Number(stock) <= 0;
 
               const name = product.name || product.title || 'منتج رقمي';
               const imageUrl = product.image || product.imageUrl || product.img || product.photo || product.picture || '';
@@ -756,8 +840,8 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                   <div className="hz-product-body" style={{ padding: '16px' }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <span className="hz-product-glasschip" style={{ fontSize: '11px', color: '#34d399', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
-                          المخزون: {isOpenStoreCredit ? 'مفتوح' : stock}
+                        <span className="hz-product-glasschip" style={{ fontSize: '11px', color: isOwnedGame ? '#c4b5fd' : isProviderOutOfStock ? '#fca5a5' : '#34d399', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
+                          {isOwnedGame ? 'مملوكة في مكتبتك 🎮' : isGame ? 'لعبة رقمية · شراء مرة واحدة' : isProviderOutOfStock ? 'Out of Stock · غير متوفر' : Number.isFinite(providerStockQuantity) ? `المتاح من المنصة: ${providerStockQuantity}` : `المخزون: ${isOpenStoreCredit ? 'مفتوح' : stock}`}
                         </span>
                         {hasDiscount && (
                           <span className="hz-product-glasschip" style={{ fontSize: '11px', color: '#f59e0b', padding: '4px 8px', borderRadius: '20px', fontWeight: 'bold' }}>
@@ -787,6 +871,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                         )}
                       </div>
                       <button
+                        disabled={isOwnedGame || isUnavailable}
                         onClick={() => authCart && authCart.addToCart && authCart.addToCart({ ...product, price: displayPrice })}
                         className="hz-glass-btn hz-add-btn"
                         style={{
@@ -795,12 +880,13 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
                           border: 'none',
                           padding: '8px 16px',
                           borderRadius: '12px',
-                          cursor: 'pointer',
+                          cursor: isOwnedGame ? 'not-allowed' : 'pointer',
+                          opacity: isOwnedGame || isUnavailable ? 0.65 : 1,
                           fontWeight: 'bold',
                           fontSize: '13px'
                         }}
                       >
-                        أضف للسلة 🛒
+                        {isOwnedGame ? 'مملوكة — من مكتبتي 🎮' : isUnavailable ? 'غير متوفر' : isGame ? 'شراء مرة واحدة 🎮' : 'أضف للسلة 🛒'}
                       </button>
                       {loyaltyPrice > 0 && (
                         <button
@@ -819,6 +905,22 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
           </div>
         )}
       </div>
+
+      {authCart?.currentUser && Array.isArray(authCart.myGames) && authCart.myGames.length > 0 && (
+        <section className="hz-glass-card" style={{ maxWidth: '1000px', margin: '28px auto 10px', padding: '18px' }} dir="rtl">
+          <h3 style={{ margin: '0 0 6px', color: '#c4b5fd' }}>🎮 مكتبة ألعابي</h3>
+          <p style={{ margin: '0 0 14px', color: '#94a3b8', fontSize: '12px' }}>الألعاب هنا مرتبطة بحسابك؛ إذا حذفت اللعبة من جهازك تقدر ترجع لها بدون شراء جديد.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+            {authCart.myGames.map((game) => (
+              <div key={game.id || game._id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(196,181,253,0.25)' }}>
+                {game.image && <img src={game.image} alt="" style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }} />}
+                <strong style={{ flex: 1, color: '#f8fafc', fontSize: '13px' }}>{game.name}</strong>
+                <a href={game.gameUrl} target="_blank" rel="noreferrer" style={{ background: '#7c3aed', color: '#fff', padding: '8px 10px', borderRadius: '8px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' }}>تشغيل 🎮</a>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div style={{ maxWidth: '600px', margin: '40px auto 20px auto' }}>
         <div className="hz-glass-card" style={{ padding: '25px' }}>
@@ -878,6 +980,16 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       </div>
 
       <SocialCards cards={settings.socialCards} />
+
+      {showPassImage && (
+        <div className="gamevault-image-lightbox" role="dialog" aria-modal="true" aria-label="صورة GameVault Pass" onClick={() => setShowPassImage(false)}>
+          <div className="gamevault-image-lightbox-panel" onClick={(event) => event.stopPropagation()}>
+            <button type="button" onClick={() => setShowPassImage(false)} aria-label="إغلاق الصورة">×</button>
+            <img src="/gamevault-pass.svg" alt="GameVault Pass بالحجم الكامل" />
+            <div className="gamevault-image-lightbox-caption"><strong>GameVault Pass</strong><span>اضغط خارج الصورة للإغلاق</span></div>
+          </div>
+        </div>
+      )}
 
       <footer className="hz-store-footer">
         <strong>{settings.storeName || 'HAMZA STORE'}</strong>

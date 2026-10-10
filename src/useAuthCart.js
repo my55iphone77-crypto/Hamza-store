@@ -61,6 +61,16 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   const [couponSubmitting, setCouponSubmitting] = useState(false);
   const [storeCreditCode, setStoreCreditCode] = useState('');
   const [redeemingStoreCredit, setRedeemingStoreCredit] = useState(false);
+  const [playerValidation, setPlayerValidation] = useState({});
+  const [myGames, setMyGames] = useState([]);
+  useEffect(() => {
+    let active = true;
+    if (!currentUser) { setMyGames([]); return () => { active = false; }; }
+    api.get('/my-games').then((response) => {
+      if (active) setMyGames(Array.isArray(response?.data?.games) ? response.data.games : []);
+    }).catch(() => { if (active) setMyGames([]); });
+    return () => { active = false; };
+  }, [api, currentUser]);
 
   const redeemStoreCredit = useCallback(async () => {
     if (!currentUser || !storeCreditCode.trim()) return;
@@ -86,6 +96,15 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   const addToCart = (product) => {
     if (!product || typeof product !== 'object') return;
     const isOpenStoreCredit = product.deliveryType === 'store_credit';
+    const isOwnedGame = product.deliveryType === 'game' && (currentUser?.ownedGames || []).map(String).includes(String(product.id || product._id));
+    if (isOwnedGame) {
+      alert('🎮 أنت تملك هذه اللعبة مسبقاً. افتح مكتبة ألعابك لتشغيلها.');
+      return;
+    }
+    if (product.deliveryType === 'game' && !currentUser) {
+      setShowLoginPage(true);
+      return;
+    }
     const isDynamicTopup = product.deliveryType === 'id_topup' && Number(product.shop2topupItemId || 0) > 0;
     const stockCount = typeof product.stock === 'number' ? product.stock : 0;
     if (!isOpenStoreCredit && !isDynamicTopup && stockCount <= 0) {
@@ -124,6 +143,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     setCart(prev => (Array.isArray(prev)
       ? prev.map(item => {
         if (!item || !(item.id === id || item._id === id) || Boolean(item.loyaltyOnly) !== Boolean(loyaltyOnly)) return item;
+        if (item.deliveryType === 'game') return { ...item, quantity: 1 };
         const isOpenStoreCredit = item.deliveryType === 'store_credit';
         const isDynamicTopup = item.deliveryType === 'id_topup' && Number(item.shop2topupItemId || 0) > 0;
         const stockCount = Number(item.stock || 0);
@@ -136,10 +156,36 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
   // 🆕 تحديث آيدي اللاعب لعنصر معيّن بالسلة (لمنتجات تعبئة الآيدي فقط)
   const updateCartItemPlayerId = (id, playerId) => {
     if (!id) return;
+    setPlayerValidation(prev => ({ ...prev, [String(id)]: { status: 'idle', playerId: String(playerId || '') } }));
     setCart(prev => (Array.isArray(prev)
       ? prev.map(item => (item && (item.id === id || item._id === id)) ? { ...item, playerId } : item)
       : []));
   };
+
+  const validateCartItemPlayer = useCallback(async (item) => {
+    const itemId = String(item?.id || item?._id || '');
+    const playerId = String(item?.playerId || '').trim();
+    const subCategoryId = Number(item?.shop2topupItemId || 0);
+    if (!itemId || !playerId || !subCategoryId) return { success: false, error: 'آيدي اللاعب ومعرّف المنتج مطلوبان.' };
+    setPlayerValidation(prev => ({ ...prev, [itemId]: { status: 'checking', playerId } }));
+    try {
+      const response = await api.post('/shop2topup/player/validate', {
+        sub_category_id: subCategoryId,
+        ...(item.topupRequirements || {}),
+        player_id: playerId
+      });
+      const player = response?.data?.player || response?.data?.data?.player || {};
+      const playerName = String(player.player_name || player.name || response?.data?.player_name || '').trim();
+      const result = { status: 'valid', playerId, playerName, player };
+      setPlayerValidation(prev => ({ ...prev, [itemId]: result }));
+      return { success: true, ...result };
+    } catch (err) {
+      const error = err?.response?.data?.error || 'آيدي اللاعب غير صحيح أو تعذر التحقق منه حالياً.';
+      const result = { status: 'invalid', playerId, error };
+      setPlayerValidation(prev => ({ ...prev, [itemId]: result }));
+      return { success: false, ...result };
+    }
+  }, [api]);
 
   const safeCart = Array.isArray(cart) ? cart : [];
   const totalPrice = safeCart.reduce((sum, item) => sum + (Number(item?.price) || 0) * (Number(item?.quantity) || 1), 0);
@@ -225,6 +271,18 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
       return;
     }
 
+    for (const item of safeCart.filter(entry => entry && entry.deliveryType === 'id_topup')) {
+      const itemKey = String(item.id || item._id || '');
+      const cached = playerValidation[itemKey];
+      if (!cached || cached.status !== 'valid' || cached.playerId !== String(item.playerId || '').trim()) {
+        const result = await validateCartItemPlayer(item);
+        if (!result.success) {
+          if (typeof setError === 'function') setError(result.error || 'تعذر التحقق من آيدي اللاعب.');
+          return;
+        }
+      }
+    }
+
     if (getActivePaymentMethods().length > 0 && !paymentMethod && !isStoreBalancePayment) {
       alert('⚠️ يرجى اختيار طريقة الدفع.');
       return;
@@ -288,11 +346,12 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
         } else {
           setError(errorMsg || (err?.message ? `تعذر إتمام الطلب: ${err.message}` : 'فشل إتمام عملية الشراء عبر الخادم.'));
         }
+        if (typeof fetchProducts === 'function') fetchProducts(typeof searchTerm === 'string' ? searchTerm : '');
       }
     } finally {
       if (isMounted.current) setSubmittingCheckout(false);
     }
-  }, [api, safeCart, currentUser, loyaltyPointsCost, totalPrice, finalTotal, paymentMethod, isStoreBalancePayment, isSandboxPayment, redeemPoints, appliedCoupon, couponCode, fetchProducts, searchTerm, setError, setShowLoginPage, setCurrentUser]);
+  }, [api, safeCart, currentUser, loyaltyPointsCost, totalPrice, finalTotal, paymentMethod, isStoreBalancePayment, isSandboxPayment, redeemPoints, appliedCoupon, couponCode, fetchProducts, searchTerm, setError, setShowLoginPage, setCurrentUser, playerValidation, validateCartItemPlayer]);
 
   const handleLogout = useCallback(() => {
     setCart([]);
@@ -326,8 +385,9 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
 
   return {
     currentUser, isAdminUser, isStaffUser, userRoleInfo,
-    cart, setCart, addToCart, removeFromCart, updateCartItemQuantity, updateCartItemPlayerId, requiresPlayerId,
+    cart, setCart, addToCart, removeFromCart, updateCartItemQuantity, updateCartItemPlayerId, validateCartItemPlayer, playerValidation, requiresPlayerId,
     totalPrice, finalTotal, loyaltyPointsCost, totalPoints, totalItemsCount,
+    myGames,
     showCartDropdown, setShowCartDropdown,
     checkoutMode, setCheckoutMode,
     submittingCheckout, lastOrder, setLastOrder,
