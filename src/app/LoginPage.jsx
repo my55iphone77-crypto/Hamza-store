@@ -407,8 +407,8 @@ function LoginPageOriginal({ onLoginSuccess, authCart }) {
                   <button type="button" onClick={() => handleSocialLogin('Google')} style={glassButtonStyle}>
                     <span>🌐</span> المتابعة باستخدام Google (Gmail)
                   </button>
-                  <button type="button" onClick={() => handleSocialLogin('Apple')} style={glassButtonStyle}>
-                    <span>🍎</span> المتابعة باستخدام Apple ID (iCloud)
+                  <button type="button" disabled style={{ ...glassButtonStyle, cursor: 'not-allowed', opacity: 0.62 }}>
+                    <span>🍎</span> Apple ID — يتوفر قريبًا
                   </button>
                   <button type="button" onClick={() => handleSocialLogin('Facebook')} style={glassButtonStyle}>
                     <span>📘</span> المتابعة باستخدام Facebook

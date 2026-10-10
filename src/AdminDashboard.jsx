@@ -116,10 +116,10 @@ export function LoginForm({ authCart, inputStyle = {} }) {
 
       <button
         type="button"
-        onClick={() => handleSocialLogin('apple')}
-        style={{ background: '#1f2937', color: '#fff', border: '1px solid #374151', padding: '10px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+        disabled
+        style={{ background: '#1f2937', color: '#94a3b8', border: '1px solid #374151', padding: '10px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold', cursor: 'not-allowed', opacity: 0.62, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
       >
-        🍎 المتابعة باستخدام Apple ID (iCloud)
+        🍎 Apple ID — يتوفر قريبًا
       </button>
 
       <button
