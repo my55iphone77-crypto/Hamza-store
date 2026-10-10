@@ -132,7 +132,10 @@ export function AppProvider({ children }) {
   // معالجة رموز التوثيق القادمة عبر روابط خارجية
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const tokenFromURL = params.get('authToken') || params.get('token');
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    // رمز reset-password مخصص لتغيير كلمة السر، وليس رمز جلسة دخول.
+    const isAuthCallbackRoute = !['/reset-password', '/verify-email'].includes(currentPath);
+    const tokenFromURL = isAuthCallbackRoute ? (params.get('authToken') || params.get('token')) : '';
     const errorFromURL = params.get('authError');
 
     if (tokenFromURL) {
