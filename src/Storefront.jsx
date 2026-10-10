@@ -57,9 +57,10 @@ const GLASS_STYLE = `
     box-shadow: 0 30px 60px rgba(0,0,0,0.55), 0 0 45px color-mix(in srgb, var(--glow) 55%, transparent), inset 0 1px 0 rgba(255,255,255,0.4);
   }
 
-  .hz-product-media { position: absolute; inset: 0; z-index: 0; }
-  .hz-product-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s ease; }
-  .hz-product-card:hover .hz-product-media img { transform: scale(1.08); }
+  .hz-product-media { position: absolute; inset: 0; z-index: 0; display: flex; align-items: center; justify-content: center; background: #080b10; }
+  /* إظهار الصورة كاملة داخل البطاقة؛ cover كان يقص أطراف الصور العريضة. */
+  .hz-product-media img { width: 100%; height: 100%; object-fit: contain; object-position: center; padding: 4px; box-sizing: border-box; display: block; transition: filter 0.35s ease; }
+  .hz-product-card:hover .hz-product-media img { filter: brightness(1.06); }
   .hz-product-media::after {
     content: ''; position: absolute; inset: 0;
     background: linear-gradient(180deg, rgba(5,6,10,0.15) 0%, rgba(5,6,10,0.55) 55%, rgba(5,6,10,0.92) 100%);
