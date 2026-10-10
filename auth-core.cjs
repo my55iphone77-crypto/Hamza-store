@@ -13,6 +13,8 @@ module.exports = function buildAuthCoreRouter(deps) {
   } = deps;
 
   const router = express.Router();
+  // منع تكوين روابط من نوع //reset-password إذا انتهى FRONTEND_URL بشرطة مائلة.
+  const frontendBaseUrl = String(FRONTEND_URL || '').replace(/\/+$/, '');
 
   router.get('/me', async (req, res) => {
     try {
@@ -94,7 +96,7 @@ module.exports = function buildAuthCoreRouter(deps) {
 
       await newUser.save();
 
-      const verifyLink = `${FRONTEND_URL}/verify-email?email=${encodeURIComponent(cleanEmail)}&token=${rawVerifyToken}`;
+      const verifyLink = `${frontendBaseUrl}/verify-email?email=${encodeURIComponent(cleanEmail)}&token=${rawVerifyToken}`;
       sendStoreEmail(
         cleanEmail,
         `🎉 أهلاً بك في ${APP_NAME || 'متجر حمزة'} - تفعيل الحساب`,
@@ -177,7 +179,7 @@ module.exports = function buildAuthCoreRouter(deps) {
         user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
         await user.save();
 
-        const resetLink = `${FRONTEND_URL}/reset-password?email=${encodeURIComponent(cleanEmail)}&token=${rawToken}`;
+        const resetLink = `${frontendBaseUrl}/reset-password?email=${encodeURIComponent(cleanEmail)}&token=${rawToken}`;
 
         const emailSent = await sendStoreEmail(
           cleanEmail,
@@ -303,7 +305,7 @@ module.exports = function buildAuthCoreRouter(deps) {
         user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
         await user.save();
 
-        const verifyLink = `${FRONTEND_URL}/verify-email?email=${encodeURIComponent(cleanEmail)}&token=${rawToken}`;
+        const verifyLink = `${frontendBaseUrl}/verify-email?email=${encodeURIComponent(cleanEmail)}&token=${rawToken}`;
         await sendStoreEmail(
           cleanEmail,
           'تفعيل حسابك - متجر حمزة',

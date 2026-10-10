@@ -574,7 +574,8 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
   const resetParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const resetEmail = resetParams?.get('email') || '';
   const resetToken = resetParams?.get('token') || '';
-  if (typeof window !== 'undefined' && window.location.pathname === '/reset-password' && resetEmail && resetToken) {
+  const normalizedPathname = typeof window !== 'undefined' ? window.location.pathname.replace(/\/+$/, '') || '/' : '';
+  if (typeof window !== 'undefined' && normalizedPathname === '/reset-password' && resetEmail && resetToken) {
     return (
       <div style={{ minHeight: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0b0f19', padding: '20px', boxSizing: 'border-box' }} dir="rtl">
         <ResetPasswordPage authCart={authCart} email={resetEmail} token={resetToken} />
