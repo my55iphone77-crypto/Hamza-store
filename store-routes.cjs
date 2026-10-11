@@ -11,6 +11,14 @@ module.exports = function buildStoreRouter(deps) {
   } = deps;
 
   const router = express.Router();
+  const GAMEVAULT_PASS_TYPE = 'gamevault_pass';
+  const GAMEVAULT_PASS_NAME = 'اشتراك GameVault Pass';
+  const GAMEVAULT_PASS_CATEGORY = 'اشتراك التطبيق';
+  const GAMEVAULT_PASS_DESCRIPTION = 'اشتراك شهري يفتح 5 ألعاب مختارة داخل تطبيق GameVault طوال مدة العضوية.';
+  const GAMEVAULT_PASS_IMAGE = '/gamevault-pass.svg';
+  const normalizeGameVaultPass = (payload = {}) => String(payload.deliveryType || '') === GAMEVAULT_PASS_TYPE
+    ? { ...payload, name: GAMEVAULT_PASS_NAME, category: GAMEVAULT_PASS_CATEGORY, description: GAMEVAULT_PASS_DESCRIPTION, image: GAMEVAULT_PASS_IMAGE, codes: [], stock: 1, gameUrl: '' }
+    : payload;
   const getShop2UnitPrice = (priceData) => {
     const candidates = [
       priceData?.price?.unit_price,
@@ -721,7 +729,7 @@ module.exports = function buildStoreRouter(deps) {
   });
   router.post('/products', guard('staff'), async (req, res) => {
     try {
-      const payload = normalizeLoyaltyFields(normalizeProductSchedule(req.body));
+      const payload = normalizeGameVaultPass(normalizeLoyaltyFields(normalizeProductSchedule(req.body)));
       if (String(payload.deliveryType || '') === 'game') {
         if (!/^https?:\/\//i.test(String(payload.gameUrl || '').trim())) throw new Error('رابط اللعبة يجب أن يبدأ بـ http:// أو https://.');
         payload.stock = 1;
@@ -742,7 +750,7 @@ module.exports = function buildStoreRouter(deps) {
     try {
       const existing = await Product.findById(req.params.id);
       if (!existing) return res.status(404).json({ error: 'المنتج غير موجود' });
-      const payload = normalizeLoyaltyFields(normalizeProductSchedule(req.body));
+      const payload = normalizeGameVaultPass(normalizeLoyaltyFields(normalizeProductSchedule({ ...req.body, deliveryType: req.body?.deliveryType || existing.deliveryType })));
       const deliveryType = String(payload.deliveryType || existing.deliveryType || '');
       if (deliveryType === 'game') {
         const nextGameUrl = payload.gameUrl !== undefined ? payload.gameUrl : existing.gameUrl;

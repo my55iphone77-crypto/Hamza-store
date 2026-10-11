@@ -5,6 +5,11 @@ import { useFullBleedStyle } from "./useWindowSize";
 const MAX_IMAGE_DIMENSION = 800;
 const IMAGE_JPEG_QUALITY = 0.8;
 const UNCATEGORIZED = "غير مصنف";
+const GAMEVAULT_PASS_TYPE = "gamevault_pass";
+const GAMEVAULT_PASS_NAME = "اشتراك GameVault Pass";
+const GAMEVAULT_PASS_CATEGORY = "اشتراك التطبيق";
+const GAMEVAULT_PASS_DESCRIPTION = "اشتراك شهري يفتح 5 ألعاب مختارة داخل تطبيق GameVault طوال مدة العضوية.";
+const GAMEVAULT_PASS_IMAGE = "/gamevault-pass.svg";
 const toDateTimeLocal = (value) => {
   if (!value) return "";
   const date = new Date(value);
@@ -32,6 +37,7 @@ const DELIVERY_TYPES = [
   { value: "subscription", label: "🔁 اشتراك موقع (نتفليكس / شاهد...)" },
   { value: "store_credit", label: "🪙 بطاقة رصيد المتجر (غير قابلة للسحب)" },
   { value: "game", label: "🎮 لعبة خاصة بالمتجر (شراء مرة واحدة)" },
+  { value: GAMEVAULT_PASS_TYPE, label: "✨ اشتراك التطبيق (GameVault Pass)" },
 ];
 
 const shop2CatalogId = (item) => {
@@ -151,6 +157,7 @@ export default function Products() {
   const [editManualStock, setEditManualStock] = useState("");
 
   const didInit = useRef(false);
+  const isGameVaultPass = deliveryType === GAMEVAULT_PASS_TYPE;
 
   function apiFetch(path, options = {}) {
     return fetch(`${apiUrl}${path}`, {
@@ -281,9 +288,26 @@ export default function Products() {
     }
   };
 
+  const handleDeliveryTypeChange = (nextType) => {
+    setDeliveryType(nextType);
+    if (nextType === GAMEVAULT_PASS_TYPE) {
+      setName(GAMEVAULT_PASS_NAME);
+      setDescription(GAMEVAULT_PASS_DESCRIPTION);
+      setCategory(GAMEVAULT_PASS_CATEGORY);
+      setImage(GAMEVAULT_PASS_IMAGE);
+      setNewCodeText("");
+      return;
+    }
+    if (name === GAMEVAULT_PASS_NAME) setName("");
+    if (description === GAMEVAULT_PASS_DESCRIPTION) setDescription("");
+    if (category === GAMEVAULT_PASS_CATEGORY) setCategory("");
+    if (image === GAMEVAULT_PASS_IMAGE) setImage("");
+  };
+
   const handleAddProduct = async (e) => {
     e.preventDefault();
-    if (!name || !price) {
+    const productName = isGameVaultPass ? GAMEVAULT_PASS_NAME : name;
+    if (!productName || !price) {
       alert("الرجاء إدخال اسم المنتج والسعر الأساسي على الأقل!");
       return;
     }
@@ -295,18 +319,22 @@ export default function Products() {
     if (loyaltyPointsValue === null || loyaltyPriceValue === null) return;
 
     const payload = {
-      name, description, category: category || UNCATEGORIZED, deliveryType,
+      name: productName,
+      description: isGameVaultPass ? GAMEVAULT_PASS_DESCRIPTION : description,
+      category: isGameVaultPass ? GAMEVAULT_PASS_CATEGORY : (category || UNCATEGORIZED),
+      deliveryType,
       ...(deliveryType === "game" ? { gameUrl: String(gameUrl || "").trim() } : {}),
       storeCreditAmount: deliveryType === "store_credit" ? (parseFloat(storeCreditAmount) || parseFloat(price)) : undefined,
       loyaltyPoints: loyaltyPointsValue,
       loyaltyPrice: loyaltyPriceValue,
       price: parseFloat(price), discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
-      image: image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300",
+      image: isGameVaultPass ? GAMEVAULT_PASS_IMAGE : (image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300"),
       status, scheduledDate: toISOStringOrNull(scheduledDate) || undefined, unpublishDate: toISOStringOrNull(unpublishDate) || undefined,
       lowStockThreshold: parseInt(lowStockThreshold) || 3,
       maxStockThreshold: parseInt(maxStockThreshold) || 50,
       ...(deliveryType === "id_topup" ? { shop2topupCategoryId: Number(shop2topupCategoryId) || undefined, shop2topupItemId: Number(shop2topupItemId) || undefined } : {}),
-      codes: codesArray, stock: deliveryType === "id_topup" || deliveryType === "game" ? 1 : codesArray.length,
+      codes: isGameVaultPass ? [] : codesArray,
+      stock: isGameVaultPass || deliveryType === "id_topup" || deliveryType === "game" ? 1 : codesArray.length,
     };
 
     try {
@@ -645,19 +673,19 @@ export default function Products() {
             <button onClick={() => setIsAddModalOpen(false)} style={closeBtnStyle}>✕</button>
             <h3 style={{ color: "#10b981", margin: "0 0 15px 0" }}>+ إضافة بطاقة أو منتج جديد</h3>
             <form className="hz-product-form" onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <input type="text" placeholder="اسم المنتج *" value={name} onChange={(e) => setName(e.target.value)} style={glassInputStyle} required />
-              <textarea placeholder="وصف المنتج..." value={description} onChange={(e) => setDescription(e.target.value)} rows={2} style={glassInputStyle} />
-              <select value={deliveryType} onChange={(e) => setDeliveryType(e.target.value)} style={glassInputStyle}>
+              <input type="text" placeholder="اسم المنتج *" value={name} onChange={(e) => setName(e.target.value)} style={{ ...glassInputStyle, ...(isGameVaultPass ? { opacity: 0.7, cursor: "not-allowed" } : {}) }} disabled={isGameVaultPass} required />
+              <textarea placeholder="وصف المنتج..." value={description} onChange={(e) => setDescription(e.target.value)} rows={2} style={{ ...glassInputStyle, ...(isGameVaultPass ? { opacity: 0.7, cursor: "not-allowed" } : {}) }} disabled={isGameVaultPass} />
+              <select value={deliveryType} onChange={(e) => handleDeliveryTypeChange(e.target.value)} style={glassInputStyle}>
                 {DELIVERY_TYPES.map(d => <option key={d.value} value={d.value} style={{ background: "#1e293b" }}>{d.label}</option>)}
               </select>
               {deliveryType === "game" && <>
                 <input type="url" placeholder="رابط تشغيل اللعبة أو تحميلها *" value={gameUrl} onChange={(e) => setGameUrl(e.target.value)} style={glassInputStyle} required />
                 <div style={{ color: "#c4b5fd", fontSize: "12px", padding: "10px", background: "rgba(124,58,237,0.10)", borderRadius: "8px" }}>🎮 اللعبة تُحفظ في مكتبة العميل بعد الشراء. يشتريها العميل مرة واحدة فقط، حتى لو حذفها من جهازه.</div>
               </>}
-              <select value={category} onChange={(e) => setCategory(e.target.value)} style={glassInputStyle}>
+              {isGameVaultPass ? <input value={GAMEVAULT_PASS_CATEGORY} readOnly style={{ ...glassInputStyle, opacity: 0.7, cursor: "not-allowed" }} /> : <select value={category} onChange={(e) => setCategory(e.target.value)} style={glassInputStyle}>
                 <option value="" style={{ background: "#1e293b" }}>— اختر فئة —</option>
                 {categories.map((c, i) => <option key={i} value={c} style={{ background: "#1e293b" }}>{c}</option>)}
-              </select>
+              </select>}
               <div style={{ display: "flex", gap: "10px" }}>
                 <input type="number" step="0.01" placeholder="السعر *" value={price} onChange={(e) => setPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} required />
                 <input type="number" step="0.01" placeholder="سعر الخصم" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} style={{ ...glassInputStyle, flex: 1 }} />
@@ -690,11 +718,13 @@ export default function Products() {
                 </select>
                 <span style={{ gridColumn: "1 / -1", color: "#7dd3fc", fontSize: "11px" }}>اختر اللعبة ثم نوع التعبئة ثم الباقة؛ التطبيق يضع Category ID وItem ID تلقائياً.</span>
               </div>}
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <input type="file" accept="image/*" onChange={(e) => handleImageFileSelect(e, false)} style={{ color: "#94a3b8", fontSize: "12px" }} />
-                {isUploadingImage && <span style={{ color: "#38bdf8", fontSize: "11px" }}>⏳ جاري معالجة وضغط الصورة...</span>}
-              </div>
-              {image && <img src={image} alt="معاينة" style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />}
+              {isGameVaultPass ? <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px", color: "#c4b5fd", background: "rgba(124,58,237,0.12)", borderRadius: "10px" }}><img src={GAMEVAULT_PASS_IMAGE} alt="بطاقة GameVault Pass" style={{ width: "72px", height: "45px", objectFit: "contain", borderRadius: "7px" }} /><span>الصورة ثابتة ومحفوظة لاشتراك التطبيق.</span></div> : <>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <input type="file" accept="image/*" onChange={(e) => handleImageFileSelect(e, false)} style={{ color: "#94a3b8", fontSize: "12px" }} />
+                  {isUploadingImage && <span style={{ color: "#38bdf8", fontSize: "11px" }}>⏳ جاري معالجة وضغط الصورة...</span>}
+                </div>
+                {image && <img src={image} alt="معاينة" style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />}
+              </>}
               {deliveryType === "store_credit" ? (
                 <div style={{ color: "#facc15", fontSize: "12px", padding: "10px", background: "rgba(250,204,21,0.08)", borderRadius: "8px" }}>🪙 بطاقة رصيد المتجر مفتوحة: لا تحدد مخزوناً ولا تضف أكواداً. يتم توليد كود فريد تلقائياً عند كل شراء.</div>
               ) : deliveryType === "game" ? (

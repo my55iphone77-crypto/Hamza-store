@@ -292,6 +292,9 @@ export function CheckoutForm({ authCart, inputStyle = {} }) {
               {(item.deliveryType === 'code' || item.deliveryType === 'subscription') && (
                 <span style={{ color: '#38bdf8', fontSize: '12px' }}>📦 كود جاهز — يُسلَّم فوراً بعد التأكيد</span>
               )}
+              {item.deliveryType === 'gamevault_pass' && (
+                <span style={{ color: '#c4b5fd', fontSize: '12px' }}>✨ اشتراك GameVault Pass — يتفعّل على حسابك بعد تأكيد الدفع</span>
+              )}
               {item.deliveryType === 'store_credit' && (
                 <span style={{ color: '#facc15', fontSize: '12px' }}>🪙 يمكنك دفع هذه البطاقة من رصيد المتجر، وسيتم توليد كود جديد تلقائياً بعد التأكيد.</span>
               )}

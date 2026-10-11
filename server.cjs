@@ -396,7 +396,7 @@ const productSchema = new mongoose.Schema({
   status: { type: String, default: 'منشور' },
   scheduledDate: { type: Date },
   unpublishDate: { type: Date },
-  deliveryType: { type: String, enum: ['code', 'id_topup', 'subscription', 'store_credit', 'game'], default: 'code' },
+  deliveryType: { type: String, enum: ['code', 'id_topup', 'subscription', 'store_credit', 'game', 'gamevault_pass'], default: 'code' },
   gameUrl: { type: String, default: '' },
   codes: [{ type: String }],
   stock: { type: Number, default: 0 },
