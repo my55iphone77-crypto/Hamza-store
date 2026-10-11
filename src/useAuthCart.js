@@ -299,6 +299,27 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
     if (typeof setError === 'function') setError('');
 
     try {
+      let paymentSessionId = '';
+      if (!isStoreBalancePayment && paymentMethod === 'hamza_pay_sandbox') {
+        const sessionKey = `checkout-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        const sessionResponse = await api.post('/payments/sessions', {
+          amount: Number(finalTotal || 0),
+          currency: 'JOD',
+          method: 'hamza_pay_sandbox',
+          clientReference: sessionKey,
+          idempotencyKey: sessionKey
+        }, { headers: { 'Idempotency-Key': sessionKey } });
+        paymentSessionId = String(sessionResponse?.data?.session?.sessionId || '');
+        if (!paymentSessionId) throw new Error('لم يتم إنشاء جلسة Hamza Pay.');
+        const confirmKey = `confirm-${paymentSessionId}`;
+        const confirmation = await api.post(`/payments/sessions/${encodeURIComponent(paymentSessionId)}/confirm`, {
+          testScenario: 'success',
+          idempotencyKey: confirmKey
+        }, { headers: { 'Idempotency-Key': confirmKey } });
+        if (!confirmation?.data?.success || confirmation?.data?.session?.status !== 'succeeded') {
+          throw new Error('لم تنجح جلسة Hamza Pay التجريبية.');
+        }
+      }
       const response = await api.post('/orders', {
         customerName: currentUser.name || currentUser.email || 'عميل',
         customerEmail: currentUser.email || 'غير متوفر',
@@ -317,6 +338,7 @@ export function useAuthCart({ api, fetchProducts, searchTerm, setError }) {
         })),
         totalAmount: finalTotal,
         paymentMethod: paymentMethod || undefined,
+        paymentSessionId: paymentSessionId || undefined,
         redeemPoints,
         couponCode: appliedCoupon?.code || couponCode || undefined
       });

@@ -5,7 +5,7 @@ module.exports = function buildStoreRouter(deps) {
     Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification, VisitorEvent,
     Customer, Transaction, Ticket, Sale, Employee, Achievement, Announcement,
     WorkHour, AttendanceLog, AppState,
-    Settings, Salary, Task, DocumentModel, Coupon, Commission, CommissionLog, StoreCreditCard,
+    Settings, Salary, Task, DocumentModel, Coupon, Commission, CommissionLog, StoreCreditCard, PaymentSession, PaymentEvent,
     mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
     io, User, getUserFromAuthHeader, publicActionLimiter, SHOP2TOPUP_WEBHOOK_SECRET, GAME_ASSET_BASE_URL
   } = deps;
@@ -876,14 +876,24 @@ module.exports = function buildStoreRouter(deps) {
       const { customerName, customerEmail, customerAddress, paymentMethod, redeemPoints, couponCode } = req.body || {};
       const authUser = await getUserFromAuthHeader(req.headers.authorization);
       const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase();
-      const sandboxPaymentMethods = new Set(['sandbox_card', 'sandbox_wallet', 'sandbox_bank']);
-      const isSandboxPayment = sandboxPaymentMethods.has(normalizedPaymentMethod);
-      const sandboxPaymentNames = {
-        sandbox_card: 'بطاقة بنكية تجريبية (Sandbox)',
-        sandbox_wallet: 'محفظة إلكترونية تجريبية (Sandbox)',
-        sandbox_bank: 'تحويل بنكي تجريبي (Sandbox)'
-      };
-      const paymentMethodName = sandboxPaymentNames[normalizedPaymentMethod] || normalizedPaymentMethod;
+      const paymentSessionId = String(req.body?.paymentSessionId || '').trim();
+      const isHamzaPaySandbox = normalizedPaymentMethod === 'hamza_pay_sandbox';
+      const legacySandboxMethods = new Set(['sandbox_card', 'sandbox_wallet', 'sandbox_bank']);
+      if (legacySandboxMethods.has(normalizedPaymentMethod)) {
+        return res.status(410).json({ error: 'تم إيقاف طرق الدفع التجريبية القديمة. استخدم Hamza Pay Sandbox.' });
+      }
+      let paymentSession = null;
+      if (isHamzaPaySandbox) {
+        if (!authUser) return res.status(401).json({ error: 'سجّل الدخول لاستخدام Hamza Pay.' });
+        if (!paymentSessionId || !PaymentSession) return res.status(400).json({ error: 'جلسة Hamza Pay مطلوبة لإتمام الطلب.' });
+        const emailHash = crypto.createHash('sha256').update(String(authUser.email || '').trim().toLowerCase()).digest('hex');
+        paymentSession = await PaymentSession.findOne({ sessionId: paymentSessionId, customerEmailHash: emailHash });
+        if (!paymentSession || paymentSession.provider !== 'hamza_sandbox' || paymentSession.mode !== 'sandbox') return res.status(404).json({ error: 'جلسة Hamza Pay غير موجودة أو لا تخص هذا الحساب.' });
+        if (paymentSession.status !== 'succeeded') return res.status(402).json({ error: 'لم تنجح جلسة Hamza Pay بعد. أكّد الدفع ثم أعد المحاولة.' });
+        if (paymentSession.orderId) return res.status(409).json({ error: 'تم ربط جلسة الدفع بطلب سابق بالفعل.' });
+      }
+      const isSandboxPayment = isHamzaPaySandbox;
+      const paymentMethodName = isHamzaPaySandbox ? 'Hamza Pay Sandbox' : normalizedPaymentMethod;
       const isStoreBalancePayment = ['store_balance', 'balance'].includes(normalizedPaymentMethod);
       if (normalizedPaymentMethod && !isSandboxPayment && !isStoreBalancePayment) {
         return res.status(400).json({ error: 'طريقة الدفع غير معروفة أو غير مفعّلة.' });
@@ -1011,6 +1021,9 @@ module.exports = function buildStoreRouter(deps) {
         appliedCouponCode = normalizedCode;
         total = Math.max(0, subtotal - couponDiscount);
       }
+      if (paymentSession && Number(paymentSession.amountMinor) !== Math.round(Number(total) * 100)) {
+        return res.status(409).json({ error: 'تغير إجمالي السلة. أنشئ جلسة Hamza Pay جديدة قبل إتمام الطلب.' });
+      }
       let walletAmount = 0;
       const usesStoreBalance = isStoreBalancePayment;
       if (total > 0 && !usesStoreBalance && !isSandboxPayment) {
@@ -1076,9 +1089,15 @@ module.exports = function buildStoreRouter(deps) {
         customerEmail: String(customerEmail).trim().toLowerCase(),
         customerAddress: String(customerAddress || 'طلب رقمي من المتجر').trim(),
         items, totalAmount: total, currency: 'JOD', status: isSandboxPayment ? 'اختبار ناجح' : 'جديد',
-        paymentMethod: normalizedPaymentMethod, paymentMethodName, paymentMode: isSandboxPayment ? 'sandbox' : (usesStoreBalance ? 'balance' : ''), paymentStatus: isSandboxPayment ? 'paid_test' : (usesStoreBalance ? 'paid_balance' : 'pending'), couponCode: appliedCouponCode, couponDiscount, walletAmount,
+        paymentMethod: normalizedPaymentMethod, paymentMethodName, paymentMode: isSandboxPayment ? 'sandbox' : (usesStoreBalance ? 'balance' : ''), paymentStatus: isSandboxPayment ? 'paid_sandbox' : (usesStoreBalance ? 'paid_balance' : 'pending'), paymentSessionId: paymentSessionId || '', paymentProvider: isSandboxPayment ? 'hamza_sandbox' : '', paymentAmountMinor: Math.round(Number(total) * 100), paymentSucceededAt: isSandboxPayment ? new Date() : undefined, couponCode: appliedCouponCode, couponDiscount, walletAmount,
         loyaltyPointsEarned: pointsEarned, loyaltyPointsRedeemed, loyaltyRewardItem
       }).save();
+      if (paymentSession) {
+        await PaymentSession.updateOne({ _id: paymentSession._id, orderId: { $exists: false } }, { $set: { orderId: order._id, orderNumber: order.orderNumber } });
+        if (PaymentEvent) {
+          await PaymentEvent.create({ eventId: `hp_evt_order_${String(order._id)}`, sessionId: paymentSession.sessionId, orderId: order._id, type: 'payment.succeeded', status: 'succeeded', source: 'system', payloadHash: crypto.createHash('sha256').update(String(order._id)).digest('hex'), payloadSafe: { orderNumber: order.orderNumber } }).catch(() => {});
+        }
+      }
       if (providerItems.length > 0) {
         let creatingItem = null;
         try {

@@ -1,31 +1,11 @@
-// ═══════════════════════════════════════════════════════════════
-// بوابات الدفع — وضع تجريبي فقط
-// هذه الخيارات لا تحوّل أموالاً ولا تخصم رصيداً ولا تُصدر أكواداً حقيقية.
-// عند جاهزية الترخيص، تُستبدل بموصلات Live معتمدة من مزود الدفع.
-// ═══════════════════════════════════════════════════════════════
-
+// Hamza Pay — وضع Sandbox الرسمي للمتجر.
+// لا يتم استقبال أو تخزين أرقام بطاقات، ولا يتم خصم أموال حقيقية.
 export const PAYMENT_METHODS = [
   {
-    id: 'sandbox_card',
-    name: 'بطاقة بنكية تجريبية (Visa / Mastercard)',
+    id: 'hamza_pay_sandbox',
+    name: 'Hamza Pay Sandbox',
     icon: '🧪',
-    description: 'Sandbox — لا يتم خصم أي مبلغ حقيقي',
-    enabled: true,
-    sandbox: true,
-  },
-  {
-    id: 'sandbox_wallet',
-    name: 'محفظة إلكترونية تجريبية / كليك',
-    icon: '🧪',
-    description: 'Sandbox — محاكاة نجاح الدفع فقط',
-    enabled: true,
-    sandbox: true,
-  },
-  {
-    id: 'sandbox_bank',
-    name: 'تحويل بنكي تجريبي',
-    icon: '🧪',
-    description: 'Sandbox — لا يحتاج إلى حساب بنكي',
+    description: 'محاكاة آمنة — لا يتم خصم أي مبلغ حقيقي',
     enabled: true,
     sandbox: true,
   },
@@ -36,5 +16,5 @@ export function getActivePaymentMethods() {
 }
 
 export function isSandboxPaymentMethod(id) {
-  return getActivePaymentMethods().some(m => m.id === id && m.sandbox === true);
+  return id === 'hamza_pay_sandbox';
 }

@@ -132,7 +132,7 @@ const paymentSessionSchema = new mongoose.Schema({
   customerEmailHash: { type: String, required: true, index: true },
   provider: { type: String, enum: ['hamza_sandbox'], default: 'hamza_sandbox', index: true },
   mode: { type: String, enum: ['sandbox', 'live'], default: 'sandbox', index: true },
-  method: { type: String, enum: ['sandbox_card', 'sandbox_wallet', 'sandbox_bank'], required: true },
+  method: { type: String, enum: ['hamza_pay_sandbox'], required: true },
   amountMinor: { type: Number, required: true, min: 0 },
   currency: { type: String, enum: ['JOD'], default: 'JOD' },
   status: {
@@ -254,7 +254,7 @@ paymentUpdatedAt: Date
 ```json
 {
   "orderId": "...",
-  "method": "sandbox_card",
+  "method": "hamza_pay_sandbox",
   "clientReference": "checkout-...",
   "idempotencyKey": "checkout-session-unique-key"
 }

@@ -19,6 +19,7 @@ const { Server } = require('socket.io'); // 🔌 استيراد Socket.IO
 const buildAuthCoreRouter = require('./auth-core.cjs');
 const buildAuthSocialRouter = require('./auth-social.cjs');
 const buildStoreRouter = require('./store-routes.cjs');
+const buildPaymentRouter = require('./payment-routes.cjs');
 const setupRealtime = require('./realtime-sync.cjs');
 
 const app = express();
@@ -434,6 +435,53 @@ const orderSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now }
 }, { strict: false });
 const Order = mongoose.model('Order', orderSchema);
+
+const paymentSessionSchema = new mongoose.Schema({
+  sessionId: { type: String, required: true, unique: true, index: true },
+  orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', index: true },
+  orderNumber: { type: String, default: '', index: true },
+  customerEmailHash: { type: String, required: true, index: true },
+  provider: { type: String, enum: ['hamza_sandbox'], default: 'hamza_sandbox', index: true },
+  mode: { type: String, enum: ['sandbox', 'live'], default: 'sandbox', index: true },
+  method: { type: String, enum: ['hamza_pay_sandbox'], required: true },
+  amountMinor: { type: Number, required: true, min: 0 },
+  currency: { type: String, enum: ['JOD'], default: 'JOD' },
+  status: { type: String, enum: ['created', 'requires_action', 'authorized', 'declined', 'expired', 'canceled', 'succeeded', 'capture_requested', 'partially_refunded', 'refunded'], default: 'created', index: true },
+  scenario: { type: String, enum: ['success', 'decline', 'pending', 'expire'], default: 'success' },
+  clientReference: { type: String, default: '', maxlength: 120 },
+  providerReference: { type: String, unique: true, sparse: true, index: true },
+  failureCode: { type: String, default: '' },
+  failureMessage: { type: String, default: '' },
+  expiresAt: { type: Date, index: true },
+  authorizedAt: Date,
+  succeededAt: Date,
+  canceledAt: Date
+}, { timestamps: true });
+const PaymentSession = mongoose.model('PaymentSession', paymentSessionSchema);
+const paymentEventSchema = new mongoose.Schema({
+  eventId: { type: String, required: true, unique: true, index: true },
+  sessionId: { type: String, required: true, index: true },
+  orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', index: true },
+  type: { type: String, required: true },
+  status: { type: String, required: true },
+  source: { type: String, enum: ['api', 'sandbox', 'webhook', 'system', 'admin'], required: true },
+  idempotencyKey: { type: String, default: '' },
+  payloadHash: { type: String, required: true },
+  payloadSafe: { type: mongoose.Schema.Types.Mixed, default: {} },
+  processedAt: { type: Date, default: Date.now },
+  processingError: { type: String, default: '' }
+}, { timestamps: true });
+const PaymentEvent = mongoose.model('PaymentEvent', paymentEventSchema);
+const paymentIdempotencySchema = new mongoose.Schema({
+  scope: { type: String, required: true },
+  key: { type: String, required: true },
+  requestHash: { type: String, required: true },
+  responseStatus: { type: Number, required: true },
+  responseBody: { type: mongoose.Schema.Types.Mixed, required: true },
+  expiresAt: { type: Date, required: true, index: true }
+}, { timestamps: true });
+paymentIdempotencySchema.index({ scope: 1, key: 1 }, { unique: true });
+const PaymentIdempotency = mongoose.model('PaymentIdempotency', paymentIdempotencySchema);
 
 const supportSchema = new mongoose.Schema({
   customerName: { type: String, required: true },
@@ -1052,11 +1100,17 @@ setupRealtime({
 // ملفات المستندات المرفوعة
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+app.use('/api/payments', buildPaymentRouter({
+  PaymentSession, PaymentEvent, PaymentIdempotency,
+  mongoose, crypto, getUserFromAuthHeader, publicActionLimiter
+}));
+
 app.use('/api', buildStoreRouter({
   Product, Order, Support, Mail, Category, NOTIFY_EMAILS, Notification, VisitorEvent,
   Customer, Transaction, Ticket, Sale, Employee, Achievement, Announcement,
   WorkHour, AttendanceLog, AppState,
   Settings, Salary, Task, DocumentModel, Coupon, Commission, CommissionLog, StoreCreditCard,
+  PaymentSession, PaymentEvent,
   mongoose, sendStoreEmail, verifyOwnerMiddleware, bcrypt, crypto,
   io, User, getUserFromAuthHeader, publicActionLimiter, SHOP2TOPUP_WEBHOOK_SECRET, GAME_ASSET_BASE_URL
 }));
