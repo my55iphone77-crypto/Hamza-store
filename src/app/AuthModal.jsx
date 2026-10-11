@@ -214,8 +214,8 @@ export default function AuthModal({ isOpen, onClose, onSuccessfulCheckout }) {
               <button type="button" disabled={loading} onClick={() => handleSocialLogin('google')} style={socialBtnStyle}>
                 <span>🌐</span> المتابعة باستخدام Google
               </button>
-              <button type="button" disabled={loading} onClick={() => handleSocialLogin('apple')} style={{ ...socialBtnStyle, background: 'rgba(0,0,0,0.3)' }}>
-                <span>🍎</span> المتابعة باستخدام Apple ID
+              <button type="button" disabled style={{ ...socialBtnStyle, background: 'rgba(0,0,0,0.3)', opacity: 0.62, cursor: 'not-allowed' }}>
+                <span>🍎</span> Apple ID — يتوفر قريبًا
               </button>
               <button type="button" disabled={loading} onClick={() => handleSocialLogin('facebook')} style={{ ...socialBtnStyle, background: 'rgba(24, 119, 242, 0.2)' }}>
                 <span>📘</span> المتابعة باستخدام Facebook
