@@ -371,6 +371,34 @@ const GLASS_STYLE = `
   .gamevault-image-lightbox-caption span { color: #94a3b8; font-size: 11px; }
   @media (max-width: 700px) { .gamevault-pass-card-art { margin: -26px -26px 18px; width: calc(100% + 52px); }.gamevault-pass-card-art img { aspect-ratio: 16 / 10; }.gamevault-image-lightbox { padding: 10px; }.gamevault-image-lightbox-caption { flex-direction: column; gap: 4px; } }
   @media (max-width: 700px) { .gamevault-pass-layout { grid-template-columns: minmax(0, 1fr) !important; } }
+  /* GameVault داخل المتجر الرئيسي */
+  .hz-gamehub-shell { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 16px; margin: 0 0 24px; direction: ltr; }
+  .hz-gamehub-main { min-width: 0; direction: rtl; position: relative; overflow: hidden; min-height: 270px; padding: clamp(24px, 4vw, 48px); border: 1px solid rgba(139,92,246,.34); border-radius: 24px; background: radial-gradient(circle at 78% 20%, rgba(124,58,237,.35), transparent 32%), linear-gradient(125deg, rgba(11,14,31,.98), rgba(28,17,58,.9)); box-shadow: 0 24px 60px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1); }
+  .hz-gamehub-main::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(5,7,18,.92), transparent 68%), radial-gradient(circle at 90% 90%, rgba(34,211,238,.13), transparent 25%); }
+  .hz-gamehub-main > * { position: relative; z-index: 1; }
+  .hz-gamehub-kicker { display: inline-flex; align-items: center; gap: 8px; color: #c4b5fd; font-size: 11px; font-weight: 900; letter-spacing: 1.4px; }
+  .hz-gamehub-kicker::before { content: ''; width: 28px; height: 2px; border-radius: 9px; background: linear-gradient(90deg,#a78bfa,#22d3ee); }
+  .hz-gamehub-main h1 { max-width: 620px; margin: 12px 0 10px; color: #fff; font-size: clamp(28px, 4vw, 52px); line-height: 1.04; text-shadow: 0 12px 34px rgba(0,0,0,.68); }
+  .hz-gamehub-main p { max-width: 560px; color: #cbd5e1; line-height: 1.8; font-size: 13px; }
+  .hz-gamehub-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 20px; }
+  .hz-gamehub-actions button { padding: 11px 15px; border: 1px solid rgba(255,255,255,.16); border-radius: 11px; color: #fff; background: linear-gradient(135deg,#7c3aed,#2563eb); font-size: 12px; font-weight: 900; cursor: pointer; }
+  .hz-gamehub-actions button.secondary { color: #c4b5fd; background: rgba(15,23,42,.72); }
+  .hz-gamehub-sidebar { direction: rtl; display: flex; flex-direction: column; gap: 5px; padding: 18px 12px; border: 1px solid rgba(148,163,184,.16); border-radius: 22px; background: linear-gradient(180deg, rgba(10,13,25,.96), rgba(13,10,28,.91)); box-shadow: 0 20px 50px rgba(0,0,0,.36); }
+  .hz-gamehub-sidebar-brand { display: flex; align-items: center; gap: 9px; padding: 3px 8px 18px; color: #fff; font-size: 14px; font-weight: 900; }
+  .hz-gamehub-sidebar-brand img { width: 34px; height: 34px; padding: 5px; border-radius: 10px; background: rgba(124,58,237,.18); }
+  .hz-gamehub-sidebar-label { margin: 10px 8px 4px; color: #64748b; font-size: 10px; font-weight: 800; }
+  .hz-gamehub-sidebar button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 11px; border: 1px solid transparent; border-radius: 10px; color: #94a3b8; background: transparent; text-align: right; font-size: 12px; cursor: pointer; }
+  .hz-gamehub-sidebar button:hover, .hz-gamehub-sidebar button.active { color: #fff; border-color: rgba(167,139,250,.38); background: linear-gradient(90deg, rgba(124,58,237,.43), rgba(37,99,235,.2)); }
+  .hz-gamehub-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 22px; }
+  .hz-gamehub-stat { padding: 10px; border: 1px solid rgba(148,163,184,.16); border-radius: 13px; background: rgba(2,6,23,.32); }
+  .hz-gamehub-stat strong, .hz-gamehub-stat span { display: block; }
+  .hz-gamehub-stat strong { color: #fff; font-size: 17px; }
+  .hz-gamehub-stat span { margin-top: 3px; color: #94a3b8; font-size: 10px; }
+  .hz-gamehub-library { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 22px; }
+  .hz-gamehub-game { min-width: 0; overflow: hidden; border: 1px solid rgba(167,139,250,.22); border-radius: 13px; background: rgba(2,6,23,.44); }
+  .hz-gamehub-game img { display: block; width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+  .hz-gamehub-game strong { display: block; padding: 8px 9px 10px; overflow: hidden; color: #e9d5ff; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 780px) { .hz-gamehub-shell { grid-template-columns: minmax(0, 1fr); }.hz-gamehub-sidebar { order: -1; flex-direction: row; align-items: center; overflow-x: auto; padding: 8px; }.hz-gamehub-sidebar-brand, .hz-gamehub-sidebar-label { display: none; }.hz-gamehub-sidebar button { width: auto; white-space: nowrap; }.hz-gamehub-library { grid-template-columns: repeat(2, minmax(0, 1fr)); }.hz-gamehub-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 `;
 
 export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {} }) {
@@ -711,9 +739,42 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
 
         <div className="hz-header-controls">
           <HeaderControls authCart={authCart} onOpenDashboard={onOpenDashboard} />
-          <a href={GAMEVAULT_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '7px 12px 7px 9px', borderRadius: '11px', color: '#e9d5ff', background: 'linear-gradient(135deg, rgba(124,58,237,.32), rgba(37,99,235,.24))', border: '1px solid rgba(167,139,250,.4)', textDecoration: 'none', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap' }}><img src="/gamevault-logo.svg" alt="" style={{ width: '24px', height: '24px', borderRadius: '7px' }} /> مكتبة ألعابي</a>
+          <button type="button" onClick={() => document.getElementById('hz-main-library')?.scrollIntoView({ behavior: 'smooth' })} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '7px 12px 7px 9px', borderRadius: '11px', color: '#e9d5ff', background: 'linear-gradient(135deg, rgba(124,58,237,.32), rgba(37,99,235,.24))', border: '1px solid rgba(167,139,250,.4)', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap', cursor: 'pointer' }}><img src="/gamevault-logo.svg" alt="" style={{ width: '24px', height: '24px', borderRadius: '7px' }} /> مكتبة ألعابي</button>
         </div>
       </div>
+
+      <section id="hz-main-library" className="hz-gamehub-shell" aria-label="مكتبة الألعاب الرئيسية">
+        <div className="hz-gamehub-main">
+          <span className="hz-gamehub-kicker">GAMEVAULT · مكتبة ألعابك</span>
+          <h1>{authCart?.currentUser ? `أهلاً ${authCart.currentUser.name || authCart.currentUser.email?.split('@')[0] || 'بك'}، مكتبتك جاهزة.` : 'مكتبتك الرقمية، في مكان واحد.'}</h1>
+          <p>اشترِ ألعابك مرة واحدة، احتفظ بها في حسابك، وارجع لها متى ما أردت. هذه هي واجهة مكتبة ألعاب حمزة داخل المتجر الرئيسي.</p>
+          <div className="hz-gamehub-actions">
+            <button type="button" onClick={() => document.getElementById('hz-game-catalog')?.scrollIntoView({ behavior: 'smooth' })}>استعرض الألعاب 🎮</button>
+            <button type="button" className="secondary" onClick={() => document.getElementById('hz-owned-games')?.scrollIntoView({ behavior: 'smooth' })}>ألعابي المملوكة</button>
+          </div>
+          <div className="hz-gamehub-stats">
+            <div className="hz-gamehub-stat"><strong>{Array.isArray(authCart?.myGames) ? authCart.myGames.length : 0}</strong><span>ألعاب في مكتبتك</span></div>
+            <div className="hz-gamehub-stat"><strong>{Array.isArray(productsWithAvailability) ? productsWithAvailability.filter((p) => isPublishedProduct(p) && p.deliveryType === 'game').length : 0}</strong><span>ألعاب متاحة</span></div>
+            <div className="hz-gamehub-stat"><strong>∞</strong><span>وصول من حسابك</span></div>
+          </div>
+          {Array.isArray(authCart?.myGames) && authCart.myGames.length > 0 && <div className="hz-gamehub-library">
+            {authCart.myGames.slice(0, 3).map((game) => <div className="hz-gamehub-game" key={game.id || game._id}>
+              {game.image && <img src={game.image} alt="" />}
+              <strong>{game.name}</strong>
+            </div>)}
+          </div>}
+        </div>
+        <aside className="hz-gamehub-sidebar">
+          <div className="hz-gamehub-sidebar-brand"><img src="/gamevault-logo.svg" alt="" /><span>GameVault</span></div>
+          <span className="hz-gamehub-sidebar-label">المكتبة</span>
+          <button type="button" className="active" onClick={() => document.getElementById('hz-main-library')?.scrollIntoView({ behavior: 'smooth' })}>⌂ الرئيسية</button>
+          <button type="button" onClick={() => document.getElementById('hz-owned-games')?.scrollIntoView({ behavior: 'smooth' })}>♡ المفضلة</button>
+          <button type="button" onClick={() => document.getElementById('hz-game-catalog')?.scrollIntoView({ behavior: 'smooth' })}>◷ آخر الألعاب</button>
+          <button type="button" onClick={() => document.getElementById('hz-game-catalog')?.scrollIntoView({ behavior: 'smooth' })}>✦ ألعاب المتجر</button>
+          <span className="hz-gamehub-sidebar-label">متجر حمزة</span>
+          <button type="button" onClick={() => document.getElementById('hz-game-catalog')?.scrollIntoView({ behavior: 'smooth' })}>↗ استكشف المتجر</button>
+        </aside>
+      </section>
 
       {!settings.hideHero && <div className="hz-hero-frame" aria-label="معرض واجهة المتجر">
         <div className="hz-hero-media active">
@@ -733,7 +794,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       <CheckoutForm authCart={authCart} inputStyle={inputStyle} />
       <OrderConfirmation authCart={authCart} />
 
-      <div className="hz-store-intro">
+      <div id="hz-game-catalog" className="hz-store-intro">
         <div className="hz-store-intro-copy">
         <span className="hz-store-kicker">Hamza Digital Market</span>
         <h2>
@@ -908,7 +969,7 @@ export default function Storefront({ inputStyle = {}, onOpenDashboard = () => {}
       </div>
 
       {authCart?.currentUser && Array.isArray(authCart.myGames) && authCart.myGames.length > 0 && (
-        <section className="hz-glass-card" style={{ maxWidth: '1000px', margin: '28px auto 10px', padding: '18px' }} dir="rtl">
+        <section id="hz-owned-games" className="hz-glass-card hz-library-card" style={{ maxWidth: '1000px', margin: '28px auto 10px', padding: '18px' }} dir="rtl">
           <h3 style={{ margin: '0 0 6px', color: '#c4b5fd' }}>🎮 مكتبة ألعابي</h3>
           <p style={{ margin: '0 0 14px', color: '#94a3b8', fontSize: '12px' }}>الألعاب هنا مرتبطة بحسابك؛ إذا حذفت اللعبة من جهازك تقدر ترجع لها بدون شراء جديد.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
